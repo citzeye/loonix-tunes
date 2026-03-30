@@ -15,6 +15,7 @@ node_modules
 # (DIBUTUHKAN - tidak diignore)
 !packaging/windows/*.dll
 !packaging/windows/libs/*.lib
+!packaging/windows/include/
 
 # Jaga-jaga kalau ada file exe nyasar di luar folder target/
 *.exe
