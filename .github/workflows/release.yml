@@ -14,45 +14,45 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
-      - name: Install Dependencies
+      
+      - name: Install System Dependencies
         run: |
           sudo add-apt-repository -y ppa:pipewire-debian/pipewire-upstream
           sudo apt-get update
           sudo apt-get install -y \
-            qt6-base-dev \
-            qt6-declarative-dev \
-            qt6-wayland \
-            qml6-module-qtquick-controls \
-            qml6-module-qtquick-layouts \
-            qml6-module-qtquick-window \
-            qml6-module-qtqml-workerscript \
-            qml6-module-qt-labs-platform \
-            qml6-module-qtquick-templates \
-            qml6-module-qtquick-effects \
-            qml6-module-qt-labs-settings \
-            qml6-module-qt-labs-folderlistmodel \
-            ffmpeg libavcodec-dev libavformat-dev libavfilter-dev libavdevice-dev libavutil-dev libswresample-dev pipewire libpipewire-0.3-dev libwayland-dev libasound2-dev librubberband-dev libsoxr-dev libfftw3-dev libdbus-1-dev libglib2.0-dev libgl1-mesa-dev libegl1-mesa-dev libxkbcommon-dev
+            libfuse2 \
+            ffmpeg libavcodec-dev libavformat-dev libavfilter-dev libavdevice-dev libavutil-dev libswresample-dev \
+            pipewire libpipewire-0.3-dev \
+            libwayland-dev libasound2-dev librubberband-dev libsoxr-dev libfftw3-dev \
+            libdbus-1-dev libglib2.0-dev libgl1-mesa-dev libegl1-mesa-dev libxkbcommon-dev
+
+      - name: Install Qt
+        uses: jurplel/install-qt-action@v3
+        with:
+          version: '6.6.2'
+          modules: 'qtmultimedia qt5compat'
 
       - name: Build Rust
         run: cargo build --release
 
       - name: Bundle AppImage
         run: |
-          # 1. Install libfuse2 buat jalanin AppImage
-          sudo apt-get install -y libfuse2
-          
-          # 2. Download linuxdeployqt
+          # Download linuxdeployqt
           wget -c https://github.com/probonopd/linuxdeployqt/releases/download/continuous/linuxdeployqt-continuous-x86_64.AppImage
           chmod +x linuxdeployqt-continuous-x86_64.AppImage
 
-          # 3. Jalankan bundling dengan flag -qmldir agar modul QML ikut masuk
+          # Export PATH Qt biar linuxdeployqt tau pake Qt yang mana
+          export PATH=$Qt6_DIR/bin:$PATH
+          export LD_LIBRARY_PATH=$Qt6_DIR/lib:$LD_LIBRARY_PATH
+
+          # Jalankan bundling dengan flag -qmldir agar modul QML ikut masuk
           ./linuxdeployqt-continuous-x86_64.AppImage \
             target/release/loonix-tunes \
             -appimage \
             -qmldir=qml \
             -verbose=2
 
-          # 4. Rename hasil build agar nama sesuai
+          # Rename hasil build agar nama sesuai
           mv Loonix-Tunes-*-x86_64.AppImage Loonix-Tunes-v1.0.0-x86_64.AppImage
 
       - name: Upload Linux Artifact
