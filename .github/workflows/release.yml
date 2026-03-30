@@ -126,40 +126,13 @@ jobs:
         run: |
           $env:PKG_CONFIG_PATH = "${{ github.workspace }}\packaging\windows\pkgconfig"
           $env:FFMPEG_DIR = "${{ github.workspace }}\packaging\windows"
-          $env:INCLUDE = "${{ github.workspace }}\packaging\windows\include;" + $env:INCLUDE
 
-          # 1. Bikin folder khusus untuk library FFmpeg (.lib)
-          $ffmpeg_lib_dir = "${{ github.workspace }}\packaging\windows\libs"
-          New-Item -ItemType Directory -Force -Path $ffmpeg_lib_dir
+          $libs = "${{ github.workspace }}\packaging\windows\libs"
+          $includes = "${{ github.workspace }}\packaging\windows\include"
 
-          # 2. Pindah ke direktori FFmpeg DLL lo
-          cd "${{ github.workspace }}\packaging\windows"
+          $env:LIB = "$libs;" + $env:LIB
+          $env:INCLUDE = "$includes;" + $env:INCLUDE
 
-          # 3. Generate file .lib dari file .dll pake alat MSVC (dumpbin & lib)
-          $dlls = Get-ChildItem -Path "av*.dll", "sw*.dll"
-          foreach ($dll in $dlls) {
-              $dll_name = $dll.Name
-              $base_name = $dll.BaseName.Split('-')[0] # Ngambil kata 'avcodec' dari 'avcodec-62'
-              $def_file = "$base_name.def"
-              $lib_file = "$ffmpeg_lib_dir\$base_name.lib"
-              
-              Write-Host "Generating $lib_file from $dll_name..."
-              
-              # Bikin file .def yang isinya daftar fungsi DLL
-              dumpbin /exports $dll_name | Out-String -Stream | Select-String "^\s+\d+\s+[A-F0-9]+\s+[A-Za-z0-9_]+" | ForEach-Object {
-                  $_.Line.Trim() -replace '^\d+\s+[A-F0-9]+\s+([A-Za-z0-9_]+).*', '$1'
-              } | Set-Content "temp_exports.txt"
-              
-              Set-Content $def_file "EXPORTS"
-              Add-Content $def_file (Get-Content "temp_exports.txt")
-              
-              # Bikin file .lib dari file .def
-              lib /def:$def_file /out:$lib_file /machine:x64
-          }
-
-          # 4. Set jalur LIB dan compile Rust lo
-          $env:LIB = "$ffmpeg_lib_dir;" + $env:LIB
-          cd "${{ github.workspace }}"
           cargo build --release --target x86_64-pc-windows-msvc
 
       - name: Deploy Windows
