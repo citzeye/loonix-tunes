@@ -44,22 +44,31 @@ jobs:
           rm -f $Qt6_DIR/plugins/sqldrivers/libqsqlpsql.so
           rm -f $Qt6_DIR/plugins/sqldrivers/libqsqlodbc.so
 
-          # 2. Download linuxdeployqt
+          # 2. Setup AppDir structure
+          mkdir -p AppDir/usr/bin
+          mkdir -p AppDir/usr/share/applications
+          mkdir -p AppDir/usr/share/icons/hicolor/256x256/apps
+          cp target/release/loonix-tunes AppDir/usr/bin/
+          cp packaging/linux/loonix-tunes.desktop AppDir/usr/share/applications/
+          cp packaging/linux/icon.png AppDir/usr/share/icons/hicolor/256x256/apps/loonix-tunes.png
+
+          # 3. Download linuxdeployqt
           wget -c https://github.com/probonopd/linuxdeployqt/releases/download/continuous/linuxdeployqt-continuous-x86_64.AppImage
           chmod +x linuxdeployqt-continuous-x86_64.AppImage
 
-          # 3. Export PATH Qt biar linuxdeployqt tau pake Qt yang mana
+          # 4. Export PATH Qt & VERSION
           export PATH=$Qt6_DIR/bin:$PATH
           export LD_LIBRARY_PATH=$Qt6_DIR/lib:$LD_LIBRARY_PATH
+          export VERSION=1.0.0
 
-          # 4. Jalankan bundling dengan flag -qmldir agar modul QML ikut masuk
+          # 5. Jalankan bundling ke .desktop file (bukan ke binary)
           ./linuxdeployqt-continuous-x86_64.AppImage \
-            target/release/loonix-tunes \
+            AppDir/usr/share/applications/loonix-tunes.desktop \
             -appimage \
             -qmldir=qml \
             -verbose=2
 
-          # 5. Rename hasil build agar nama sesuai
+          # 6. Rename hasil build
           mv Loonix-Tunes-*-x86_64.AppImage Loonix-Tunes-v1.0.0-x86_64.AppImage
 
       - name: Upload Linux Artifact
