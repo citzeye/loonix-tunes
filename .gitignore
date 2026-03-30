@@ -2,14 +2,18 @@
 *.log
 bin/
 obj/
-.DS_Store/target
+.DS_Store
+/target
 **/*.rs.bk
 Cargo.lock
 node_modules
-/target
 .skill
 .backup
 .vst3
+
+# Makepkg artifacts
+loonix-tunes-*/
+src/loonix-tunes-*/
 
 # --- Windows Build Dependencies ---
 # (DIBUTUHKAN - tidak diignore)
