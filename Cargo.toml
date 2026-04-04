@@ -12,11 +12,11 @@ eula = false
 [dependencies]
 # --- CORE AUDIO ENGINE (Universal) ---
 ffmpeg-next = "8.0"
-cpal = "0.15"
+cpal = "0.17.3"
 ringbuf = "0.4"
-biquad = "0.4"
+biquad = "0.6.0"
 dasp = "0.11"
-freeverb = "0.1"
+freeverb = "0.2.0"
 soxr = "0.6"
 crossbeam = "0.8"
 arc-swap = "1.6"
@@ -27,9 +27,9 @@ parking_lot = "0.12"
 [target.'cfg(target_os = "linux")'.dependencies]
 pipewire = "0.9"
 libspa = "0.9"
-zbus = "5.6.1" # Tambahin ini biar dbus_service.rs gak nangis
+zbus = "5.6.1"
 qmetaobject = "0.2.10"
-glib = { version = "0.19", features = ["v2_68"] }
+glib = { version = "0.22.3", features = ["v2_68"] }
 x11 = "2.20"
 
 # --- WINDOWS ONLY: UI (tanpa glib) ---
@@ -42,17 +42,17 @@ qmetaobject = { version = "0.2.10", default-features = false }
 
 # --- DESKTOP ONLY (Linux + Windows): Trash ---
 [target.'cfg(any(target_os = "linux", target_os = "windows"))'.dependencies]
-trash = "3.0"
+trash = "5.2.5"
 
 # --- UI & UTILS (Universal) ---
 cstr = "0.2"
 dirs = "6.0.0"
-rand = "0.8"
-rfd = "0.15"
+rand = "0.10.0"
+rfd = "0.17.2"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
-reqwest = { version = "0.12", features = ["blocking", "json"] }
-confy = "0.6"
+reqwest = { version = "0.13.2", features = ["blocking", "json"], default-features = false }
+confy = "2.0.0"
 url = "2.5.8"
 crossbeam-channel = "0.5.15"
 # cbindgen biasanya buat build-dep, tapi kalau lo butuh runtime gak apa-apa tetap di sini

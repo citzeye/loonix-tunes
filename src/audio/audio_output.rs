@@ -364,7 +364,7 @@ impl AudioOutput {
         // Use fixed buffer size to prevent underruns (kaset kusut/distortion)
         let config = cpal::StreamConfig {
             channels,
-            sample_rate: cpal::SampleRate(self.sample_rate),
+            sample_rate: self.sample_rate,
             buffer_size: cpal::BufferSize::Fixed(4096), // ~85ms at 48kHz — lebih aman untuk DSP berat (WSOLA)
         };
 

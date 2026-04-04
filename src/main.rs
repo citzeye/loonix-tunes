@@ -15,11 +15,26 @@ use crate::ui::playerbridge::PlayerBridge;
 use crate::ui::theme::ThemeManager;
 
 fn setup_env() {
+    // Basic environment untuk Qt
     std::env::set_var("RUST_LOG", "info");
     std::env::set_var("QT_QUICK_CONTROLS_STYLE", "Fusion");
 }
 
 fn main() {
+    // ==========================================
+    // 1. SMART ENVIRONMENT DETECTOR
+    // ==========================================
+    if cfg!(debug_assertions) {
+        println!("========================================");
+        println!("🛠️ LOONIX-TUNES [DEVELOPER MODE]");
+        println!("Menjalankan dari Cargo. Log diaktifkan.");
+        println!("========================================");
+    } else {
+        // Mode ini jalan kalau lo pake 'cargo build --release' (Buat User)
+        // Di Windows, terminal hitam bakal hilang berkat windows_subsystem di atas.
+        println!("🚀 LOONIX-TUNES [RELEASE MODE]");
+    }
+
     #[cfg(target_os = "linux")]
     {
         if std::env::var("WAYLAND_DISPLAY").is_ok() {
@@ -31,9 +46,9 @@ fn main() {
     // Install panic hook to print backtrace
     std::panic::set_hook(Box::new(|panic_info| {
         eprintln!("Panic: {:?}", panic_info);
-        // Print backtrace if available
         eprintln!("Backtrace:\n{:?}", std::backtrace::Backtrace::capture());
     }));
+    
     setup_env();
 
     #[cfg(target_os = "linux")]
@@ -44,6 +59,20 @@ fn main() {
     }
 
     init_resources_v4();
+
+    // ==========================================
+    // 2. MEMORY MANAGEMENT: BUAT DATA DULUAN
+    // (Wajib di atas Engine biar gak Access Violation pas close app)
+    // ==========================================
+    let boxed_model = QObjectBox::new(MusicModel::new());
+    let boxed_theme = QObjectBox::new(ThemeManager::new());
+    let boxed_popup = QObjectBox::new(PopupMenu::default());
+    let boxed_bridge = QObjectBox::new(PlayerBridge::new());
+
+    // ==========================================
+    // 3. BUAT ENGINE & REGISTRASI
+    // (Engine dibuat belakangan, jadi dihancurkan duluan)
+    // ==========================================
     let mut engine = QmlEngine::new();
 
     // Registrasi Type untuk QML
@@ -52,17 +81,9 @@ fn main() {
     qml_register_type::<ThemeManager>(cstr!("Loonix"), 1, 0, cstr!("ThemeManager"));
 
     // Inisialisasi Model dengan Engine Audio baru
-    let boxed_model = QObjectBox::new(MusicModel::new());
     engine.set_object_property("musicModel".into(), boxed_model.pinned());
-
-    let boxed_theme = QObjectBox::new(ThemeManager::new());
     engine.set_object_property("theme".into(), boxed_theme.pinned());
-
-    let boxed_popup = QObjectBox::new(PopupMenu::default());
     engine.set_object_property("popupMenu".into(), boxed_popup.pinned());
-
-    // Player Bridge untuk UI communications
-    let boxed_bridge = QObjectBox::new(PlayerBridge::new());
     engine.set_object_property("playerBridge".into(), boxed_bridge.pinned());
 
     // Check for command line arguments (file paths)
@@ -71,12 +92,14 @@ fn main() {
         // Store command line files for later processing
         let files: Vec<String> = args[1..].to_vec();
         crate::ui::core::set_command_line_files(files);
-        println!(
-            "Stored {} file(s) from command line for processing",
-            args.len() - 1
-        );
+        if cfg!(debug_assertions) {
+            println!("Stored {} file(s) from command line for processing", args.len() - 1);
+        }
     }
 
+    // ==========================================
+    // 4. LOAD UI & EXECUTE
+    // ==========================================
     engine.load_file("qrc:/qml/Ui.qml".into());
     engine.exec();
 }
@@ -91,27 +114,25 @@ qmetaobject::qrc!(init_resources_v4,
         "qml/ui/TabCustom.qml",
         "qml/ui/Eq.qml",
         "qml/ui/Fx.qml",
+        "qml/ui/EqPopup.qml",
+        "qml/ui/FxPopup.qml",
         "qml/ui/TrackInfo.qml",
-        "qml/ui/LoonixDrawer.qml",
-        "qml/ui/HeaderMenu.qml",
         "qml/ui/TabContextMenu.qml",
         "qml/ui/PlaylistContextMenu.qml",
         "qml/ui/Playlist.qml",
-        "qml/ui/Preferences.qml",
-        "qml/ui/preferences/About.qml",
-        "qml/ui/preferences/Donate.qml",
-        "qml/ui/preferences/Hardware.qml",
-        "qml/ui/preferences/Audio.qml",
-        "qml/ui/preferences/Library.qml",
-        "qml/ui/preferences/Appearance.qml",
-        "qml/ui/preferences/SettingTab.qml",
-        "qml/ui/preferences/SettingSwitch.qml",
-        "qml/ui/preferences/SettingHeader.qml",
-        "qml/ui/preferences/SettingDropdown.qml",
-        "qml/ui/preferences/SettingSlider.qml",
-        "qml/ui/preferences/CollapsibleSection.qml",
-        "qml/ui/preferences/SettingFooter.qml",
-        "qml/ui/preferences/SettingButton.qml",
+        "qml/ui/Pref.qml",
+        "qml/ui/pref/PrefAbout.qml",
+        "qml/ui/pref/PrefDonate.qml",
+        "qml/ui/pref/PrefHardware.qml",
+        "qml/ui/pref/PrefAudio.qml",
+        "qml/ui/pref/PrefLibrary.qml",
+        "qml/ui/pref/PrefAppearance.qml",
+        "qml/ui/pref/PrefTab.qml",
+        "qml/ui/pref/PrefSwitch.qml",
+        "qml/ui/pref/PrefDropdown.qml",
+        "qml/ui/pref/PrefSlider.qml",
+        "qml/ui/pref/PrefCollapsibleSection.qml",
+        "qml/ui/pref/PrefButton.qml",
         "qml/ui/ThemeSlider.qml",
         "qml/ui/qmldir",
         "assets/qtquickcontrols2.conf",

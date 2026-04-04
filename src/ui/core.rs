@@ -1312,7 +1312,7 @@ impl MusicModel {
         // Shuffle mode: pick random from folder
         if self.shuffle_active {
             use rand::seq::SliceRandom;
-            let mut rng = rand::thread_rng();
+            let mut rng = rand::rng();
 
             // If shuffle queue is empty or not in folder, rebuild it
             if self.shuffle_queue.is_empty() || !folder_indices.contains(&self.shuffle_queue[0]) {
@@ -1432,7 +1432,7 @@ impl MusicModel {
                 self.shuffle_queue.push(i as i32);
             }
 
-            self.shuffle_queue.shuffle(&mut rand::thread_rng());
+            self.shuffle_queue.shuffle(&mut rand::rng());
         }
 
         self.shuffle_changed();

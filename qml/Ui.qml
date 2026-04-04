@@ -134,14 +134,7 @@ Window {
     id: emoji
     source: 'qrc:/assets/fonts/twemoji.ttf'
   }
-
-  LoonixDrawer {
-    id: eqDrawer
-    title: '10-BAND EQUALIZER'
-    edgePosition: Qt.RightEdge
-    content: Eq {} // Memanggil file eq.qml
-  }
-
+  
   // Rename Dialog
   Item {
     id: renameDialogContainer
@@ -264,17 +257,17 @@ Window {
 
         RowLayout {
           anchors.left: parent.left
-        anchors.right: parent.right
-        anchors.verticalCenter: parent.verticalCenter // Paksa Row di tengah vertikal
-        anchors.leftMargin: 8
-        anchors.rightMargin: 8
-        spacing: 0
+          anchors.right: parent.right
+          anchors.verticalCenter: parent.verticalCenter
+          anchors.leftMargin: 8
+          anchors.rightMargin: 8
+          spacing: 0
 
-        MouseArea {
-          anchors.fill: parent
-          onPressed: root.startSystemMove()
-          cursorShape: Qt.SizeAllCursor
-        }
+          MouseArea {
+            anchors.fill: parent
+            onPressed: root.startSystemMove()
+            cursorShape: Qt.SizeAllCursor
+          }
 
           Text {
             id: menuIcon
@@ -294,26 +287,26 @@ Window {
             }
           }
 
-            Item {
-              Layout.fillWidth: true
-              Layout.alignment: Qt.AlignVCenter
-              Text {
-                id: headerTitle
-                anchors.centerIn: parent
-                text: 'LOONIX TUNES'
-                font.family: kodeMono.name
-                font.pixelSize: 12
-                color: theme.colormap.headericon
-                horizontalAlignment: Text.AlignHCenter
-              }
-              MouseArea {
-                id: headerTitleMouse
-                anchors.fill: parent
-                onDoubleClicked: {
-                  handleHeaderDoubleClick()
-                }
+          Item {
+            Layout.fillWidth: true
+            Layout.alignment: Qt.AlignVCenter
+            Text {
+              id: headerTitle
+              anchors.centerIn: parent
+              text: 'LOONIX TUNES'
+              font.family: kodeMono.name
+              font.pixelSize: 12
+              color: theme.colormap.headericon
+              horizontalAlignment: Text.AlignHCenter
+            }
+            MouseArea {
+              id: headerTitleMouse
+              anchors.fill: parent
+              onDoubleClicked: {
+                handleHeaderDoubleClick()
               }
             }
+          }
 
           Text {
             text: '󰅖'
@@ -1195,39 +1188,40 @@ Window {
     }
   }
 
-  TrackInfo {}
-
-  Popup {
-    id: settingsPopup
-    visible: root.settingsDialogVisible
-    onClosed: root.settingsDialogVisible = false
-
-    parent: Overlay.overlay
-    width: parent.width * 0.85
-    height: parent.height * 0.85
-    anchors.centerIn: parent
-    modal: true
-    focus: true
-    closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutside
-
-    background: Rectangle {
-      color: theme.colormap["bgmain"]
-      border.color: theme.colormap["graysolid"]
-      antialiasing: false
-      radius: 4
-    }
-
-    contentItem: Item {
-      anchors.fill: parent
-
-      Preferences {
-        anchors.fill: parent
-        anchors.margins: 10
-      }
-    }
+  // ==========================================
+  // SECTION: POPUPS (Panggilan Eksternal)
+  // ==========================================
+  EqPopup {
+      id: eqPopup
+      x: (parent.width - width) / 2
+      y: parent.height - height - 120
+      width: root.width > 400 ? 380 : root.width - 40
+      height: 300
   }
 
-  // Update checker poll timer
+  FxPopup {
+      id: fxPopup
+      x: (parent.width - width) / 2
+      y: parent.height - height - 120
+      width: root.width > 400 ? 380 : root.width - 40
+      height: 380
+  }
+
+  Pref {
+      id: prefPopup
+      visible: root.settingsDialogVisible
+  }
+
+// ==========================================
+  // SECTION: CONTEXT MENUS
+  // ==========================================
+  TabContextMenu {}
+  PlaylistContextMenu {}
+  TrackInfo {}
+
+  // ==========================================
+  // SECTION: SYSTEM & LOGIC CONNECTIONS
+  // ==========================================
   Timer {
     id: updatePollTimer
     interval: 500
@@ -1235,101 +1229,17 @@ Window {
     running: false
     onTriggered: musicModel.poll_update_result()
   }
+
   Connections {
     target: musicModel
     function onUpdate_status_changed() {
-      if (musicModel.update_status === "Checking for updates...") {
-        updatePollTimer.running = true
-      } else {
-        updatePollTimer.running = false
-      }
+      updatePollTimer.running = (musicModel.update_status === "Checking for updates...")
     }
-  }
-
-  HeaderMenu {}
-  TabContextMenu {}
-  PlaylistContextMenu {}
-
-  MouseArea {
-    width: 6
-    anchors.top: parent.top
-    anchors.bottom: parent.bottom
-    anchors.left: parent.left
-    cursorShape: Qt.SizeHorCursor
-    onPressed: root.startSystemResize(Qt.LeftEdge)
-  }
-
-  MouseArea {
-    width: 6
-    anchors.top: parent.top
-    anchors.bottom: parent.bottom
-    anchors.right: parent.right
-    cursorShape: Qt.SizeHorCursor
-    onPressed: root.startSystemResize(Qt.RightEdge)
-  }
-
-  MouseArea {
-    height: 6
-    anchors.left: parent.left
-    anchors.right: parent.right
-    anchors.top: parent.top
-    cursorShape: Qt.SizeVerCursor
-    onPressed: root.startSystemResize(Qt.TopEdge)
-  }
-
-  MouseArea {
-    height: 6
-    anchors.left: parent.left
-    anchors.right: parent.right
-    anchors.bottom: parent.bottom
-    cursorShape: Qt.SizeVerCursor
-    onPressed: root.startSystemResize(Qt.BottomEdge)
-  }
-
-  MouseArea {
-    width: 10
-    height: 10
-    anchors.left: parent.left
-    anchors.top: parent.top
-    cursorShape: Qt.SizeFDiagCursor
-    onPressed: root.startSystemResize(Qt.LeftEdge | Qt.TopEdge)
-  }
-
-  MouseArea {
-    width: 10
-    height: 10
-    anchors.right: parent.right
-    anchors.top: parent.top
-    cursorShape: Qt.SizeBDiagCursor
-    onPressed: root.startSystemResize(Qt.RightEdge | Qt.TopEdge)
-  }
-
-  MouseArea {
-    width: 10
-    height: 10
-    anchors.left: parent.left
-    anchors.bottom: parent.bottom
-    cursorShape: Qt.SizeBDiagCursor
-    onPressed: root.startSystemResize(Qt.LeftEdge | Qt.BottomEdge)
-  }
-
-  MouseArea {
-    width: 10
-    height: 10
-    anchors.right: parent.right
-    anchors.bottom: parent.bottom
-    cursorShape: Qt.SizeFDiagCursor
-    onPressed: root.startSystemResize(Qt.RightEdge | Qt.BottomEdge)
-  }
-
-  Connections {
-    target: musicModel
+    
     function onPositionChanged() {
       currentTime.text = musicModel.format_time(musicModel.position)
-      if (musicModel.duration > 0) {
-        if (!seekbar.pressed) {
-          seekbar.value = musicModel.position / musicModel.duration
-        }
+      if (musicModel.duration > 0 && !seekbar.pressed) {
+        seekbar.value = musicModel.position / musicModel.duration
       }
     }
 
@@ -1339,7 +1249,7 @@ Window {
   }
 
   // ==========================================
-  // KEYBOARD SHORTCUTS
+  // SECTION: KEYBOARD SHORTCUTS
   // ==========================================
   function adjustVolume(delta) {
     var step = 0.05
@@ -1349,39 +1259,29 @@ Window {
     volTimer.restart()
   }
 
-  Shortcut {
-    sequence: "+"
-    onActivated: adjustVolume(1)
-  }
-
-  Shortcut {
-    sequence: "="
-    onActivated: adjustVolume(1)
-  }
-
-  Shortcut {
-    sequence: "-"
-    onActivated: adjustVolume(-1)
-  }
-
-  Shortcut {
-    sequence: "_"
-    onActivated: adjustVolume(-1)
-  }
-
-  Shortcut {
+  Shortcut { sequence: "+"; onActivated: adjustVolume(1) }
+  Shortcut { sequence: "="; onActivated: adjustVolume(1) }
+  Shortcut { sequence: "-"; onActivated: adjustVolume(-1) }
+  Shortcut { sequence: "_"; onActivated: adjustVolume(-1) }
+  Shortcut { 
     sequence: "M"
-    onActivated: {
-      musicModel.toggle_mute()
-      volTimer.restart()
-    }
+    onActivated: { musicModel.toggle_mute(); volTimer.restart() }
+  }
+  Shortcut { 
+    sequence: "Escape"
+    onActivated: { root.renameDialogVisible = false } // Atau tambahin settingsPopup.close() kalau perlu
   }
 
-  Shortcut {
-    sequence: "Escape"
-    onActivated: {
-      root.renameDialogVisible = false
-    }
-  }
+  // ==========================================
+  // SECTION: WINDOW RESIZE HANDLERS (BORDERS)
+  // ==========================================
+  MouseArea { width: 6; anchors.top: parent.top; anchors.bottom: parent.bottom; anchors.left: parent.left; cursorShape: Qt.SizeHorCursor; onPressed: root.startSystemResize(Qt.LeftEdge) }
+  MouseArea { width: 6; anchors.top: parent.top; anchors.bottom: parent.bottom; anchors.right: parent.right; cursorShape: Qt.SizeHorCursor; onPressed: root.startSystemResize(Qt.RightEdge) }
+  MouseArea { height: 6; anchors.left: parent.left; anchors.right: parent.right; anchors.top: parent.top; cursorShape: Qt.SizeVerCursor; onPressed: root.startSystemResize(Qt.TopEdge) }
+  MouseArea { height: 6; anchors.left: parent.left; anchors.right: parent.right; anchors.bottom: parent.bottom; cursorShape: Qt.SizeVerCursor; onPressed: root.startSystemResize(Qt.BottomEdge) }
+  MouseArea { width: 10; height: 10; anchors.left: parent.left; anchors.top: parent.top; cursorShape: Qt.SizeFDiagCursor; onPressed: root.startSystemResize(Qt.LeftEdge | Qt.TopEdge) }
+  MouseArea { width: 10; height: 10; anchors.right: parent.right; anchors.top: parent.top; cursorShape: Qt.SizeBDiagCursor; onPressed: root.startSystemResize(Qt.RightEdge | Qt.TopEdge) }
+  MouseArea { width: 10; height: 10; anchors.left: parent.left; anchors.bottom: parent.bottom; cursorShape: Qt.SizeBDiagCursor; onPressed: root.startSystemResize(Qt.LeftEdge | Qt.BottomEdge) }
+  MouseArea { width: 10; height: 10; anchors.right: parent.right; anchors.bottom: parent.bottom; cursorShape: Qt.SizeFDiagCursor; onPressed: root.startSystemResize(Qt.RightEdge | Qt.BottomEdge) }
 
 }
