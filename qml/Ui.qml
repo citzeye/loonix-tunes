@@ -628,6 +628,7 @@ Window {
       // SECTION: SPECIAL CONTROLS
       // ==========================================
       Rectangle {
+        id: specialControlsSection
         Layout.fillWidth: true
         Layout.preferredHeight: 40
         color: 'transparent'
@@ -1145,14 +1146,14 @@ Window {
   Eq {
       id: eq
       x: (parent.width - width) / 2
-      y: (parent.height - height) / 2
+      y: 171
       width: parent.width * 0.9
   }
 
   Fx {
       id: fx
       x: (parent.width - width) / 2
-      y: (parent.height - height) / 2
+      y: 171
       width: parent.width * 0.9
   }
 

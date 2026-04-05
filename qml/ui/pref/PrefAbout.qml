@@ -152,7 +152,10 @@ Flickable {
                         anchors.fill: parent
                         cursorShape: Qt.PointingHandCursor
                         hoverEnabled: true
-                        onClicked: musicModel.check_for_updates()
+                        onClicked: {
+                            musicModel.check_for_updates()
+                            updatePollTimer.start()
+                        }
                     }
                 }
 
@@ -180,7 +183,7 @@ Flickable {
                         anchors.fill: parent
                         cursorShape: Qt.PointingHandCursor
                         hoverEnabled: true
-                        onClicked: Qt.openUrlExternally("https://github.com/citz/loonix-tunes/releases")
+                        onClicked: Qt.openUrlExternally("https://github.com/citzeye/loonix-tunes/releases")
                     }
                 }
                 Item { Layout.fillWidth: true }
