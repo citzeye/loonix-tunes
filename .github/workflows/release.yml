@@ -90,106 +90,107 @@ jobs:
           path: "*.tar.gz"
 
   # --- BUILD WINDOWS (ZIP) ---
-  windows-release:
-    runs-on: windows-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          lfs: true
-
-      - name: Install Rust
-        uses: dtolnay/rust-toolchain@stable
-        with:
-          toolchain: stable-x86_64-pc-windows-msvc
-
-      - name: Install Qt6
-        uses: jurplel/install-qt-action@v3
-        with:
-          version: "6.5.0"
-
-      - name: Setup MSVC Command Prompt
-        uses: ilammy/msvc-dev-cmd@v1
-
-      - name: Setup VCPKG & PkgConfig
-        shell: pwsh
-        run: |
-          # Install pkgconfiglite
-          choco install pkgconfiglite --no-progress
-          
-          # Add to PATH
-          echo "C:\ProgramData\chocolatey\bin" >> $env:GITHUB_PATH
-          
-          # Install soxr dan rubberband
-          $vcpkg_exe = "C:\vcpkg\vcpkg.exe"
-          & $vcpkg_exe install soxr:x64-windows rubberband:x64-windows --vcpkg-root="C:\vcpkg"
-
-          # Copy files
-          New-Item -ItemType Directory -Force -Path "${{ github.workspace }}\packaging\windows\libs"
-          New-Item -ItemType Directory -Force -Path "${{ github.workspace }}\packaging\windows\include"
-
-          Copy-Item -Path "C:\vcpkg\packages\soxr_x64-windows\lib\soxr.lib" -Destination "${{ github.workspace }}\packaging\windows\libs\" -Force
-          Copy-Item -Path "C:\vcpkg\packages\soxr_x64-windows\include\soxr.h" -Destination "${{ github.workspace }}\packaging\windows\include\" -Force
-
-          Copy-Item -Path "C:\vcpkg\packages\rubberband_x64-windows\lib\rubberband.lib" -Destination "${{ github.workspace }}\packaging\windows\libs\" -Force
-          Copy-Item -Path "C:\vcpkg\packages\rubberband_x64-windows\include\*" -Destination "${{ github.workspace }}\packaging\windows\include\" -Recurse -Force
-
-          # Create .pc files
-          $pc_dir = "${{ github.workspace }}\packaging\windows\pkgconfig"
-          New-Item -ItemType Directory -Force -Path $pc_dir
-
-          $libs_dir = "${{ github.workspace }}\packaging\windows\libs" -replace '\\', '/'
-          $inc_dir = "${{ github.workspace }}\packaging\windows\include" -replace '\\', '/'
-
-          @"
-          Name: soxr
-          Description: SoX Resampler
-          Version: 0.1.3
-          Libs: -L$libs_dir -lsoxr
-          Cflags: -I$inc_dir
-          "@ | Out-File -FilePath "$pc_dir\soxr.pc" -Encoding ascii
-
-          @"
-          Name: rubberband
-          Description: Rubber Band
-          Version: 3.0.0
-          Libs: -L$libs_dir -lrubberband
-          Cflags: -I$inc_dir
-          "@ | Out-File -FilePath "$pc_dir\rubberband.pc" -Encoding ascii
-
-      - name: Build Rust
-        shell: pwsh
-        run: |
-          # Make sure pkg-config is in PATH
-          $env:Path = "C:\ProgramData\chocolatey\bin;" + $env:Path
-
-          # Set paths for Rust & Linker
-          $env:PKG_CONFIG_PATH = "${{ github.workspace }}\packaging\windows\pkgconfig"
-          $env:FFMPEG_DIR = "${{ github.workspace }}\packaging\windows"
-          $env:LIB = "${{ github.workspace }}\packaging\windows\libs;" + $env:LIB
-          $env:INCLUDE = "${{ github.workspace }}\packaging\windows\include;" + $env:INCLUDE
-
-          cargo build --release --target x86_64-pc-windows-msvc
-
-      - name: Deploy Windows
-        shell: bash
-        run: |
-          mkdir release-win
-          cp target/x86_64-pc-windows-msvc/release/loonix-tunes.exe release-win/
-          cp packaging/windows/*.dll release-win/
-
-          windeployqt.exe release-win/loonix-tunes.exe --qmldir=qml --release --no-translations
-
-          7z a loonix-tunes-${{ github.ref_name }}-win64.zip ./release-win/*
-
-      - name: Upload Windows Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: loonix-tunes-windows
-          path: "*.zip"
+  # DISABLED: Build Windows manually from Windows OS
+  # windows-release:
+  #   runs-on: windows-latest
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #       with:
+  #         lfs: true
+  #
+  #     - name: Install Rust
+  #       uses: dtolnay/rust-toolchain@stable
+  #       with:
+  #         toolchain: stable-x86_64-pc-windows-msvc
+  #
+  #     - name: Install Qt6
+  #       uses: jurplel/install-qt-action@v3
+  #       with:
+  #         version: "6.5.0"
+  #
+  #     - name: Setup MSVC Command Prompt
+  #       uses: ilammy/msvc-dev-cmd@v1
+  #
+  #     - name: Setup VCPKG & PkgConfig
+  #       shell: pwsh
+  #       run: |
+  #         # Install pkgconfiglite
+  #         choco install pkgconfiglite --no-progress
+  #         
+  #         # Add to PATH
+  #         echo "C:\ProgramData\chocolatey\bin" >> $env:GITHUB_PATH
+  #         
+  #         # Install soxr dan rubberband
+  #         $vcpkg_exe = "C:\vcpkg\vcpkg.exe"
+  #         & $vcpkg_exe install soxr:x64-windows rubberband:x64-windows --vcpkg-root="C:\vcpkg"
+  #
+  #         # Copy files
+  #         New-Item -ItemType Directory -Force -Path "${{ github.workspace }}\packaging\windows\libs"
+  #         New-Item -ItemType Directory -Force -Path "${{ github.workspace }}\packaging\windows\include"
+  #
+  #         Copy-Item -Path "C:\vcpkg\packages\soxr_x64-windows\lib\soxr.lib" -Destination "${{ github.workspace }}\packaging\windows\libs\" -Force
+  #         Copy-Item -Path "C:\vcpkg\packages\soxr_x64-windows\include\soxr.h" -Destination "${{ github.workspace }}\packaging\windows\include\" -Force
+  #
+  #         Copy-Item -Path "C:\vcpkg\packages\rubberband_x64-windows\lib\rubberband.lib" -Destination "${{ github.workspace }}\packaging\windows\libs\" -Force
+  #         Copy-Item -Path "C:\vcpkg\packages\rubberband_x64-windows\include\*" -Destination "${{ github.workspace }}\packaging\windows\include\" -Recurse -Force
+  #
+  #         # Create .pc files
+  #         $pc_dir = "${{ github.workspace }}\packaging\windows\pkgconfig"
+  #         New-Item -ItemType Directory -Force -Path $pc_dir
+  #
+  #         $libs_dir = "${{ github.workspace }}\packaging\windows\libs" -replace '\\', '/'
+  #         $inc_dir = "${{ github.workspace }}\packaging\windows\include" -replace '\\', '/'
+  #
+  #         @"
+  #         Name: soxr
+  #         Description: SoX Resampler
+  #         Version: 0.1.3
+  #         Libs: -L$libs_dir -lsoxr
+  #         Cflags: -I$inc_dir
+  #         "@ | Out-File -FilePath "$pc_dir\soxr.pc" -Encoding ascii
+  #
+  #         @"
+  #         Name: rubberband
+  #         Description: Rubber Band
+  #         Version: 3.0.0
+  #         Libs: -L$libs_dir -lrubberband
+  #         Cflags: -I$inc_dir
+  #         "@ | Out-File -FilePath "$pc_dir\rubberband.pc" -Encoding ascii
+  #
+  #     - name: Build Rust
+  #       shell: pwsh
+  #       run: |
+  #         # Make sure pkg-config is in PATH
+  #         $env:Path = "C:\ProgramData\chocolatey\bin;" + $env:Path
+  #
+  #         # Set paths for Rust & Linker
+  #         $env:PKG_CONFIG_PATH = "${{ github.workspace }}\packaging\windows\pkgconfig"
+  #         $env:FFMPEG_DIR = "${{ github.workspace }}\packaging\windows"
+  #         $env:LIB = "${{ github.workspace }}\packaging\windows\libs;" + $env:LIB
+  #         $env:INCLUDE = "${{ github.workspace }}\packaging\windows\include;" + $env:INCLUDE
+  #
+  #         cargo build --release --target x86_64-pc-windows-msvc
+  #
+  #     - name: Deploy Windows
+  #       shell: bash
+  #       run: |
+  #         mkdir release-win
+  #         cp target/x86_64-pc-windows-msvc/release/loonix-tunes.exe release-win/
+  #         cp packaging/windows/*.dll release-win/
+  #
+  #         windeployqt.exe release-win/loonix-tunes.exe --qmldir=qml --release --no-translations
+  #
+  #         7z a loonix-tunes-${{ github.ref_name }}-win64.zip ./release-win/*
+  #
+  #     - name: Upload Windows Artifact
+  #       uses: actions/upload-artifact@v4
+  #       with:
+  #         name: loonix-tunes-windows
+  #         path: "*.zip"
 
   # --- PUBLISH EVERYTHING ---
   publish:
-    needs: [linux-release, windows-release]
+    needs: [linux-release]
     runs-on: ubuntu-latest
     steps:
       - name: Download all artifacts
@@ -200,7 +201,7 @@ jobs:
           files: |
             **/*.AppImage
             **/*.tar.gz
-            **/*.zip
+            # **/*.zip  # Windows build done manually
           body: "Loonix-Tunes v1.0.0 - Birthday Release 🎂\n\nEfficient, Native, and Fast."
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
