@@ -1,15 +1,15 @@
-name: Birthday Release Build
+name: Linux Release Build
 
 on:
   push:
     tags:
-      - "v*" # Trigger: git tag v1.0.0 && git push origin v1.0.0
+      - "v*" # Trigger: git tag v1.0.2 && git push origin v1.0.2
 
 permissions:
   contents: write
 
 jobs:
-  # --- BUILD LINUX (APPIMAGE) ---
+  # --- BUILD LINUX ---
   linux-release:
     runs-on: ubuntu-22.04
     steps:
@@ -25,7 +25,11 @@ jobs:
             ffmpeg libavcodec-dev libavformat-dev libavfilter-dev libavdevice-dev libavutil-dev libswresample-dev \
             pipewire libpipewire-0.3-dev \
             libwayland-dev libasound2-dev librubberband-dev libsoxr-dev libfftw3-dev \
-            libdbus-1-dev libglib2.0-dev libgl1-mesa-dev libegl1-mesa-dev libxkbcommon-dev
+            libdbus-1-dev libglib2.0-dev libgl1-mesa-dev libegl1-mesa-dev libxkbcommon-dev \
+            ruby ruby-dev rubygems build-essential rpm # Tambahan untuk FPM
+
+      - name: Install FPM (For DEB/RPM Packaging)
+        run: sudo gem install fpm
 
       - name: Install Qt
         uses: jurplel/install-qt-action@v3
@@ -36,15 +40,13 @@ jobs:
       - name: Build Rust
         run: cargo build --release
 
-      - name: Bundle AppImage
+      - name: Bundle AppImage & Prepare AppDir
         run: |
-          # 1. Hapus SQL plugins yang nggak dipakai (sisakan SQLite aja)
           rm -f $Qt6_DIR/plugins/sqldrivers/libqsqlmimer.so
           rm -f $Qt6_DIR/plugins/sqldrivers/libqsqlmysql.so
           rm -f $Qt6_DIR/plugins/sqldrivers/libqsqlpsql.so
           rm -f $Qt6_DIR/plugins/sqldrivers/libqsqlodbc.so
 
-          # 2. Setup AppDir structure
           mkdir -p AppDir/usr/bin
           mkdir -p AppDir/usr/share/applications
           mkdir -p AppDir/usr/share/icons/hicolor/256x256/apps
@@ -52,141 +54,74 @@ jobs:
           cp packaging/linux/loonix-tunes.desktop AppDir/usr/share/applications/
           cp packaging/linux/icon.png AppDir/usr/share/icons/hicolor/256x256/apps/loonix-tunes.png
 
-          # 3. Download linuxdeployqt
           wget -c https://github.com/probonopd/linuxdeployqt/releases/download/continuous/linuxdeployqt-continuous-x86_64.AppImage
           chmod +x linuxdeployqt-continuous-x86_64.AppImage
 
-          # 4. Export PATH Qt & VERSION
           export PATH=$Qt6_DIR/bin:$PATH
           export LD_LIBRARY_PATH=$Qt6_DIR/lib:$LD_LIBRARY_PATH
-          export VERSION=1.0.0
-
-          # 5. Jalankan bundling ke .desktop file (bukan ke binary)
+          
+          # Jalankan bundling
           ./linuxdeployqt-continuous-x86_64.AppImage \
             AppDir/usr/share/applications/loonix-tunes.desktop \
             -appimage \
             -qmldir=qml \
             -verbose=2
 
-          # 6. Rename hasil build
-          mv Loonix-Tunes-*-x86_64.AppImage Loonix-Tunes-v1.0.0-x86_64.AppImage
+          # Rename AppImage
+          mv Loonix-Tunes-*-x86_64.AppImage Loonix-Tunes-${{ github.ref_name }}-x86_64.AppImage
 
-      - name: Upload Linux Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: loonix-tunes-appimage
-          path: "*.AppImage"
+      - name: Package DEB and RPM
+        run: |
+          export VERSION=${GITHUB_REF_NAME#v}
+          
+          # Buat struktur direktori virtual untuk DEB/RPM
+          # Instalasi di arahkan ke /opt/loonix-tunes biar terisolasi dan rapi
+          mkdir -p pkg_root/opt/loonix-tunes
+          cp -r AppDir/* pkg_root/opt/loonix-tunes/
+
+          # Symlink AppRun ke /usr/bin biar user bisa ketik 'loonix-tunes' di terminal
+          mkdir -p pkg_root/usr/bin
+          ln -s /opt/loonix-tunes/AppRun pkg_root/usr/bin/loonix-tunes
+
+          # Copy Desktop file & Icon ke root system biar kebaca sama DE (GNOME/KDE/LOONIX)
+          mkdir -p pkg_root/usr/share/applications
+          mkdir -p pkg_root/usr/share/icons/hicolor/256x256/apps
+          cp packaging/linux/loonix-tunes.desktop pkg_root/usr/share/applications/
+          cp packaging/linux/icon.png pkg_root/usr/share/icons/hicolor/256x256/apps/loonix-tunes.png
+
+          # Bikin file .deb
+          fpm -s dir -t deb \
+            -n loonix-tunes \
+            -v $VERSION \
+            -C pkg_root \
+            --prefix / \
+            --description "Efficient, Native, and Fast Audio Player." \
+            .
+
+          # Bikin file .rpm
+          fpm -s dir -t rpm \
+            -n loonix-tunes \
+            -v $VERSION \
+            -C pkg_root \
+            --prefix / \
+            --description "Efficient, Native, and Fast Audio Player." \
+            .
 
       - name: Create Portable Tarball
         run: |
           mkdir -p loonix-tunes-portable
-          cp target/release/loonix*tunes loonix-tunes-portable/loonix-tunes
+          cp target/release/loonix-tunes loonix-tunes-portable/loonix-tunes
           tar -czvf loonix-tunes-linux-x64-portable.tar.gz loonix-tunes-portable/
 
-      - name: Upload Tarball Artifact
+      - name: Upload All Linux Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: loonix-tunes-tarball
-          path: "*.tar.gz"
-
-  # --- BUILD WINDOWS (ZIP) ---
-  # DISABLED: Build Windows manually from Windows OS
-  # windows-release:
-  #   runs-on: windows-latest
-  #   steps:
-  #     - uses: actions/checkout@v4
-  #       with:
-  #         lfs: true
-  #
-  #     - name: Install Rust
-  #       uses: dtolnay/rust-toolchain@stable
-  #       with:
-  #         toolchain: stable-x86_64-pc-windows-msvc
-  #
-  #     - name: Install Qt6
-  #       uses: jurplel/install-qt-action@v3
-  #       with:
-  #         version: "6.5.0"
-  #
-  #     - name: Setup MSVC Command Prompt
-  #       uses: ilammy/msvc-dev-cmd@v1
-  #
-  #     - name: Setup VCPKG & PkgConfig
-  #       shell: pwsh
-  #       run: |
-  #         # Install pkgconfiglite
-  #         choco install pkgconfiglite --no-progress
-  #         
-  #         # Add to PATH
-  #         echo "C:\ProgramData\chocolatey\bin" >> $env:GITHUB_PATH
-  #         
-  #         # Install soxr dan rubberband
-  #         $vcpkg_exe = "C:\vcpkg\vcpkg.exe"
-  #         & $vcpkg_exe install soxr:x64-windows rubberband:x64-windows --vcpkg-root="C:\vcpkg"
-  #
-  #         # Copy files
-  #         New-Item -ItemType Directory -Force -Path "${{ github.workspace }}\packaging\windows\libs"
-  #         New-Item -ItemType Directory -Force -Path "${{ github.workspace }}\packaging\windows\include"
-  #
-  #         Copy-Item -Path "C:\vcpkg\packages\soxr_x64-windows\lib\soxr.lib" -Destination "${{ github.workspace }}\packaging\windows\libs\" -Force
-  #         Copy-Item -Path "C:\vcpkg\packages\soxr_x64-windows\include\soxr.h" -Destination "${{ github.workspace }}\packaging\windows\include\" -Force
-  #
-  #         Copy-Item -Path "C:\vcpkg\packages\rubberband_x64-windows\lib\rubberband.lib" -Destination "${{ github.workspace }}\packaging\windows\libs\" -Force
-  #         Copy-Item -Path "C:\vcpkg\packages\rubberband_x64-windows\include\*" -Destination "${{ github.workspace }}\packaging\windows\include\" -Recurse -Force
-  #
-  #         # Create .pc files
-  #         $pc_dir = "${{ github.workspace }}\packaging\windows\pkgconfig"
-  #         New-Item -ItemType Directory -Force -Path $pc_dir
-  #
-  #         $libs_dir = "${{ github.workspace }}\packaging\windows\libs" -replace '\\', '/'
-  #         $inc_dir = "${{ github.workspace }}\packaging\windows\include" -replace '\\', '/'
-  #
-  #         @"
-  #         Name: soxr
-  #         Description: SoX Resampler
-  #         Version: 0.1.3
-  #         Libs: -L$libs_dir -lsoxr
-  #         Cflags: -I$inc_dir
-  #         "@ | Out-File -FilePath "$pc_dir\soxr.pc" -Encoding ascii
-  #
-  #         @"
-  #         Name: rubberband
-  #         Description: Rubber Band
-  #         Version: 3.0.0
-  #         Libs: -L$libs_dir -lrubberband
-  #         Cflags: -I$inc_dir
-  #         "@ | Out-File -FilePath "$pc_dir\rubberband.pc" -Encoding ascii
-  #
-  #     - name: Build Rust
-  #       shell: pwsh
-  #       run: |
-  #         # Make sure pkg-config is in PATH
-  #         $env:Path = "C:\ProgramData\chocolatey\bin;" + $env:Path
-  #
-  #         # Set paths for Rust & Linker
-  #         $env:PKG_CONFIG_PATH = "${{ github.workspace }}\packaging\windows\pkgconfig"
-  #         $env:FFMPEG_DIR = "${{ github.workspace }}\packaging\windows"
-  #         $env:LIB = "${{ github.workspace }}\packaging\windows\libs;" + $env:LIB
-  #         $env:INCLUDE = "${{ github.workspace }}\packaging\windows\include;" + $env:INCLUDE
-  #
-  #         cargo build --release --target x86_64-pc-windows-msvc
-  #
-  #     - name: Deploy Windows
-  #       shell: bash
-  #       run: |
-  #         mkdir release-win
-  #         cp target/x86_64-pc-windows-msvc/release/loonix-tunes.exe release-win/
-  #         cp packaging/windows/*.dll release-win/
-  #
-  #         windeployqt.exe release-win/loonix-tunes.exe --qmldir=qml --release --no-translations
-  #
-  #         7z a loonix-tunes-${{ github.ref_name }}-win64.zip ./release-win/*
-  #
-  #     - name: Upload Windows Artifact
-  #       uses: actions/upload-artifact@v4
-  #       with:
-  #         name: loonix-tunes-windows
-  #         path: "*.zip"
+          name: loonix-tunes-linux-packages
+          path: |
+            *.AppImage
+            *.tar.gz
+            *.deb
+            *.rpm
 
   # --- PUBLISH EVERYTHING ---
   publish:
@@ -201,7 +136,8 @@ jobs:
           files: |
             **/*.AppImage
             **/*.tar.gz
-            # **/*.zip  # Windows build done manually
-          body: "Loonix-Tunes v1.0.0 - Birthday Release 🎂\n\nEfficient, Native, and Fast."
+            **/*.deb
+            **/*.rpm
+          body: "Loonix-Tunes ${{ github.ref_name }} Release 🚀\n\nEfficient, Native, and Fast."
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
