@@ -12,8 +12,8 @@ Popup {
     closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutside
 
     background: Rectangle {
-        color: theme.colormap.bgmain
-        border.color: theme.colormap.tabborder
+        color: theme.colormap.fxbg
+        border.color: theme.colormap.fxborder
         border.width: 1
         radius: 4
         antialiasing: false
@@ -32,9 +32,9 @@ Popup {
                 id: reverbCard
                 Layout.fillWidth: true
                 Layout.preferredHeight: 65
-                color: theme.colormap.bgoverlay
+                color: theme.colormap.fxsliderbg
                 radius: 4
-                border.color: musicModel.reverb_active ? theme.colormap.playeraccent : theme.colormap.tabborder
+                border.color: musicModel.reverb_active ? theme.colormap.fxactive : theme.colormap.fxborder
                 antialiasing: false
 
                 ColumnLayout {
@@ -48,13 +48,13 @@ Popup {
                             font.family: kodeMono.name
                             font.pixelSize: 11
                             font.bold: true
-                            color: musicModel.reverb_active ? theme.colormap.playeraccent : theme.colormap.playersubtext
+                            color: musicModel.reverb_active ? theme.colormap.fxtext : theme.colormap.fxsubtext
                         }
                         Text {
                             text: musicModel.reverb_active ? '󰔡' : '󰨙'
                             font.family: symbols.name
                             font.pixelSize: 16
-                            color: musicModel.reverb_active ? theme.colormap.playerhover : theme.colormap.playersubtext
+                            color: musicModel.reverb_active ? theme.colormap.fxhover : theme.colormap.fxsubtext
                             MouseArea {
                                 anchors.fill: parent
                                 onClicked: musicModel.toggle_reverb_master()
@@ -81,8 +81,8 @@ Popup {
                                     verticalAlignment: Text.AlignVCenter
                                 }
                                 background: Rectangle {
-                                    color: rBtn.checked ? theme.colormap.playeraccent : "transparent"
-                                    border.color: theme.colormap.tabborder
+                                    color: rBtn.checked ? theme.colormap.fxactive : "transparent"
+                                    border.color: theme.colormap.fxborder
                                     radius: 3
                                     antialiasing: false
                                 }
@@ -111,10 +111,10 @@ Popup {
                 Rectangle {
                     Layout.fillWidth: true
                     Layout.preferredHeight: 55
-                    color: theme.colormap.bgoverlay
+                    color: theme.colormap.fxsliderbg
                     radius: 4
                     opacity: musicModel.pitch_active ? 1.0 : 0.5
-                    border.color: musicModel.pitch_active ? theme.colormap.playeraccent : "transparent"
+                    border.color: musicModel.pitch_active ? theme.colormap.fxactive : "transparent"
                     antialiasing: false
 
                     ColumnLayout {
@@ -129,14 +129,14 @@ Popup {
                                 text: "PITCH SHIFTER"
                                 font.family: kodeMono.name
                                 font.pixelSize: 10
-                                color: musicModel.pitch_active ? theme.colormap.playeraccent : theme.colormap.playersubtext
+                                color: musicModel.pitch_active ? theme.colormap.fxtext : theme.colormap.fxsubtext
                                 Layout.fillWidth: true
                             }
                             Text {
                                 text: musicModel.pitch_active ? '󰔡' : '󰨙'
                                 font.family: symbols.name
                                 font.pixelSize: 16
-                                color: musicModel.pitch_active ? theme.colormap.playerhover : theme.colormap.playersubtext
+                                color: musicModel.pitch_active ? theme.colormap.fxhover : theme.colormap.fxsubtext
                                 MouseArea {
                                     anchors.fill: parent
                                     hoverEnabled: true
@@ -181,14 +181,14 @@ Popup {
                                 background: Rectangle {
                                     height: 3
                                     radius: 1.5
-                                    color: "#111"
+                                    color: theme.colormap.fxsliderbg
                                     y: (parent.height - height) / 2
 
                                     Rectangle {
                                         width: 2
                                         height: 8
                                         anchors.centerIn: parent
-                                        color: theme.colormap.playersubtext
+                                        color: theme.colormap.fxsubtext
                                         opacity: 0.5
                                     }
 
@@ -196,7 +196,7 @@ Popup {
                                         anchors.verticalCenter: parent.verticalCenter
                                         height: parent.height
                                         radius: 1.5
-                                        color: theme.colormap.playeraccent
+                                        color: theme.colormap.fxslider
                                         x: pitchSld.visualPosition >= 0.5 ? parent.width / 2 : pitchSld.visualPosition * parent.width
                                         width: Math.abs(pitchSld.visualPosition - 0.5) * parent.width
                                     }
@@ -208,7 +208,7 @@ Popup {
                                     width: 10
                                     height: 10
                                     radius: 5
-                                    color: pitchSld.value === 0 ? "#ffffff" : (pitchSld.pressed ? theme.colormap.playerhover : theme.colormap.playeraccent)
+                                    color: pitchSld.value === 0 ? "#ffffff" : (pitchSld.pressed ? theme.colormap.fxhover : theme.colormap.fxslider)
                                 }
                             }
 
@@ -216,7 +216,7 @@ Popup {
                                 text: pitchSld.value === 0 ? "ORIGINAL" : ((pitchSld.value > 0 ? "+" : "") + pitchSld.value.toFixed(1) + " ST")
                                 font.family: sansSerif.name
                                 font.pixelSize: 9
-                                color: theme.colormap.playersubtext
+                                color: theme.colormap.fxsubtext
                                 Layout.preferredWidth: 70
                             }
 
@@ -224,7 +224,7 @@ Popup {
                                 text: '󰜉'
                                 font.family: symbols.name
                                 font.pixelSize: 14
-                                color: theme.colormap.playersubtext
+                                color: theme.colormap.fxsubtext
                                 MouseArea {
                                     anchors.fill: parent
                                     hoverEnabled: true
@@ -293,10 +293,10 @@ Popup {
 
             Layout.fillWidth: true
             Layout.preferredHeight: 55
-            color: theme.colormap.bgoverlay
+            color: theme.colormap.fxsliderbg
             radius: 4
             opacity: enabledState ? 1.0 : 0.5
-            border.color: enabledState ? theme.colormap.playeraccent : "transparent"
+            border.color: enabledState ? theme.colormap.fxactive : "transparent"
             antialiasing: false
 
             ColumnLayout {
@@ -311,14 +311,14 @@ Popup {
                         text: title
                         font.family: kodeMono.name
                         font.pixelSize: 10
-                        color: enabledState ? theme.colormap.playeraccent : theme.colormap.playersubtext
+                        color: enabledState ? theme.colormap.fxtext : theme.colormap.fxsubtext
                         Layout.fillWidth: true
                     }
                     Text {
                         text: enabledState ? '󰔡' : '󰨙'
                         font.family: symbols.name
                         font.pixelSize: 16
-                        color: enabledState ? theme.colormap.playerhover : theme.colormap.playersubtext
+                        color: enabledState ? theme.colormap.fxhover : theme.colormap.fxsubtext
                         MouseArea {
                             anchors.fill: parent
                             onClicked: rootItem.toggled()
@@ -332,7 +332,7 @@ Popup {
                         text: rootItem.leftLabel
                         font.family: kodeMono.name
                         font.pixelSize: 9
-                        color: theme.colormap.playersubtext
+                        color: theme.colormap.fxsubtext
                         visible: rootItem.leftLabel !== ""
                     }
                     Slider {
@@ -365,12 +365,12 @@ Popup {
                         background: Rectangle {
                             height: 3
                             radius: 1.5
-                            color: "#111"
+                            color: theme.colormap.fxsliderbg
                             y: (parent.height - height) / 2
                             Rectangle {
                                 width: sld.visualPosition * parent.width
                                 height: parent.height
-                                color: theme.colormap.playeraccent
+                                color: theme.colormap.fxslider
                                 radius: 1.5
                             }
                         }
@@ -380,28 +380,28 @@ Popup {
                             width: 10
                             height: 10
                             radius: 5
-                            color: sld.pressed ? theme.colormap.playerhover : theme.colormap.playeraccent
+                            color: sld.pressed ? theme.colormap.fxhover : theme.colormap.fxslider
                         }
                     }
                     Text {
                         text: rootItem.rightLabel
                         font.family: kodeMono.name
                         font.pixelSize: 9
-                        color: theme.colormap.playersubtext
+                        color: theme.colormap.fxsubtext
                         visible: rootItem.rightLabel !== ""
                     }
                     Text {
                         text: Math.round(sld.value * 100) + "%"
                         font.family: sansSerif.name
                         font.pixelSize: 9
-                        color: theme.colormap.playersubtext
+                        color: theme.colormap.fxsubtext
                         Layout.preferredWidth: 25
                     }
                     Text {
                         text: '󰜉'
                         font.family: symbols.name
                         font.pixelSize: 14
-                        color: theme.colormap.playersubtext
+                        color: theme.colormap.fxsubtext
                         MouseArea {
                             anchors.fill: parent
                             onClicked: {
