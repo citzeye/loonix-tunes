@@ -371,14 +371,14 @@ Item {
           text: ''
           font.family: symbols.name
           font.pixelSize: 18
-          color: theme.colormap.footeralert
+          color: theme.colormap.playlistactive
         }
         Text {
           anchors.horizontalCenter: parent.horizontalCenter
           text: 'Close'
           font.family: kodeMono.name
           font.pixelSize: 10
-          color: theme.colormap.footeralert
+          color: theme.colormap.playlistactive
         }
       }
       MouseArea {

@@ -178,7 +178,7 @@ Item {
             musicModel.folder_lock_version
             var idx = root.tabContextMenuIndex
             var locked = idx >= 0 ? musicModel.is_folder_locked(idx) : false
-            if (locked) return theme.colormap.footerwarning
+            if (locked) return theme.colormap.playlistfolder
             return tile4MA.containsMouse ? theme.colormap.playlisticon : theme.colormap.tabtext
           }
         }
@@ -233,7 +233,7 @@ Item {
             : (root.tabContextMenuIndex >= 0 &&
               !musicModel.is_folder_locked(root.tabContextMenuIndex))
               ? theme.colormap.tabtext
-              : theme.colormap.footerwarning
+              : theme.colormap.playlistfolder
         }
       }
       MouseArea {
@@ -265,14 +265,14 @@ Item {
           text: ''
           font.family: symbols.name
           font.pixelSize: 18
-          color: theme.colormap.footeralert
+          color: theme.colormap.playlistactive
         }
         Text {
           anchors.horizontalCenter: parent.horizontalCenter
           text: 'Close'
           font.family: kodeMono.name
           font.pixelSize: 10
-          color: theme.colormap.footeralert
+          color: theme.colormap.playlistactive
         }
       }
       MouseArea {
