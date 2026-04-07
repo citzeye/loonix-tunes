@@ -12,16 +12,29 @@ Item {
     visible: root.prefDialogVisible
     enabled: root.prefDialogVisible
 
-    // Block mouse events to background when popup is open
+    // ==========================================
+    // 1. BACKGROUND BLOCKER (Tembok Luar)
+    // ==========================================
     Rectangle {
         anchors.fill: parent
-        color: "transparent"
+        color: "transparent" 
         
         MouseArea {
             anchors.fill: parent
-            hoverEnabled: true 
+            // TANGKAP SEMUA! Jangan dikasih no button
+            acceptedButtons: Qt.AllButtons 
+            hoverEnabled: true // Cegah tooltip dari Ui.qml muncul pas di-hover
+            
+            // HAPUS propagateComposedEvents: true
+            
+            // Tangkap scroll wheel biar nggak bisa scroll playlist di bawahnya
             onWheel: (wheel) => { wheel.accepted = true } 
-            onClicked: root.prefDialogVisible = false
+            
+            onClicked: {
+                // Karena popupContainer di bawah punya tameng sendiri,
+                // klik yang sampai ke sini PASTI di luar popup. Langsung tutup.
+                root.prefDialogVisible = false
+            }
         }
     }
 
@@ -39,9 +52,17 @@ Item {
         border.width: 0.5
         radius: 0
 
-        // Tameng klik - mencegah click jatuh ke background
+        // ==========================================
+        // 2. TAMENG POPUP (Tembok Dalam)
+        // ==========================================
+        // Mencegah klik di area kosong dalam popup tembus ke background (yang bikin ketutup)
         MouseArea {
             anchors.fill: parent
+            acceptedButtons: Qt.AllButtons
+            hoverEnabled: true 
+            cursorShape: Qt.ArrowCursor
+            onWheel: (wheel) => { wheel.accepted = true } 
+            // Sengaja GAK ADA onClicked, supaya dia cuma "nelen" klik tanpa melakukan apa-apa
         }
 
         ColumnLayout {
@@ -91,11 +112,11 @@ Item {
 
                     Text {
                         id: closeButton
-                        text: "X"
+                        text: "󰅖"
                         property bool isHovered: false
                         color: isHovered ? "#FF69B4" : theme.colormap.headertext
                         font.family: kodeMono.name
-                        font.pixelSize: 12
+                        font.pixelSize: 14
                         Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
 
                         MouseArea {
@@ -130,7 +151,7 @@ Item {
 
                 // --- LEFT BOX (SIDEBAR) ---
                 Rectangle {
-                    Layout.preferredWidth: 120
+                    Layout.preferredWidth: 100
                     Layout.fillHeight: true
                     color: theme.colormap["bgoverlay"]
                     radius: 0

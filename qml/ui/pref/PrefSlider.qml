@@ -1,5 +1,4 @@
 /* --- LOONIX-TUNES qml/ui/pref/PrefSlider.qml --- */
-
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
@@ -7,6 +6,7 @@ import QtQuick.Layouts
 Item {
     id: rootSlider
     implicitHeight: 24
+    Layout.fillWidth: true
 
     property string label: "Slider"
     property string valueText: ""
@@ -19,11 +19,9 @@ Item {
     signal moved(real value)
     signal resetToDefault()
 
-    Layout.fillWidth: true
-
     RowLayout {
         anchors.fill: parent
-        spacing: 12
+        spacing: 10
 
         Text {
             text: rootSlider.label
@@ -34,9 +32,21 @@ Item {
             elide: Text.ElideRight
         }
 
+        Item { Layout.fillWidth: true }
+
+        Text {
+            text: rootSlider.valueText
+            font.family: kodeMono.name
+            font.pixelSize: 12
+            color: theme.colormap["playeraccent"]
+        }
+
         Slider {
             id: slider
-            Layout.fillWidth: true
+            Layout.maximumWidth: 80
+            Layout.minimumWidth: 40
+            Layout.fillHeight: true
+
             from: rootSlider.fromValue
             to: rootSlider.toValue
             stepSize: rootSlider.stepValue
@@ -47,7 +57,6 @@ Item {
             WheelHandler {
                 target: slider
                 acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
-                property: "position"
                 orientation: Qt.Vertical
                 onWheel: function(event) {
                     var step = rootSlider.stepValue
@@ -72,24 +81,16 @@ Item {
                     color: theme.colormap["playeraccent"]
                 }
             }
+
             handle: Rectangle {
-                x: slider.leftPadding + slider.visualPosition * (slider.availableWidth - width)
-                y: slider.topPadding + slider.availableHeight / 2 - height / 2
+                x: slider.leftPadding + slider.visualPosition * (slider.availableWidth - 10)
+                y: slider.topPadding + slider.availableHeight / 2 - 5
                 width: 10
                 height: 10
                 radius: 5
                 color: slider.pressed ? theme.colormap["playerhover"] : theme.colormap["playeraccent"]
                 border.color: theme.colormap["playeraccent"]
             }
-        }
-
-        Text {
-            text: rootSlider.valueText
-            Layout.preferredWidth: 60
-            horizontalAlignment: Text.AlignRight
-            font.family: kodeMono.name
-            font.pixelSize: 12
-            color: theme.colormap["playeraccent"]
         }
     }
 }

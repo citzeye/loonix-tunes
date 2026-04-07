@@ -11,9 +11,9 @@ Flickable {
     boundsBehavior: Flickable.StopAtBounds
     ScrollBar.vertical: ScrollBar {
         policy: ScrollBar.AsNeeded
-        width: 4
+        width: 6
         z: 1
-        background: Rectangle { implicitWidth: 4; implicitHeight: 20; color: theme.colormap.bgmain; opacity: 0.0 }
+        background: Rectangle { implicitWidth: 4; implicitHeight: 20; color: theme.colormap["bgoverlay"]; opacity: 0.3 }
         contentItem: Rectangle {
             implicitWidth: 4
             implicitHeight: 30
@@ -25,7 +25,7 @@ Flickable {
 
     ColumnLayout {
         id: audioColumn
-        width: audioFlick.width - 15
+        width: audioFlick.width - 10
         spacing: 24
 
         // ==========================================
@@ -41,7 +41,19 @@ Flickable {
                  onToggled: musicModel.toggle_dsp()
              }
 
-             // Smart Loudness Normalizer (collapsible)
+        }
+
+        // ==========================================
+        // KELOMPOK 2: DYNAMIC RANGE (Normalizer dkk)
+        // ==========================================
+        ColumnLayout {
+            Layout.fillWidth: true
+            spacing: 8
+            enabled: musicModel.dsp_enabled
+            opacity: enabled ? 1.0 : 0.4
+            Behavior on opacity { NumberAnimation { duration: 150 } }
+
+            // Smart Loudness Normalizer (collapsible)
             ColumnLayout {
                 id: normalizerSection
                 property bool expanded: false
@@ -57,15 +69,19 @@ Flickable {
                         Layout.fillWidth: true
                         spacing: 6
                         MouseArea {
+                            id: normalizerHover
                             width: chevronText.implicitWidth + labelText.implicitWidth + 12
                             height: 22
                             cursorShape: Qt.PointingHandCursor
+                            hoverEnabled: true
+                            onEntered: labelText.color = theme.colormap["playeraccent"]
+                            onExited: labelText.color = theme.colormap["playlisttext"]
                             onClicked: normalizerSection.expanded = !normalizerSection.expanded
                             RowLayout {
                                 spacing: 6
                                 Text {
                                     id: chevronText
-                                    text: normalizerSection.expanded ? "󰅀" : "󰅂"
+                                    text: normalizerSection.expanded ? "󰅀" : ""
                                     font.family: symbols.name
                                     font.pixelSize: 11
                                     color: theme.colormap["playersubtext"]
@@ -77,15 +93,14 @@ Flickable {
                                     font.pixelSize: 13
                                     color: theme.colormap["playlisttext"]
                                 }
-                            }
+}
                         }
                         Item { Layout.fillWidth: true }
                     }
 
-                    // Switch (separate - toggle on/off only)
                     Rectangle {
                         Layout.alignment: Qt.AlignVCenter
-                        width: 30; height: 16
+                        width: 24; height: 16
                         radius: 8
                         color: musicModel.normalizer_enabled ? theme.colormap["playeraccent"] : theme.colormap["graysolid"]
 
@@ -103,11 +118,18 @@ Flickable {
                             onClicked: musicModel.toggle_normalizer()
                         }
                     }
+
+                    Text {
+                        text: normalizerSection.expanded ? "󰅀" : ""
+                        font.family: symbols.name
+                        font.pixelSize: 11
+                        color: theme.colormap["playersubtext"]
+                    }
                 }
 
                 ColumnLayout {
                     Layout.fillWidth: true
-                    Layout.leftMargin: 24
+                    Layout.leftMargin: 16
                     Layout.topMargin: 4
                     visible: normalizerSection.expanded
                     spacing: 6
@@ -141,17 +163,6 @@ Flickable {
                     }
                 }
             }
-        }
-
-        // ==========================================
-        // KELOMPOK 2: DYNAMIC RANGE (Normalizer dkk)
-        // ==========================================
-        ColumnLayout {
-            Layout.fillWidth: true
-            spacing: 8
-            enabled: musicModel.dsp_enabled
-            opacity: enabled ? 1.0 : 0.4
-            Behavior on opacity { NumberAnimation { duration: 150 } }
 
             // === Reverb (collapsible) ===
             ColumnLayout {
@@ -171,12 +182,15 @@ Flickable {
                             width: reverbChevronText.implicitWidth + reverbLabelText.implicitWidth + 12
                             height: 22
                             cursorShape: Qt.PointingHandCursor
+                            hoverEnabled: true
+                            onEntered: reverbLabelText.color = theme.colormap["playeraccent"]
+                            onExited: reverbLabelText.color = theme.colormap["playlisttext"]
                             onClicked: reverbSection.expanded = !reverbSection.expanded
                             RowLayout {
                                 spacing: 6
-                                Text {
+Text {
                                     id: reverbChevronText
-                                    text: reverbSection.expanded ? "󰅀" : "󰅂"
+                                    text: reverbSection.expanded ? "󰅀" : ""
                                     font.family: symbols.name
                                     font.pixelSize: 11
                                     color: theme.colormap["playersubtext"]
@@ -195,7 +209,7 @@ Flickable {
 
                     Rectangle {
                         Layout.alignment: Qt.AlignVCenter
-                        width: 30; height: 16
+                        width: 24; height: 16
                         radius: 8
                         color: musicModel.reverb_active ? theme.colormap["playeraccent"] : theme.colormap["graysolid"]
                         Rectangle {
@@ -212,11 +226,18 @@ Flickable {
                             onClicked: musicModel.toggle_reverb_master()
                         }
                     }
+
+                    Text {
+                        text: reverbSection.expanded ? "󰅀" : ""
+                        font.family: symbols.name
+                        font.pixelSize: 11
+                        color: theme.colormap["playersubtext"]
+                    }
                 }
 
                 RowLayout {
                     Layout.fillWidth: true
-                    Layout.leftMargin: 24
+                    Layout.leftMargin: 16
                     Layout.topMargin: 4
                     visible: reverbSection.expanded
                     spacing: 8
@@ -249,7 +270,7 @@ Flickable {
 
                 ColumnLayout {
                     Layout.fillWidth: true
-                    Layout.leftMargin: 24
+                    Layout.leftMargin: 16
                     Layout.topMargin: 4
                     visible: reverbSection.expanded && musicModel.reverb_active
                     spacing: 6
@@ -293,12 +314,15 @@ Flickable {
                             width: compChevronText.implicitWidth + compLabelText.implicitWidth + 12
                             height: 22
                             cursorShape: Qt.PointingHandCursor
+                            hoverEnabled: true
+                            onEntered: compLabelText.color = theme.colormap["playeraccent"]
+                            onExited: compLabelText.color = theme.colormap["playlisttext"]
                             onClicked: compressorSection.expanded = !compressorSection.expanded
                             RowLayout {
                                 spacing: 6
                                 Text {
                                     id: compChevronText
-                                    text: compressorSection.expanded ? "󰅀" : "󰅂"
+                                    text: compressorSection.expanded ? "󰅀" : ""
                                     font.family: symbols.name
                                     font.pixelSize: 11
                                     color: theme.colormap["playersubtext"]
@@ -317,7 +341,7 @@ Flickable {
 
                     Rectangle {
                         Layout.alignment: Qt.AlignVCenter
-                        width: 30; height: 16
+                        width: 24; height: 16
                         radius: 8
                         color: musicModel.compressor_active ? theme.colormap["playeraccent"] : theme.colormap["graysolid"]
                         Rectangle {
@@ -334,11 +358,18 @@ Flickable {
                             onClicked: musicModel.toggle_compressor()
                         }
                     }
+
+                    Text {
+                        text: compressorSection.expanded ? "󰅀" : ""
+                        font.family: symbols.name
+                        font.pixelSize: 11
+                        color: theme.colormap["playersubtext"]
+                    }
                 }
 
                 ColumnLayout {
                     Layout.fillWidth: true
-                    Layout.leftMargin: 24
+                    Layout.leftMargin: 16
                     Layout.topMargin: 4
                     visible: compressorSection.expanded
                     spacing: 6
@@ -373,12 +404,15 @@ Flickable {
                             width: pitchChevronText.implicitWidth + pitchLabelText.implicitWidth + 12
                             height: 22
                             cursorShape: Qt.PointingHandCursor
+                            hoverEnabled: true
+                            onEntered: pitchLabelText.color = theme.colormap["playeraccent"]
+                            onExited: pitchLabelText.color = theme.colormap["playlisttext"]
                             onClicked: pitchSection.expanded = !pitchSection.expanded
                             RowLayout {
                                 spacing: 6
                                 Text {
                                     id: pitchChevronText
-                                    text: pitchSection.expanded ? "󰅀" : "󰅂"
+                                    text: pitchSection.expanded ? "󰅀" : ""
                                     font.family: symbols.name
                                     font.pixelSize: 11
                                     color: theme.colormap["playersubtext"]
@@ -397,7 +431,7 @@ Flickable {
 
                     Rectangle {
                         Layout.alignment: Qt.AlignVCenter
-                        width: 30; height: 16
+                        width: 24; height: 16
                         radius: 8
                         color: musicModel.pitch_active ? theme.colormap["playeraccent"] : theme.colormap["graysolid"]
                         Rectangle {
@@ -414,11 +448,18 @@ Flickable {
                             onClicked: musicModel.toggle_pitch()
                         }
                     }
+
+                    Text {
+                        text: pitchSection.expanded ? "󰅀" : ""
+                        font.family: symbols.name
+                        font.pixelSize: 11
+                        color: theme.colormap["playersubtext"]
+                    }
                 }
 
                 ColumnLayout {
                     Layout.fillWidth: true
-                    Layout.leftMargin: 24
+                    Layout.leftMargin: 16
                     Layout.topMargin: 4
                     visible: pitchSection.expanded
                     spacing: 6
@@ -453,12 +494,15 @@ Flickable {
                             width: middleChevronText.implicitWidth + middleLabelText.implicitWidth + 12
                             height: 22
                             cursorShape: Qt.PointingHandCursor
+                            hoverEnabled: true
+                            onEntered: middleLabelText.color = theme.colormap["playeraccent"]
+                            onExited: middleLabelText.color = theme.colormap["playlisttext"]
                             onClicked: middleSection.expanded = !middleSection.expanded
                             RowLayout {
                                 spacing: 6
                                 Text {
                                     id: middleChevronText
-                                    text: middleSection.expanded ? "󰅀" : "󰅂"
+                                    text: middleSection.expanded ? "󰅀" : ""
                                     font.family: symbols.name
                                     font.pixelSize: 11
                                     color: theme.colormap["playersubtext"]
@@ -477,7 +521,7 @@ Flickable {
 
                     Rectangle {
                         Layout.alignment: Qt.AlignVCenter
-                        width: 30; height: 16
+                        width: 24; height: 16
                         radius: 8
                         color: musicModel.middle_active ? theme.colormap["playeraccent"] : theme.colormap["graysolid"]
                         Rectangle {
@@ -494,11 +538,18 @@ Flickable {
                             onClicked: musicModel.toggle_middle()
                         }
                     }
+
+                    Text {
+                        text: middleSection.expanded ? "󰅀" : ""
+                        font.family: symbols.name
+                        font.pixelSize: 11
+                        color: theme.colormap["playersubtext"]
+                    }
                 }
 
                 ColumnLayout {
                     Layout.fillWidth: true
-                    Layout.leftMargin: 24
+                    Layout.leftMargin: 16
                     Layout.topMargin: 4
                     visible: middleSection.expanded
                     spacing: 6
@@ -533,12 +584,15 @@ Flickable {
                             width: stereoWidthChevronText.implicitWidth + stereoWidthLabelText.implicitWidth + 12
                             height: 22
                             cursorShape: Qt.PointingHandCursor
+                            hoverEnabled: true
+                            onEntered: stereoWidthLabelText.color = theme.colormap["playeraccent"]
+                            onExited: stereoWidthLabelText.color = theme.colormap["playlisttext"]
                             onClicked: stereoWidthSection.expanded = !stereoWidthSection.expanded
                             RowLayout {
                                 spacing: 6
                                 Text {
                                     id: stereoWidthChevronText
-                                    text: stereoWidthSection.expanded ? "󰅀" : "󰅂"
+                                    text: stereoWidthSection.expanded ? "󰅀" : ""
                                     font.family: symbols.name
                                     font.pixelSize: 11
                                     color: theme.colormap["playersubtext"]
@@ -557,7 +611,7 @@ Flickable {
 
                     Rectangle {
                         Layout.alignment: Qt.AlignVCenter
-                        width: 30; height: 16
+                        width: 24; height: 16
                         radius: 8
                         color: musicModel.mono_active ? theme.colormap["playeraccent"] : theme.colormap["graysolid"]
                         Rectangle {
@@ -574,11 +628,18 @@ Flickable {
                             onClicked: musicModel.toggle_mono()
                         }
                     }
+
+                    Text {
+                        text: stereoWidthSection.expanded ? "󰅀" : ""
+                        font.family: symbols.name
+                        font.pixelSize: 11
+                        color: theme.colormap["playersubtext"]
+                    }
                 }
 
                 ColumnLayout {
                     Layout.fillWidth: true
-                    Layout.leftMargin: 24
+                    Layout.leftMargin: 16
                     Layout.topMargin: 4
                     visible: stereoWidthSection.expanded
                     spacing: 6
@@ -613,12 +674,15 @@ Flickable {
                             width: stereoEnhanceChevronText.implicitWidth + stereoEnhanceLabelText.implicitWidth + 12
                             height: 22
                             cursorShape: Qt.PointingHandCursor
+                            hoverEnabled: true
+                            onEntered: stereoEnhanceLabelText.color = theme.colormap["playeraccent"]
+                            onExited: stereoEnhanceLabelText.color = theme.colormap["playlisttext"]
                             onClicked: stereoEnhanceSection.expanded = !stereoEnhanceSection.expanded
                             RowLayout {
                                 spacing: 6
                                 Text {
                                     id: stereoEnhanceChevronText
-                                    text: stereoEnhanceSection.expanded ? "󰅀" : "󰅂"
+                                    text: stereoEnhanceSection.expanded ? "󰅀" : ""
                                     font.family: symbols.name
                                     font.pixelSize: 11
                                     color: theme.colormap["playersubtext"]
@@ -637,7 +701,7 @@ Flickable {
 
                     Rectangle {
                         Layout.alignment: Qt.AlignVCenter
-                        width: 30; height: 16
+                        width: 24; height: 16
                         radius: 8
                         color: musicModel.stereo_active ? theme.colormap["playeraccent"] : theme.colormap["graysolid"]
                         Rectangle {
@@ -654,11 +718,18 @@ Flickable {
                             onClicked: musicModel.toggle_stereo()
                         }
                     }
+
+                    Text {
+                        text: stereoEnhanceSection.expanded ? "󰅀" : ""
+                        font.family: symbols.name
+                        font.pixelSize: 11
+                        color: theme.colormap["playersubtext"]
+                    }
                 }
 
                 ColumnLayout {
                     Layout.fillWidth: true
-                    Layout.leftMargin: 24
+                    Layout.leftMargin: 16
                     Layout.topMargin: 4
                     visible: stereoEnhanceSection.expanded
                     spacing: 6
@@ -693,12 +764,15 @@ Flickable {
                             width: crossfeedChevronText.implicitWidth + crossfeedLabelText.implicitWidth + 12
                             height: 22
                             cursorShape: Qt.PointingHandCursor
+                            hoverEnabled: true
+                            onEntered: crossfeedLabelText.color = theme.colormap["playeraccent"]
+                            onExited: crossfeedLabelText.color = theme.colormap["playlisttext"]
                             onClicked: crossfeedSection.expanded = !crossfeedSection.expanded
                             RowLayout {
                                 spacing: 6
                                 Text {
                                     id: crossfeedChevronText
-                                    text: crossfeedSection.expanded ? "󰅀" : "󰅂"
+                                    text: crossfeedSection.expanded ? "󰅀" : ""
                                     font.family: symbols.name
                                     font.pixelSize: 11
                                     color: theme.colormap["playersubtext"]
@@ -717,7 +791,7 @@ Flickable {
 
                     Rectangle {
                         Layout.alignment: Qt.AlignVCenter
-                        width: 30; height: 16
+                        width: 24; height: 16
                         radius: 8
                         color: musicModel.crossfeed_active ? theme.colormap["playeraccent"] : theme.colormap["graysolid"]
                         Rectangle {
@@ -734,11 +808,18 @@ Flickable {
                             onClicked: musicModel.toggle_crossfeed()
                         }
                     }
+
+                    Text {
+                        text: crossfeedSection.expanded ? "󰅀" : ""
+                        font.family: symbols.name
+                        font.pixelSize: 11
+                        color: theme.colormap["playersubtext"]
+                    }
                 }
 
                 ColumnLayout {
                     Layout.fillWidth: true
-                    Layout.leftMargin: 24
+                    Layout.leftMargin: 16
                     Layout.topMargin: 4
                     visible: crossfeedSection.expanded
                     spacing: 6
@@ -783,12 +864,15 @@ Flickable {
                             width: bassChevronText.implicitWidth + bassLabelText.implicitWidth + 12
                             height: 22
                             cursorShape: Qt.PointingHandCursor
+                            hoverEnabled: true
+                            onEntered: bassLabelText.color = theme.colormap["playeraccent"]
+                            onExited: bassLabelText.color = theme.colormap["playlisttext"]
                             onClicked: bassBoosterSection.expanded = !bassBoosterSection.expanded
                             RowLayout {
                                 spacing: 6
                                 Text {
                                     id: bassChevronText
-                                    text: bassBoosterSection.expanded ? "󰅀" : "󰅂"
+                                    text: bassBoosterSection.expanded ? "󰅀" : ""
                                     font.family: symbols.name
                                     font.pixelSize: 11
                                     color: theme.colormap["playersubtext"]
@@ -807,7 +891,7 @@ Flickable {
 
                     Rectangle {
                         Layout.alignment: Qt.AlignVCenter
-                        width: 30; height: 16
+                        width: 24; height: 16
                         radius: 8
                         color: musicModel.bassbooster_active ? theme.colormap["playeraccent"] : theme.colormap["graysolid"]
                         Rectangle {
@@ -824,11 +908,18 @@ Flickable {
                             onClicked: musicModel.toggle_bassbooster()
                         }
                     }
+
+                    Text {
+                        text: bassBoosterSection.expanded ? "󰅀" : ""
+                        font.family: symbols.name
+                        font.pixelSize: 11
+                        color: theme.colormap["playersubtext"]
+                    }
                 }
 
                 ColumnLayout {
                     Layout.fillWidth: true
-                    Layout.leftMargin: 24
+                    Layout.leftMargin: 16
                     Layout.topMargin: 4
                     visible: bassBoosterSection.expanded
                     spacing: 6
@@ -872,12 +963,15 @@ Flickable {
                             width: surChevronText.implicitWidth + surLabelText.implicitWidth + 12
                             height: 22
                             cursorShape: Qt.PointingHandCursor
+                            hoverEnabled: true
+                            onEntered: surLabelText.color = theme.colormap["playeraccent"]
+                            onExited: surLabelText.color = theme.colormap["playlisttext"]
                             onClicked: surroundSection.expanded = !surroundSection.expanded
                             RowLayout {
                                 spacing: 6
                                 Text {
                                     id: surChevronText
-                                    text: surroundSection.expanded ? "󰅀" : "󰅂"
+                                    text: surroundSection.expanded ? "󰅀" : ""
                                     font.family: symbols.name
                                     font.pixelSize: 11
                                     color: theme.colormap["playersubtext"]
@@ -896,7 +990,7 @@ Flickable {
 
                     Rectangle {
                         Layout.alignment: Qt.AlignVCenter
-                        width: 30; height: 16
+                        width: 24; height: 16
                         radius: 8
                         color: musicModel.surround_active ? theme.colormap["playeraccent"] : theme.colormap["graysolid"]
                         Rectangle {
@@ -913,11 +1007,18 @@ Flickable {
                             onClicked: musicModel.toggle_surround()
                         }
                     }
+
+                    Text {
+                        text: surroundSection.expanded ? "󰅀" : ""
+                        font.family: symbols.name
+                        font.pixelSize: 11
+                        color: theme.colormap["playersubtext"]
+                    }
                 }
 
                 ColumnLayout {
                     Layout.fillWidth: true
-                    Layout.leftMargin: 24
+                    Layout.leftMargin: 16
                     Layout.topMargin: 4
                     visible: surroundSection.expanded
                     spacing: 6
@@ -952,12 +1053,15 @@ Flickable {
                             width: cryChevronText.implicitWidth + cryLabelText.implicitWidth + 12
                             height: 22
                             cursorShape: Qt.PointingHandCursor
+                            hoverEnabled: true
+                            onEntered: cryLabelText.color = theme.colormap["playeraccent"]
+                            onExited: cryLabelText.color = theme.colormap["playlisttext"]
                             onClicked: crystalizerSection.expanded = !crystalizerSection.expanded
                             RowLayout {
                                 spacing: 6
                                 Text {
                                     id: cryChevronText
-                                    text: crystalizerSection.expanded ? "󰅀" : "󰅂"
+                                    text: crystalizerSection.expanded ? "󰅀" : ""
                                     font.family: symbols.name
                                     font.pixelSize: 11
                                     color: theme.colormap["playersubtext"]
@@ -976,7 +1080,7 @@ Flickable {
 
                     Rectangle {
                         Layout.alignment: Qt.AlignVCenter
-                        width: 30; height: 16
+                        width: 24; height: 16
                         radius: 8
                         color: musicModel.crystalizer_active ? theme.colormap["playeraccent"] : theme.colormap["graysolid"]
                         Rectangle {
@@ -993,11 +1097,18 @@ Flickable {
                             onClicked: musicModel.toggle_crystalizer()
                         }
                     }
+
+                    Text {
+                        text: crystalizerSection.expanded ? "󰅀" : ""
+                        font.family: symbols.name
+                        font.pixelSize: 11
+                        color: theme.colormap["playersubtext"]
+                    }
                 }
 
                 ColumnLayout {
                     Layout.fillWidth: true
-                    Layout.leftMargin: 24
+                    Layout.leftMargin: 16
                     Layout.topMargin: 4
                     visible: crystalizerSection.expanded
                     spacing: 6

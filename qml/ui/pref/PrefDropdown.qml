@@ -48,6 +48,7 @@ ColumnLayout {
 
     ComboBox {
         id: control
+        hoverEnabled: true
         model: dropdownRoot.model
         currentIndex: dropdownRoot.currentIndex
 
@@ -85,6 +86,7 @@ ColumnLayout {
         }
 
         popup: Popup {
+            modal: true
             y: control.height + 2
             width: control.width
             implicitHeight: contentItem.implicitHeight
@@ -97,6 +99,7 @@ ColumnLayout {
             }
             contentItem: ListView {
                 clip: true
+                interactive: true
                 implicitHeight: contentHeight
                 model: control.popup.visible ? control.delegateModel : null
             }

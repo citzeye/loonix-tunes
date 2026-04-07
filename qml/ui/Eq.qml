@@ -498,8 +498,8 @@ Popup {
                     }
 
                     background: Rectangle {
-                        color: eqOnOffBtn.hovered ? theme.colormap.eqactive : theme.colormap.eqbg
-                        border.color: theme.colormap.eqborder
+                        color: musicModel.eq_enabled ? theme.colormap.eqactive : (eqOnOffBtn.hovered ? theme.colormap.eqactive : theme.colormap.eqbg)
+                        border.color: musicModel.eq_enabled ? theme.colormap.eqtext : theme.colormap.eqborder
                         radius: 2
                     }
 
@@ -509,8 +509,7 @@ Popup {
                         font.pixelSize: 10
                         font.bold: true
 
-                        color: eqOnOffBtn.hovered ? "black" :
-                               (musicModel.eq_enabled ? theme.colormap.eqtext : theme.colormap.eqsubtext)
+                        color: musicModel.eq_enabled ? "black" : (eqOnOffBtn.hovered ? "black" : theme.colormap.eqsubtext)
 
                         horizontalAlignment: Text.AlignHCenter
                         verticalAlignment: Text.AlignVCenter
@@ -590,12 +589,12 @@ Popup {
                             text: modelData
                             font.family: kodeMono.name
                             font.pixelSize: 10
-                            color: pBtn.isActive ? theme.colormap.eqtext : (pBtn.hovered ? "black" : theme.colormap.eqsubtext)
+                            color: pBtn.isActive ? "black" : (pBtn.hovered ? "black" : theme.colormap.eqsubtext)
                             horizontalAlignment: Text.AlignHCenter
                             verticalAlignment: Text.AlignVCenter
                         }
                         background: Rectangle {
-                            color: pBtn.hovered ? theme.colormap.eqactive : theme.colormap.eqbg
+                            color: pBtn.isActive ? theme.colormap.eqactive : (pBtn.hovered ? theme.colormap.eqactive : theme.colormap.eqbg)
                             border.color: pBtn.isActive ? theme.colormap.eqtext : theme.colormap.eqborder
                             radius: 2
                         }
@@ -614,7 +613,7 @@ Popup {
             height: 160
             x: (eqContentItem.width - width) / 2
             y: (eqContentItem.height - height) / 2
-            modal: false
+            modal: true
             focus: true
             closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutside
 

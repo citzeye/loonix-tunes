@@ -21,5 +21,10 @@
         <file alias="fonts/Oswald-Regular.ttf">../assets/fonts/Oswald-Regular.ttf</file>
         <file>ui/vst/vstwindow.qml</file>
         <file>ui/pref/PrefButton.qml</file>
+        <file>ui/contextmenu/TabContextMenu.qml</file>
+        <file>ui/contextmenu/PlaylistContextMenu.qml</file>
+        <file>ui/contextmenu/AppearanceContextMenu.qml</file>
+        <file>ui/RenameDialog.qml</file>
+        <file>ui/pref/ThemeEditor.qml</file>
     </qresource>
 </RCC>
