@@ -9,6 +9,7 @@ node_modules
 /target
 .skill
 .backup
+.opencode
 
 # Windows installer output
 *.msi
@@ -20,3 +21,5 @@ node_modules
 
 # Build output
 Output/
+release_windows/
+.aider*

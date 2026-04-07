@@ -282,10 +282,5 @@ fn scan_loudness(path: &str, params: &ScanParams) -> f32 {
     // Final safety clamp
     gain = gain.clamp(MIN_GAIN, max_gain_linear);
 
-    println!(
-        "[SCANNER] {} -> loudness={:.1} dBFS, peak={:.3}, gain={:.3} ({} samples)",
-        path, measured_loudness_db, true_peak, gain, total_samples
-    );
-
     gain
 }

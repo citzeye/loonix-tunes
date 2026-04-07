@@ -2,7 +2,6 @@
 /* D-Bus service is currently disabled due to Send/Sync issues with MusicModel */
 
 pub fn init_dbus() -> Result<(), String> {
-    println!("[DBUS] Service disabled - needs redesign for Send/Sync compatibility");
     Ok(())
 }
 

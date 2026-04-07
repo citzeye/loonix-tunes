@@ -775,7 +775,6 @@ impl FfmpegEngine {
                     if let Some(norm) = normalizer_arc {
                         if let Ok(mut n) = norm.lock() {
                             n.set_fixed_gain(gain);
-                            println!("[SCANNER] Background scan done, gain={:.3}", gain);
                         }
                     }
                 });

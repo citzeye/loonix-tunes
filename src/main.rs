@@ -10,6 +10,7 @@ pub mod ui;
 pub mod dbus_service;
 
 use crate::audio::popup::PopupMenu;
+use crate::audio::sysmedia::SysMediaManager;
 use crate::ui::core::MusicModel;
 use crate::ui::playerbridge::PlayerBridge;
 use crate::ui::theme::ThemeManager;
@@ -38,7 +39,6 @@ fn main() {
     #[cfg(target_os = "linux")]
     {
         if std::env::var("WAYLAND_DISPLAY").is_ok() {
-            println!("[System] Wayland terdeteksi! Memaksa Qt menggunakan XCB.");
             std::env::set_var("QT_QPA_PLATFORM", "xcb");
         }
     }
@@ -68,6 +68,7 @@ fn main() {
     let boxed_theme = QObjectBox::new(ThemeManager::new());
     let boxed_popup = QObjectBox::new(PopupMenu::default());
     let boxed_bridge = QObjectBox::new(PlayerBridge::new());
+    let boxed_sysmedia = QObjectBox::new(SysMediaManager::new());
 
     // ==========================================
     // 3. BUAT ENGINE & REGISTRASI
@@ -79,12 +80,14 @@ fn main() {
     qml_register_type::<MusicModel>(cstr!("Loonix"), 1, 0, cstr!("MusicModel"));
     qml_register_type::<PopupMenu>(cstr!("Loonix"), 1, 0, cstr!("PopupMenu"));
     qml_register_type::<ThemeManager>(cstr!("Loonix"), 1, 0, cstr!("ThemeManager"));
+    qml_register_type::<SysMediaManager>(cstr!("Loonix"), 1, 0, cstr!("SysMediaManager"));
 
     // Inisialisasi Model dengan Engine Audio baru
     engine.set_object_property("musicModel".into(), boxed_model.pinned());
     engine.set_object_property("theme".into(), boxed_theme.pinned());
     engine.set_object_property("popupMenu".into(), boxed_popup.pinned());
     engine.set_object_property("playerBridge".into(), boxed_bridge.pinned());
+    engine.set_object_property("sysMedia".into(), boxed_sysmedia.pinned());
 
     // Check for command line arguments (file paths)
     let args: Vec<String> = std::env::args().collect();
@@ -115,8 +118,9 @@ qmetaobject::qrc!(init_resources_v4,
         "qml/ui/Eq.qml",
         "qml/ui/Fx.qml",
         "qml/ui/TrackInfo.qml",
-        "qml/ui/TabContextMenu.qml",
-        "qml/ui/PlaylistContextMenu.qml",
+        "qml/ui/contextmenu/TabContextMenu.qml",
+        "qml/ui/contextmenu/PlaylistContextMenu.qml",
+        "qml/ui/contextmenu/AppearanceContextMenu.qml",
         "qml/ui/Playlist.qml",
         "qml/ui/Pref.qml",
         "qml/ui/pref/PrefAbout.qml",
@@ -131,6 +135,7 @@ qmetaobject::qrc!(init_resources_v4,
         "qml/ui/pref/PrefSlider.qml",
         "qml/ui/pref/PrefCollapsibleSection.qml",
         "qml/ui/pref/PrefButton.qml",
+        "qml/ui/pref/ThemeEditor.qml",
         "qml/ui/ThemeSlider.qml",
         "qml/ui/RenameDialog.qml",
         "qml/ui/qmldir",

@@ -124,7 +124,7 @@ fn decoder_loop(
         }
 
         ffmpeg::init().ok();
-        ffmpeg::log::set_level(ffmpeg::log::Level::Warning);
+        ffmpeg::log::set_level(ffmpeg::log::Level::Error);
 
         let mut ictx = match input(&path) {
             Ok(i) => i,

@@ -26,6 +26,10 @@ pub mod metadata;
 pub mod playlist;
 pub mod popup;
 
+// System Media Controls (MPRIS on Linux)
+#[cfg(target_os = "linux")]
+pub mod sysmedia;
+
 // Re-export key types
 pub use self::audio_output::AudioOutput;
 pub use self::decoder::DecoderControl;

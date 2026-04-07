@@ -269,22 +269,15 @@ impl AudioOutput {
 
     pub fn set_exclusive_mode(&mut self, enabled: bool) {
         self.exclusive_mode.store(enabled, Ordering::SeqCst);
-        if enabled {
-            println!("[AUDIO] Exclusive mode enabled - PipeWire hardware bypass");
-        } else {
-            println!("[AUDIO] Shared mode enabled - PipeWire mixer");
-        }
     }
 
     pub fn set_normalizer_enabled(&mut self, enabled: bool) {
         self.normalizer_enabled.store(enabled, Ordering::SeqCst);
-        println!("[NORMALIZER] Enabled: {}", enabled);
     }
 
     pub fn set_normalizer_gain(&self, gain: f32) {
         if let Ok(mut norm) = self.normalizer.lock() {
             norm.set_fixed_gain(gain);
-            println!("[NORMALIZER] Fixed gain set to {:.3}", gain);
         }
     }
 
@@ -796,13 +789,10 @@ fn spawn_pipewire_exclusive(
         "[PIPEWIRE] Exclusive mode ACTIVE - direct hardware access at {}Hz",
         sample_rate
     );
-    println!("[PIPEWIRE] Note: Full audio pipeline integration pending");
 
     while is_running.load(Ordering::SeqCst) {
         std::thread::sleep(Duration::from_millis(10));
     }
-
-    println!("[PIPEWIRE] Exclusive stream stopped");
 }
 
 impl Drop for AudioOutput {

@@ -1939,7 +1939,6 @@ impl MusicModel {
             ff.set_normalizer_enabled(self.normalizer_enabled);
         }
 
-        println!("[NORMALIZER] Enabled: {}", self.normalizer_enabled);
         if let Some(ref mut config) = self.saved_config {
             config.normalizer_enabled = self.normalizer_enabled;
             config.save();
@@ -1962,7 +1961,6 @@ impl MusicModel {
             config.normalizer_target_lufs = clamped as f32;
             config.save();
         }
-        println!("[NORMALIZER] Target LUFS: {:.1}", clamped);
     }
 
     pub fn set_normalizer_true_peak_dbtp(&mut self, val: f64) {
@@ -1981,7 +1979,6 @@ impl MusicModel {
             config.normalizer_true_peak_dbtp = clamped as f32;
             config.save();
         }
-        println!("[NORMALIZER] True Peak Ceiling: {:.1} dBTP", clamped);
     }
 
     pub fn set_normalizer_max_gain_db(&mut self, val: f64) {
@@ -2000,7 +1997,6 @@ impl MusicModel {
             config.normalizer_max_gain_db = clamped as f32;
             config.save();
         }
-        println!("[NORMALIZER] Max Gain: +{:.1} dB", clamped);
     }
 
     pub fn set_normalizer_smoothing(&mut self, val: f64) {
@@ -2018,9 +2014,6 @@ impl MusicModel {
             config.normalizer_smoothing = clamped as f32;
             config.save();
         }
-
-        let label = crate::audio::dsp::normalizer::SmoothingPreset::from_factor(clamped as f32);
-        println!("[NORMALIZER] Smoothing: {} ({:.4})", label, clamped);
     }
 
     pub fn get_normalizer_smoothing_label(&self) -> QString {

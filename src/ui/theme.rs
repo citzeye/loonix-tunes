@@ -12,12 +12,33 @@ macro_rules! c {
 #[derive(Serialize, Deserialize, Debug)]
 pub struct AppConfig {
     pub theme: String,
+    pub custom_themes: Vec<CustomTheme>,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, Default)]
+pub struct CustomTheme {
+    pub name: String,
+    pub colors: HashMap<String, String>,
 }
 
 impl Default for AppConfig {
     fn default() -> Self {
         Self {
             theme: "Default".to_string(),
+            custom_themes: vec![
+                CustomTheme {
+                    name: "Custom 1".to_string(),
+                    colors: HashMap::new(),
+                },
+                CustomTheme {
+                    name: "Custom 2".to_string(),
+                    colors: HashMap::new(),
+                },
+                CustomTheme {
+                    name: "Custom 3".to_string(),
+                    colors: HashMap::new(),
+                },
+            ],
         }
     }
 }
@@ -31,6 +52,14 @@ pub struct ThemeManager {
     pub current_theme_changed: qt_signal!(),
     pub set_theme: qt_method!(fn(&mut self, name: String)),
     pub cycle_theme: qt_method!(fn(&mut self)),
+    pub get_custom_theme_count: qt_method!(fn(&self) -> i32),
+    pub get_custom_theme_name: qt_method!(fn(&self, index: i32) -> QString),
+    pub set_custom_theme_name: qt_method!(fn(&mut self, index: i32, name: String)),
+    pub get_custom_theme_colors: qt_method!(fn(&self, index: i32) -> QVariantMap),
+    pub set_custom_theme_colors: qt_method!(fn(&mut self, index: i32, colors: QVariantMap)),
+
+    custom_themes: Vec<CustomTheme>,
+    current_raw_colors: HashMap<String, String>,
 }
 
 impl ThemeManager {
@@ -43,8 +72,85 @@ impl ThemeManager {
         } else {
             cfg.theme
         };
+        s.custom_themes = cfg.custom_themes;
+
+        while s.custom_themes.len() < 3 {
+            s.custom_themes.push(CustomTheme {
+                name: format!("Custom {}", s.custom_themes.len() + 1),
+                colors: HashMap::new(),
+            });
+        }
+
         s.set_theme(theme_name);
         s
+    }
+
+    pub fn get_custom_theme_count(&self) -> i32 {
+        self.custom_themes.len() as i32
+    }
+
+    pub fn get_custom_theme_name(&self, index: i32) -> QString {
+        if index >= 0 && index < self.custom_themes.len() as i32 {
+            QString::from(self.custom_themes[index as usize].name.as_str())
+        } else {
+            QString::from("")
+        }
+    }
+
+    pub fn set_custom_theme_name(&mut self, index: i32, name: String) {
+        if index >= 0 && index < self.custom_themes.len() as i32 {
+            self.custom_themes[index as usize].name = name;
+            self.save_config();
+        }
+    }
+
+    pub fn get_custom_theme_colors(&self, index: i32) -> QVariantMap {
+        if index >= 0 && index < self.custom_themes.len() as i32 {
+            let colors = &self.custom_themes[index as usize].colors;
+            if colors.is_empty() {
+                return self
+                    .current_raw_colors
+                    .iter()
+                    .map(|(k, v)| {
+                        (
+                            QString::from(k.as_str()),
+                            QVariant::from(QString::from(v.as_str())),
+                        )
+                    })
+                    .collect();
+            }
+            colors
+                .iter()
+                .map(|(k, v)| {
+                    (
+                        QString::from(k.as_str()),
+                        QVariant::from(QString::from(v.as_str())),
+                    )
+                })
+                .collect()
+        } else {
+            QVariantMap::default()
+        }
+    }
+
+    pub fn set_custom_theme_colors(&mut self, index: i32, _colors: QVariantMap) {
+        if index >= 0 && index < self.custom_themes.len() as i32 {
+            self.save_config();
+        } else if index == self.custom_themes.len() as i32 {
+            self.custom_themes.push(CustomTheme {
+                name: "Custom".to_string(),
+                colors: HashMap::new(),
+            });
+            self.save_config();
+        }
+    }
+
+    fn save_config(&self) {
+        let cfg = AppConfig {
+            theme: self.current_theme.to_string(),
+            custom_themes: self.custom_themes.clone(),
+        };
+        let _ = confy::store("loonix-tunes", "config", cfg);
     }
 
     pub fn available_themes() -> Vec<String> {
@@ -76,6 +182,7 @@ impl ThemeManager {
     pub fn set_theme(&mut self, name: String) {
         let cfg = AppConfig {
             theme: name.clone(),
+            custom_themes: self.custom_themes.clone(),
         };
         let _ = confy::store("loonix-tunes", "config", cfg);
 
@@ -446,6 +553,26 @@ impl ThemeManager {
                     "fxhandle", "#ffea00",
                 });
             }
+            "Custom 1" | "Custom 2" | "Custom 3" => {
+                let idx = match name.as_str() {
+                    "Custom 1" => 0,
+                    "Custom 2" => 1,
+                    "Custom 3" => 2,
+                    _ => 0,
+                };
+                if idx < self.custom_themes.len() {
+                    let custom = &self.custom_themes[idx];
+                    if custom.colors.is_empty() {
+                        map.extend(
+                            self.current_raw_colors
+                                .iter()
+                                .map(|(k, v)| (k.as_str(), v.as_str())),
+                        );
+                    } else {
+                        map.extend(custom.colors.iter().map(|(k, v)| (k.as_str(), v.as_str())));
+                    }
+                }
+            }
             _ => {
                 c!(map, {
                     // BACKGROUNDS
@@ -501,13 +628,18 @@ impl ThemeManager {
         }
 
         let qmap: QVariantMap = map
-            .into_iter()
-            .map(|(k, v)| (QString::from(k), QVariant::from(QString::from(v))))
+            .iter()
+            .map(|(k, v)| (QString::from(*k), QVariant::from(QString::from(*v))))
             .collect();
 
         self.colormap = qmap;
         self.current_theme = QString::from(name);
         self.colormap_changed();
         self.current_theme_changed();
+
+        self.current_raw_colors = map
+            .into_iter()
+            .map(|(k, v)| (k.to_string(), v.to_string()))
+            .collect();
     }
 }
