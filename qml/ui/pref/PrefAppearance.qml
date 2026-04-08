@@ -3,8 +3,18 @@ import QtQuick.Controls
 import QtQuick.Layouts
 import "../contextmenu"
 
-Flickable {
-    id: appFlick
+Item {
+    property int refreshTicker: 0
+
+    Connections {
+        target: theme
+        function onCustom_themes_changed() {
+            refreshTicker++
+        }
+    }
+
+    Flickable {
+        id: appFlick
     anchors.fill: parent
     contentWidth: width
     contentHeight: appColumn.implicitHeight + 40
@@ -89,7 +99,7 @@ Flickable {
 
                 delegate: Rectangle {
                     property int slotIndex: index
-                    property string slotName: theme.get_custom_theme_name(index)
+                    property string slotName: (refreshTicker, theme.get_custom_theme_name(index))
 
                     Layout.preferredWidth: 200
                     Layout.preferredHeight: 32
@@ -182,4 +192,5 @@ Flickable {
     }
 
     Item { Layout.fillHeight: true }
+    }
 }

@@ -1054,6 +1054,11 @@ impl MusicModel {
                 name_str = name_str.trim().to_string();
                 self.custom_folders[index as usize] = (name_str, new_path.clone());
                 self.custom_folders_changed();
+                self.save_dsp_config();
+                if let Some(ref mut config) = self.saved_config {
+                    config.custom_folders = self.custom_folders.clone();
+                    config.save();
+                }
                 self.switch_to_folder(new_path);
             }
         }

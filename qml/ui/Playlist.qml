@@ -81,10 +81,12 @@ Rectangle {
 
         Text {
           anchors.horizontalCenter: parent.horizontalCenter
-          text: 'Add music in Settings > Library'
+          text: "Click + to add folder.\nRight Click song and choose 'fav' to add your file into favorite tab."
           font.family: kodeMono.name
           font.pixelSize: 11
           color: theme.colormap.graysolid
+          wrapMode: Text.WordWrap
+          horizontalAlignment: Text.AlignHCenter
         }
       }
     }

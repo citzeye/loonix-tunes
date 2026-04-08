@@ -7,6 +7,15 @@ import Qt.labs.platform
 
 Rectangle {
   id: customTabItem
+  property int refreshTicker: 0
+
+  Connections {
+      target: musicModel
+      function onCustom_folders_changed() {
+          refreshTicker++
+      }
+  }
+
   width: Math.min(tabText.implicitWidth + 30, 100)
   height: 20
   property bool isActive: musicModel.current_folder_qml.toUpperCase() ===
@@ -23,7 +32,7 @@ Rectangle {
   Text {
     id: tabText
     anchors.centerIn: parent
-    text: musicModel.get_custom_folder_name(index)
+    text: (refreshTicker, musicModel.get_custom_folder_name(index))
     font.family: kodeMono.name
     font.pixelSize: 10
     font.bold: parent.isActive

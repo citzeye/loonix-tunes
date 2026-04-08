@@ -55,6 +55,7 @@ pub struct ThemeManager {
     pub get_custom_theme_count: qt_method!(fn(&self) -> i32),
     pub get_custom_theme_name: qt_method!(fn(&self, index: i32) -> QString),
     pub set_custom_theme_name: qt_method!(fn(&mut self, index: i32, name: String)),
+    pub custom_themes_changed: qt_signal!(),
     pub get_custom_theme_colors: qt_method!(fn(&self, index: i32) -> QVariantMap),
     pub set_custom_theme_colors: qt_method!(fn(&mut self, index: i32, colors: QVariantMap)),
 
@@ -101,6 +102,7 @@ impl ThemeManager {
         if index >= 0 && index < self.custom_themes.len() as i32 {
             self.custom_themes[index as usize].name = name;
             self.save_config();
+            self.custom_themes_changed();
         }
     }
 
