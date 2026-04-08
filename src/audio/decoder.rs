@@ -106,10 +106,12 @@ pub fn spawn_decoder_with_sample_rate(
     control: Arc<DecoderControl>,
     output_sample_rate: u32,
 ) {
-    std::thread::Builder::new()
+    if let Err(e) = std::thread::Builder::new()
         .name("decoder".to_string())
         .spawn(move || decoder_loop(path, producer, control, output_sample_rate))
-        .expect("Failed to spawn decoder thread");
+    {
+        eprintln!("Failed to spawn decoder thread: {}", e);
+    }
 }
 
 fn decoder_loop(
@@ -142,13 +144,32 @@ fn decoder_loop(
         };
         control.set_duration(duration_ms);
 
-        let input_stream = ictx.streams().best(Type::Audio).expect("no audio stream");
+        let input_stream = match ictx.streams().best(Type::Audio) {
+            Some(s) => s,
+            None => {
+                eprintln!("Decoder: No audio stream found in: {}", path);
+                return;
+            }
+        };
         let stream_idx = input_stream.index();
         let time_base = input_stream.time_base();
 
         let context =
-            ffmpeg::codec::context::Context::from_parameters(input_stream.parameters()).unwrap();
-        let mut decoder = context.decoder().audio().unwrap();
+            match ffmpeg::codec::context::Context::from_parameters(input_stream.parameters()) {
+                Ok(c) => c,
+                Err(e) => {
+                    eprintln!("Decoder: Failed to get codec context: {}", e);
+                    return;
+                }
+            };
+
+        let mut decoder = match context.decoder().audio() {
+            Ok(d) => d,
+            Err(e) => {
+                eprintln!("Decoder: Failed to create audio decoder: {}", e);
+                return;
+            }
+        };
 
         unsafe {
             (*decoder.as_mut_ptr()).flags2 |= 1 << 29;
@@ -165,17 +186,28 @@ fn decoder_loop(
             ffmpeg::util::channel_layout::ChannelLayout::default(decoder.channels() as i32)
         };
 
-        let mut format_converter = ffmpeg::software::resampling::Context::get(
+        let mut format_converter = match ffmpeg::software::resampling::Context::get(
             input_format,
             input_layout,
             input_rate_u32,
             ffmpeg::format::Sample::F32(ffmpeg::format::sample::Type::Packed),
             ffmpeg::util::channel_layout::ChannelLayout::STEREO,
             input_rate_u32,
-        )
-        .expect("Gagal buat Universal Converter");
+        ) {
+            Ok(c) => c,
+            Err(e) => {
+                eprintln!("Decoder: Failed to create resampling context: {}", e);
+                return;
+            }
+        };
 
-        let mut resampler = resample::create_resampler(input_rate, output_rate);
+        let mut resampler = match resample::create_resampler(input_rate, output_rate) {
+            Some(r) => r,
+            None => {
+                eprintln!("Decoder: Failed to create resampler, exiting");
+                return;
+            }
+        };
 
         let mut frame = AudioFrame::empty();
         let mut interleaved_frame = AudioFrame::empty();
@@ -222,7 +254,13 @@ fn decoder_loop(
                     decoder.flush();
                 }
 
-                resampler = resample::create_resampler(input_rate, output_rate);
+                resampler = match resample::create_resampler(input_rate, output_rate) {
+                    Some(r) => r,
+                    None => {
+                        eprintln!("Decoder: Failed to create resampler on seek, exiting");
+                        return;
+                    }
+                };
 
                 let mut buffered = 0;
                 let min = control.min_buffer_samples.load(Ordering::SeqCst);

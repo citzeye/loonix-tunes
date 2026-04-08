@@ -79,14 +79,19 @@ pub fn spawn_scan(
     let done = std::sync::Arc::new(AtomicBool::new(false));
     let done_clone = done.clone();
 
-    let handle = std::thread::Builder::new()
+    let handle = match std::thread::Builder::new()
         .name("loudness-scanner".to_string())
         .spawn(move || {
             let gain = calculate_track_gain(&path, &params);
             done_clone.store(true, Ordering::SeqCst);
             gain
-        })
-        .expect("Failed to spawn loudness scanner thread");
+        }) {
+        Ok(h) => h,
+        Err(e) => {
+            eprintln!("Failed to spawn loudness scanner thread: {}", e);
+            return (std::thread::Builder::new().spawn(|| 0.0f32).unwrap(), done);
+        }
+    };
 
     (handle, done)
 }
@@ -103,7 +108,10 @@ pub fn spawn_scan_with_callback(
             let gain = calculate_track_gain(&path, &params);
             callback(gain);
         })
-        .expect("Failed to spawn loudness scanner thread")
+        .unwrap_or_else(|e| {
+            eprintln!("Failed to spawn loudness scanner thread: {}", e);
+            std::thread::spawn(|| {})
+        })
 }
 
 /// Internal: decode file, compute integrated RMS and true peak, apply constraints.

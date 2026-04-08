@@ -8,12 +8,14 @@ static STEREO_ENHANCE_AMOUNT_ARC: OnceLock<Mutex<Option<Arc<AtomicU32>>>> = Once
 
 pub fn get_stereo_enhance_arc() -> Option<Arc<AtomicU32>> {
     let guard = STEREO_ENHANCE_AMOUNT_ARC.get_or_init(|| Mutex::new(None));
-    guard.lock().unwrap().clone()
+    guard.lock().ok()?.clone()
 }
 
 pub fn set_stereo_enhance_arc(arc: Arc<AtomicU32>) {
     let guard = STEREO_ENHANCE_AMOUNT_ARC.get_or_init(|| Mutex::new(None));
-    *guard.lock().unwrap() = Some(arc);
+    if let Ok(mut g) = guard.lock() {
+        *g = Some(arc);
+    }
 }
 
 pub struct StereoEnhance {

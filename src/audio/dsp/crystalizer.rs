@@ -9,13 +9,15 @@ static CRYSTALIZER_AMOUNT_ARC: OnceLock<Mutex<Option<Arc<AtomicU32>>>> = OnceLoc
 /// Get the global Arc<AtomicU32> for crystalizer amount (if initialized)
 pub fn get_crystalizer_amount_arc() -> Option<Arc<AtomicU32>> {
     let guard = CRYSTALIZER_AMOUNT_ARC.get_or_init(|| Mutex::new(None));
-    guard.lock().unwrap().clone()
+    guard.lock().ok()?.clone()
 }
 
 /// Set the global Arc<AtomicU32> for crystalizer amount
 pub fn set_crystalizer_amount_arc(arc: Arc<AtomicU32>) {
     let guard = CRYSTALIZER_AMOUNT_ARC.get_or_init(|| Mutex::new(None));
-    *guard.lock().unwrap() = Some(arc);
+    if let Ok(mut g) = guard.lock() {
+        *g = Some(arc);
+    }
 }
 
 /// Helper functions for atomic f32 storage
@@ -47,17 +49,19 @@ impl Crystalizer {
     pub fn new(amount: f32) -> Self {
         // Get pointer from Global ARC so UI and DSP connect to the same memory
         let shared_arc = {
-            let mut guard = CRYSTALIZER_AMOUNT_ARC
-                .get_or_init(|| Mutex::new(None))
-                .lock()
-                .unwrap();
-            if let Some(existing_arc) = guard.as_ref() {
-                existing_arc.store(f32_to_bits(amount.max(0.0).min(1.0)), Ordering::Relaxed);
-                existing_arc.clone()
+            let guard = CRYSTALIZER_AMOUNT_ARC.get_or_init(|| Mutex::new(None));
+            if let Ok(mut guard) = guard.lock() {
+                if let Some(existing_arc) = guard.as_ref() {
+                    existing_arc.store(f32_to_bits(amount.max(0.0).min(1.0)), Ordering::Relaxed);
+                    existing_arc.clone()
+                } else {
+                    let new_arc = Arc::new(AtomicU32::new(f32_to_bits(amount.max(0.0).min(1.0))));
+                    *guard = Some(new_arc.clone());
+                    new_arc
+                }
             } else {
-                let new_arc = Arc::new(AtomicU32::new(f32_to_bits(amount.max(0.0).min(1.0))));
-                *guard = Some(new_arc.clone());
-                new_arc
+                // Lock failed, create independent Arc
+                Arc::new(AtomicU32::new(f32_to_bits(amount.max(0.0).min(1.0))))
             }
         };
 

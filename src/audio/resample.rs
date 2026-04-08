@@ -8,8 +8,14 @@ use std::sync::atomic::{AtomicBool, Ordering};
 
 pub type StereoResampler = Soxr<Interleaved<f32, 2>>;
 
-pub fn create_resampler(input_rate: f64, output_rate: f64) -> StereoResampler {
-    Soxr::new(input_rate, output_rate).expect("Failed to create Soxr resampler")
+pub fn create_resampler(input_rate: f64, output_rate: f64) -> Option<StereoResampler> {
+    match Soxr::new(input_rate, output_rate) {
+        Ok(s) => Some(s),
+        Err(e) => {
+            eprintln!("Failed to create Soxr resampler: {}", e);
+            None
+        }
+    }
 }
 
 pub fn process_frame(
@@ -33,15 +39,15 @@ pub fn process_frame(
     let max_output_frames = ((input_frames as f64 * 1.5) as usize) + 32;
     let mut output_stereo: Vec<[f32; 2]> = vec![[0.0; 2]; max_output_frames];
 
-    let processed = resampler.process(input_stereo, &mut output_stereo).unwrap();
-
-    if processed.output_frames > 0 {
-        push_output(
-            &output_stereo,
-            processed.output_frames,
-            producer,
-            total_decoded_samples,
-        );
+    if let Ok(processed) = resampler.process(input_stereo, &mut output_stereo) {
+        if processed.output_frames > 0 {
+            push_output(
+                &output_stereo,
+                processed.output_frames,
+                producer,
+                total_decoded_samples,
+            );
+        }
     }
 }
 
@@ -67,20 +73,20 @@ pub fn process_frame_buffered(
     let max_output_frames = ((input_frames as f64 * 1.5) as usize) + 32;
     let mut output_stereo: Vec<[f32; 2]> = vec![[0.0; 2]; max_output_frames];
 
-    let processed = resampler.process(input_stereo, &mut output_stereo).unwrap();
+    if let Ok(processed) = resampler.process(input_stereo, &mut output_stereo) {
+        if processed.output_frames > 0 {
+            let output_flat = &output_stereo[..processed.output_frames];
+            let flat_len = output_flat.len() * 2;
 
-    if processed.output_frames > 0 {
-        let output_flat = &output_stereo[..processed.output_frames];
-        let flat_len = output_flat.len() * 2;
+            *buffered += flat_len as u64;
 
-        *buffered += flat_len as u64;
-
-        push_output(
-            output_stereo.as_slice(),
-            processed.output_frames,
-            producer,
-            total_decoded_samples,
-        );
+            push_output(
+                output_stereo.as_slice(),
+                processed.output_frames,
+                producer,
+                total_decoded_samples,
+            );
+        }
     }
 }
 
@@ -93,7 +99,13 @@ pub fn drain(
     let mut output_stereo: Vec<[f32; 2]> = vec![[0.0; 2]; 4096];
 
     loop {
-        let output_frames = resampler.drain(&mut output_stereo).unwrap();
+        let output_frames = match resampler.drain(&mut output_stereo) {
+            Ok(frames) => frames,
+            Err(e) => {
+                eprintln!("Resampler drain error: {}", e);
+                break;
+            }
+        };
 
         if output_frames == 0 {
             break;

@@ -191,13 +191,17 @@ impl Engine {
 
         // 6. Spawn Decoder Thread
         let path_clone = path.clone();
-        let producer = self.producer.take().unwrap();
-        crate::audio::decoder::spawn_decoder_with_sample_rate(
-            path_clone,
-            producer,
-            control_for_decoder.clone(),
-            actual_sample_rate,
-        );
+        if let Some(producer) = self.producer.take() {
+            crate::audio::decoder::spawn_decoder_with_sample_rate(
+                path_clone,
+                producer,
+                control_for_decoder.clone(),
+                actual_sample_rate,
+            );
+        } else {
+            eprintln!("[Engine] Failed to start playback: producer not available");
+            return;
+        }
 
         // 7. Setup Audio Output - reuse existing for crossfade (persistent device)
         if let Some(ref mut audio_output) = self.audio_output {
