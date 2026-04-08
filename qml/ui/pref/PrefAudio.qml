@@ -10,16 +10,20 @@ Flickable {
     interactive: true
     boundsBehavior: Flickable.StopAtBounds
     ScrollBar.vertical: ScrollBar {
-        policy: ScrollBar.AsNeeded
+        id: vBar
         width: 6
-        z: 1
-        background: Rectangle { implicitWidth: 4; implicitHeight: 20; color: theme.colormap["bgoverlay"]; opacity: 0.3 }
+        policy: ScrollBar.AsNeeded
+        background: Rectangle { color: "transparent" }
         contentItem: Rectangle {
-            implicitWidth: 4
-            implicitHeight: 30
-            radius: 2
-            color: theme.colormap.playeraccent
-            Behavior on color { ColorAnimation { duration: 200 } }
+            implicitWidth: 6
+            implicitHeight: Math.max(30, audioFlick.height * audioFlick.visibleArea.heightRatio)
+            radius: 3
+            color: vBar.pressed ? theme.colormap.playeraccent : 
+                   vBar.hovered ? theme.colormap.headerhover : 
+                   theme.colormap.playeraccent
+            opacity: vBar.active ? 1.0 : 0.5
+            Behavior on color { ColorAnimation { duration: 150 } }
+            Behavior on opacity { NumberAnimation { duration: 150 } }
         }
     }
 
