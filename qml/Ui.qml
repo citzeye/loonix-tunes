@@ -99,7 +99,7 @@ Window {
         interval: 50
         running: true
         repeat: true
-        onTriggered: sysMedia.pollEvents()
+        onTriggered: sysMedia.poll_events()
     }
 
     property real popupX: 0

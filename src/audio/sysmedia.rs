@@ -37,7 +37,7 @@ pub struct SysMediaManager {
     playback_state_changed: qt_signal!(),
     position_updated: qt_signal!(),
 
-    pollEvents: qt_method!(fn(&mut self)),
+    poll_events: qt_method!(fn(&mut self)),
 
     #[cfg(target_os = "linux")]
     controls: Option<MediaControls>,
@@ -104,7 +104,7 @@ impl SysMediaManager {
     #[cfg(not(target_os = "linux"))]
     fn spawn_mpris_listener(&mut self) {}
 
-    pub fn pollEvents(&mut self) {
+    pub fn poll_events(&mut self) {
         #[cfg(target_os = "linux")]
         {
             EVENT_RX.with(|cell| {
