@@ -9,10 +9,65 @@ Item {
     z: 20000
     visible: root.themeEditorVisible
 
+    property int refreshTicker: 0
+
+    Connections {
+        target: theme
+        function onCustom_themes_changed() {
+            refreshTicker++
+        }
+    }
+
     MouseArea {
         anchors.fill: parent
         onClicked: {
             root.themeEditorVisible = false
+        }
+    }
+
+    function getThemeData() {
+        return {
+            "bgmain": inBgMain.inputText,
+            "bgoverlay": inBgOverlay.inputText,
+            "graysolid": inGraySolid.inputText,
+            "contextmenubg": inContextMenuBg.inputText,
+            "overlay": inOverlay.inputText,
+            "headerbg": inHeaderBg.inputText,
+            "headericon": inHeaderIcon.inputText,
+            "headertext": inHeaderText.inputText,
+            "headerhover": inHeaderHover.inputText,
+            "playertitle": inPlayerTitle.inputText,
+            "playersubtext": inPlayerSubtext.inputText,
+            "playeraccent": inPlayerAccent.inputText,
+            "playerhover": inPlayerHover.inputText,
+            "tabtext": inTabText.inputText,
+            "tabborder": inTabBorder.inputText,
+            "tabhover": inTabHover.inputText,
+            "playlisttext": inPlaylistText.inputText,
+            "playlistfolder": inPlaylistFolder.inputText,
+            "playlistactive": inPlaylistActive.inputText,
+            "playlisticon": inPlaylistIcon.inputText,
+            "eqbg": inEqBg.inputText,
+            "eqborder": inEqBorder.inputText,
+            "eqtext": inEqText.inputText,
+            "eqsubtext": inEqSubtext.inputText,
+            "eqicon": inEqIcon.inputText,
+            "eqhover": inEqHover.inputText,
+            "eqactive": inEqActive.inputText,
+            "eqsliderbg": inEqSliderBg.inputText,
+            "eqfader": inEqFader.inputText,
+            "eqmix": inEqMix.inputText,
+            "eqhandle": inEqHandle.inputText,
+            "fxbg": inFxBg.inputText,
+            "fxborder": inFxBorder.inputText,
+            "fxtext": inFxText.inputText,
+            "fxsubtext": inFxSubtext.inputText,
+            "fxicon": inFxIcon.inputText,
+            "fxhover": inFxHover.inputText,
+            "fxactive": inFxActive.inputText,
+            "fxslider": inFxSlider.inputText,
+            "fxsliderbg": inFxSliderBg.inputText,
+            "fxhandle": inFxHandle.inputText
         }
     }
 
@@ -455,7 +510,8 @@ Item {
 
                             Text {
                                 anchors.centerIn: parent
-                                text: "1"
+                                text: (refreshTicker, theme.get_custom_theme_name(0) || "Custom 1")
+                                elide: Text.ElideRight
                                 color: slot1MA.containsMouse ? theme.colormap.bgmain : theme.colormap.tabtext
                                 font.family: kodeMono.name
                                 font.bold: true
@@ -467,17 +523,7 @@ Item {
                                 hoverEnabled: true
                                 onClicked: {
                                     theme.set_custom_theme_name(0, themeNameInput.text)
-                                    theme.set_custom_theme_colors(0,
-                                        inBgMain.inputText, inBgOverlay.inputText, inGraySolid.inputText, inContextMenuBg.inputText, inOverlay.inputText,
-                                        inHeaderBg.inputText, inHeaderIcon.inputText, inHeaderText.inputText, inHeaderHover.inputText,
-                                        inPlayerTitle.inputText, inPlayerSubtext.inputText, inPlayerAccent.inputText, inPlayerHover.inputText,
-                                        inTabText.inputText, inTabBorder.inputText, inTabHover.inputText,
-                                        inPlaylistText.inputText, inPlaylistFolder.inputText, inPlaylistActive.inputText, inPlaylistIcon.inputText,
-                                        inEqBg.inputText, inEqBorder.inputText, inEqText.inputText, inEqSubtext.inputText, inEqIcon.inputText,
-                                        inEqHover.inputText, inEqActive.inputText, inEqSliderBg.inputText, inEqFader.inputText, inEqMix.inputText, inEqHandle.inputText,
-                                        inFxBg.inputText, inFxBorder.inputText, inFxText.inputText, inFxSubtext.inputText, inFxIcon.inputText,
-                                        inFxHover.inputText, inFxActive.inputText, inFxSlider.inputText, inFxSliderBg.inputText, inFxHandle.inputText
-                                    )
+                                    theme.set_custom_theme_colors(0, getThemeData())
                                     saveAsPopup.visible = false
                                     root.themeEditorVisible = false
                                 }
@@ -493,7 +539,8 @@ Item {
 
                             Text {
                                 anchors.centerIn: parent
-                                text: "2"
+                                text: (refreshTicker, theme.get_custom_theme_name(1) || "Custom 2")
+                                elide: Text.ElideRight
                                 color: slot2MA.containsMouse ? theme.colormap.bgmain : theme.colormap.tabtext
                                 font.family: kodeMono.name
                                 font.bold: true
@@ -505,17 +552,7 @@ Item {
                                 hoverEnabled: true
                                 onClicked: {
                                     theme.set_custom_theme_name(1, themeNameInput.text)
-                                    theme.set_custom_theme_colors(1,
-                                        inBgMain.inputText, inBgOverlay.inputText, inGraySolid.inputText, inContextMenuBg.inputText, inOverlay.inputText,
-                                        inHeaderBg.inputText, inHeaderIcon.inputText, inHeaderText.inputText, inHeaderHover.inputText,
-                                        inPlayerTitle.inputText, inPlayerSubtext.inputText, inPlayerAccent.inputText, inPlayerHover.inputText,
-                                        inTabText.inputText, inTabBorder.inputText, inTabHover.inputText,
-                                        inPlaylistText.inputText, inPlaylistFolder.inputText, inPlaylistActive.inputText, inPlaylistIcon.inputText,
-                                        inEqBg.inputText, inEqBorder.inputText, inEqText.inputText, inEqSubtext.inputText, inEqIcon.inputText,
-                                        inEqHover.inputText, inEqActive.inputText, inEqSliderBg.inputText, inEqFader.inputText, inEqMix.inputText, inEqHandle.inputText,
-                                        inFxBg.inputText, inFxBorder.inputText, inFxText.inputText, inFxSubtext.inputText, inFxIcon.inputText,
-                                        inFxHover.inputText, inFxActive.inputText, inFxSlider.inputText, inFxSliderBg.inputText, inFxHandle.inputText
-                                    )
+                                    theme.set_custom_theme_colors(1, getThemeData())
                                     saveAsPopup.visible = false
                                     root.themeEditorVisible = false
                                 }
@@ -531,7 +568,8 @@ Item {
 
                             Text {
                                 anchors.centerIn: parent
-                                text: "3"
+                                text: (refreshTicker, theme.get_custom_theme_name(2) || "Custom 3")
+                                elide: Text.ElideRight
                                 color: slot3MA.containsMouse ? theme.colormap.bgmain : theme.colormap.tabtext
                                 font.family: kodeMono.name
                                 font.bold: true
@@ -543,17 +581,7 @@ Item {
                                 hoverEnabled: true
                                 onClicked: {
                                     theme.set_custom_theme_name(2, themeNameInput.text)
-                                    theme.set_custom_theme_colors(2,
-                                        inBgMain.inputText, inBgOverlay.inputText, inGraySolid.inputText, inContextMenuBg.inputText, inOverlay.inputText,
-                                        inHeaderBg.inputText, inHeaderIcon.inputText, inHeaderText.inputText, inHeaderHover.inputText,
-                                        inPlayerTitle.inputText, inPlayerSubtext.inputText, inPlayerAccent.inputText, inPlayerHover.inputText,
-                                        inTabText.inputText, inTabBorder.inputText, inTabHover.inputText,
-                                        inPlaylistText.inputText, inPlaylistFolder.inputText, inPlaylistActive.inputText, inPlaylistIcon.inputText,
-                                        inEqBg.inputText, inEqBorder.inputText, inEqText.inputText, inEqSubtext.inputText, inEqIcon.inputText,
-                                        inEqHover.inputText, inEqActive.inputText, inEqSliderBg.inputText, inEqFader.inputText, inEqMix.inputText, inEqHandle.inputText,
-                                        inFxBg.inputText, inFxBorder.inputText, inFxText.inputText, inFxSubtext.inputText, inFxIcon.inputText,
-                                        inFxHover.inputText, inFxActive.inputText, inFxSlider.inputText, inFxSliderBg.inputText, inFxHandle.inputText
-                                    )
+                                    theme.set_custom_theme_colors(2, getThemeData())
                                     saveAsPopup.visible = false
                                     root.themeEditorVisible = false
                                 }
