@@ -55,7 +55,7 @@ pub struct AudioOutput {
     seek_mode: Arc<AtomicBool>,
     // Resume pending counter - frames to wait before unmuting
     resume_frame_counter: Arc<AtomicU32>,
-    // Shadow Slot: shared handle to consumer for crossfade on track change
+    // Shadow Preset: shared handle to consumer for crossfade on track change
     shared_consumer: Arc<Mutex<Option<HeapCons<f32>>>>,
     // Crossfade consumer: holds old track's consumer during 50ms overlap
     crossfade_consumer: Arc<Mutex<Option<HeapCons<f32>>>>,
@@ -361,7 +361,7 @@ impl AudioOutput {
             buffer_size: cpal::BufferSize::Fixed(4096), // ~85ms at 48kHz — lebih aman untuk DSP berat (WSOLA)
         };
 
-        // Wrap consumer in Arc<Mutex<Option>> for shared access (crossfade slot)
+        // Wrap consumer in Arc<Mutex<Option>> for shared access (crossfade preset)
         let shared = Arc::new(Mutex::new(Some(consumer)));
         self.shared_consumer = shared.clone();
         let shared_for_callback = shared.clone();
@@ -425,7 +425,7 @@ impl AudioOutput {
                         None => return,
                     };
 
-                    // 🔥 SHADOW SLOT: crossfade from old consumer (track transition)
+                    // 🔥 SHADOW PRESET: crossfade from old consumer (track transition)
                     let cf_remaining = crossfade_frames.load(Ordering::SeqCst);
                     let samples_per_frame = 2;
                     let num_frames = data.len() / channels as usize;
@@ -663,7 +663,7 @@ impl AudioOutput {
         // Note: PipeWire thread will exit on its own when is_running is false
         // No need to join here - it's handled by Drop
 
-        // 🔥 SHADOW SLOT: move current consumer to crossfade slot
+        // 🔥 SHADOW PRESET: move current consumer to crossfade preset
         // The callback will drain it with fade-out when next track starts
         if let Ok(mut cons) = self.shared_consumer.lock() {
             if let Some(c) = cons.take() {

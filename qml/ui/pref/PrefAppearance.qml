@@ -100,8 +100,8 @@ Item {
                 model: theme.get_custom_theme_count()
 
                 delegate: Rectangle {
-                    property int slotIndex: index
-                    property string slotName: (refreshTicker, theme.get_custom_theme_name(index))
+                     property int presetIndex: index
+                     property string presetName: (refreshTicker, theme.get_custom_theme_name(index))
 
                     Layout.preferredWidth: 200
                     Layout.preferredHeight: 32
@@ -109,7 +109,7 @@ Item {
                     radius: 4
                     color: String(index + 1) === theme.current_theme ? theme.colormap["playeraccent"] : theme.colormap["bgoverlay"]
                     border.color: {
-                        if (root.appearanceContextMenuVisible && root.appearanceContextMenuIndex === slotIndex) {
+                         if (root.appearanceContextMenuVisible && root.appearanceContextMenuIndex === presetIndex) {
                             return theme.colormap["playeraccent"]
                         }
                         if (customItemArea.containsMouse) {
@@ -117,14 +117,14 @@ Item {
                         }
                         return theme.colormap["graysolid"]
                     }
-                    border.width: (root.appearanceContextMenuVisible && root.appearanceContextMenuIndex === slotIndex) ? 2 : 1
+                     border.width: (root.appearanceContextMenuVisible && root.appearanceContextMenuIndex === presetIndex) ? 2 : 1
 
                     Behavior on color { ColorAnimation { duration: 150 } }
                     Behavior on border.color { ColorAnimation { duration: 150 } }
 
                     Text {
                         anchors.centerIn: parent
-                        text: slotName
+                         text: presetName
                         font.family: kodeMono.name
                         font.pixelSize: 12
                         color: String(index + 1) === theme.current_theme ? theme.colormap["bgmain"] : theme.colormap["playlisttext"]
@@ -142,12 +142,12 @@ Item {
                                 var mappedPos = customItemArea.mapToItem(root.contentItem, 0, customItemArea.height)
                                 root.appearanceContextMenuX = mappedPos.x
                                 root.appearanceContextMenuY = mappedPos.y
-                                root.appearanceContextMenuIndex = slotIndex
+                                 root.appearanceContextMenuIndex = presetIndex
                                 root.appearanceContextMenuVisible = true
                                 root.playlistContextMenuVisible = false
                             } else if (mouse.button === Qt.LeftButton) {
                                 root.appearanceContextMenuVisible = false
-                                theme.set_theme(String(slotIndex + 1))
+                                 theme.set_theme(String(presetIndex + 1))
                             }
                         }
                     }
@@ -183,7 +183,7 @@ Item {
                     cursorShape: Qt.PointingHandCursor
                     hoverEnabled: true
                     onClicked: {
-                        root.themeEditorSlotTarget = -1
+                        root.themeEditorProfileTarget = -1
                         root.themeEditorVisible = true
                     }
                 }

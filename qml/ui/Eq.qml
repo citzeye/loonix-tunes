@@ -75,11 +75,11 @@ Popup {
             if (index >= 0 && index < 6) {
                 gains = eqContentItem.defaultPresetValues[index]
             } else if (index >= 6 && index < 12) {
-                var slot = index - 6
-                gains = musicModel.get_user_eq_gains(slot)
-                macroVal = musicModel.get_user_eq_macro(slot)
-                dryVal = musicModel.get_user_eq_dry(slot)
-                wetVal = musicModel.get_user_eq_wet(slot)
+                var preset = index - 6
+                gains = musicModel.get_user_eq_gains(preset)
+                macroVal = musicModel.get_user_eq_macro(preset)
+                dryVal = musicModel.get_user_eq_dry(preset)
+                wetVal = musicModel.get_user_eq_wet(preset)
             } else {
                 return
             }
@@ -646,22 +646,22 @@ Popup {
                     color: theme.colormap.eqactive
                 }
 
-                ComboBox {
-                    id: slotCombo
-                    Layout.fillWidth: true
-                    Layout.preferredHeight: 32
-                    model: [
-                        "1: " + eqContentItem.userPresets[0],
-                        "2: " + eqContentItem.userPresets[1],
-                        "3: " + eqContentItem.userPresets[2],
-                        "4: " + eqContentItem.userPresets[3],
-                        "5: " + eqContentItem.userPresets[4],
-                        "6: " + eqContentItem.userPresets[5]
-                    ]
+                 ComboBox {
+                     id: presetCombo
+                     Layout.fillWidth: true
+                     Layout.preferredHeight: 32
+                     model: [
+                         "1: " + eqContentItem.userPresets[0],
+                         "2: " + eqContentItem.userPresets[1],
+                         "3: " + eqContentItem.userPresets[2],
+                         "4: " + eqContentItem.userPresets[3],
+                         "5: " + eqContentItem.userPresets[4],
+                         "6: " + eqContentItem.userPresets[5]
+                     ]
 
-                    contentItem: Text {
-                        leftPadding: 10
-                        text: slotCombo.displayText
+                     contentItem: Text {
+                         leftPadding: 10
+                         text: presetCombo.displayText
                         font.family: kodeMono.name
                         font.pixelSize: 10
                         color: theme.colormap.eqtext
@@ -674,9 +674,9 @@ Popup {
                         radius: 2
                     }
 
-                    delegate: ItemDelegate {
-                        width: slotCombo.width
-                        hoverEnabled: true
+                     delegate: ItemDelegate {
+                         width: presetCombo.width
+                         hoverEnabled: true
 
                         contentItem: Text {
                             text: modelData
@@ -693,17 +693,17 @@ Popup {
                         }
                     }
 
-                    popup: Popup {
-                        y: slotCombo.height - 1
-                        width: slotCombo.width
-                        implicitHeight: contentItem.implicitHeight
+                     popup: Popup {
+                          y: presetCombo.height - 1
+                         width: presetCombo.width
+                         implicitHeight: contentItem.implicitHeight
                         padding: 1
 
                         contentItem: ListView {
                             clip: true
                             implicitHeight: contentHeight
-                            model: slotCombo.popup.visible ? slotCombo.delegateModel : null
-                            currentIndex: slotCombo.highlightedIndex
+                             model: presetCombo.popup.visible ? presetCombo.delegateModel : null
+                             currentIndex: presetCombo.highlightedIndex
                         }
 
                         background: Rectangle {
@@ -729,7 +729,7 @@ Popup {
                     selectByMouse: true
 
                     onAccepted: {
-                        musicModel.save_user_eq(slotCombo.currentIndex, text, gainSlider.value, musicModel.eq_dry, musicModel.eq_wet)
+                         musicModel.save_user_eq(presetCombo.currentIndex, text, gainSlider.value, musicModel.eq_dry, musicModel.eq_wet)
                         refreshUserPresetNames()
                         saveEqDialog.close()
                     }
@@ -770,7 +770,7 @@ Popup {
                             anchors.fill: parent
                             hoverEnabled: true
                             onClicked: {
-                                musicModel.save_user_eq(slotCombo.currentIndex, nameInput.text, gainSlider.value, musicModel.eq_dry, musicModel.eq_wet)
+                                 musicModel.save_user_eq(presetCombo.currentIndex, nameInput.text, gainSlider.value, musicModel.eq_dry, musicModel.eq_wet)
                                 refreshUserPresetNames()
                                 saveEqDialog.close()
                             }

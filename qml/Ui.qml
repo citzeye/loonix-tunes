@@ -129,7 +129,7 @@ Window {
     property bool customRenameDialogVisible: false
     property int customRenameDialogIndex: -1
     property bool themeEditorVisible: false
-    property int themeEditorSlotTarget: -1 // -1 = CREATE, 0/1/2 = EDIT slot
+    property int themeEditorProfileTarget: -1 // -1 = CREATE, 0/1/2 = EDIT preset
 
     // MINIMAL: 30% dari lebar/tinggi monitor user
     minimumWidth: Screen.width * 0.25

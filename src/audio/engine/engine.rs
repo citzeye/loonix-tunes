@@ -380,7 +380,7 @@ impl Engine {
         self.decoder_control = None;
 
         // 🔥 CROSSFADE: keep AudioOutput alive for track transitions
-        // stop() moves the consumer to the crossfade shadow slot
+        // stop() moves the consumer to the crossfade shadow preset
         // The cpal stream stays open (persistent device)
         // Only on explicit FfmpegEngine::stop() is AudioOutput dropped
         if let Some(ref audio_output) = self.audio_output {

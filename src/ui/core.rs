@@ -271,13 +271,13 @@ pub struct MusicModel {
     pub get_eq_wet: qt_method!(fn(&self) -> f64),
     pub user_presets_changed: qt_signal!(),
     pub save_user_eq: qt_method!(
-        fn(&mut self, slot: i32, name: String, macro_val: f64, dry_val: f64, wet_val: f64)
+        fn(&mut self, preset: i32, name: String, macro_val: f64, dry_val: f64, wet_val: f64)
     ),
-    pub get_user_eq_gains: qt_method!(fn(&self, slot: i32) -> QVariantList),
-    pub get_user_eq_macro: qt_method!(fn(&self, slot: i32) -> f64),
-    pub get_user_eq_dry: qt_method!(fn(&self, slot: i32) -> f64),
-    pub get_user_eq_wet: qt_method!(fn(&self, slot: i32) -> f64),
-    pub get_user_preset_name: qt_method!(fn(&self, slot: i32) -> QString),
+    pub get_user_eq_gains: qt_method!(fn(&self, preset: i32) -> QVariantList),
+    pub get_user_eq_macro: qt_method!(fn(&self, preset: i32) -> f64),
+    pub get_user_eq_dry: qt_method!(fn(&self, preset: i32) -> f64),
+    pub get_user_eq_wet: qt_method!(fn(&self, preset: i32) -> f64),
+    pub get_user_preset_name: qt_method!(fn(&self, preset: i32) -> QString),
     pub get_eq_preset_count: qt_method!(fn(&self) -> i32),
     pub get_eq_preset_name: qt_method!(fn(&self, index: i32) -> QString),
     pub get_eq_preset_gains: qt_method!(fn(&self, index: i32) -> QVariantList),
@@ -2113,19 +2113,19 @@ impl MusicModel {
 
     pub fn save_user_eq(
         &mut self,
-        slot: i32,
+        preset: i32,
         name: String,
         macro_val: f64,
         dry_val: f64,
         wet_val: f64,
     ) {
-        if slot >= 0 && slot < 6 {
-            let idx = slot as usize;
+        if preset >= 0 && preset < 6 {
+            let idx = preset as usize;
 
             let mut trimmed_name = name.trim().to_string();
             trimmed_name.truncate(10);
             if trimmed_name.is_empty() {
-                trimmed_name = format!("User {}", slot + 1);
+                trimmed_name = format!("User {}", preset + 1);
             }
 
             self.user_eq_names[idx] = trimmed_name.to_uppercase();
@@ -2139,43 +2139,43 @@ impl MusicModel {
         }
     }
 
-    pub fn get_user_eq_gains(&self, slot: i32) -> QVariantList {
+    pub fn get_user_eq_gains(&self, preset: i32) -> QVariantList {
         let mut list = QVariantList::default();
-        if slot >= 0 && slot < 6 {
-            for &gain in &self.user_eq_gains[slot as usize] {
+        if preset >= 0 && preset < 6 {
+            for &gain in &self.user_eq_gains[preset as usize] {
                 list.push(QVariant::from(gain as f64));
             }
         }
         list
     }
 
-    pub fn get_user_eq_macro(&self, slot: i32) -> f64 {
-        if slot >= 0 && slot < 6 {
-            self.user_eq_macro[slot as usize] as f64
+    pub fn get_user_eq_macro(&self, preset: i32) -> f64 {
+        if preset >= 0 && preset < 6 {
+            self.user_eq_macro[preset as usize] as f64
         } else {
             0.0
         }
     }
 
-    pub fn get_user_eq_dry(&self, slot: i32) -> f64 {
-        if slot >= 0 && slot < 6 {
-            self.user_eq_dry[slot as usize] as f64
+    pub fn get_user_eq_dry(&self, preset: i32) -> f64 {
+        if preset >= 0 && preset < 6 {
+            self.user_eq_dry[preset as usize] as f64
         } else {
             100.0
         }
     }
 
-    pub fn get_user_eq_wet(&self, slot: i32) -> f64 {
-        if slot >= 0 && slot < 6 {
-            self.user_eq_wet[slot as usize] as f64
+    pub fn get_user_eq_wet(&self, preset: i32) -> f64 {
+        if preset >= 0 && preset < 6 {
+            self.user_eq_wet[preset as usize] as f64
         } else {
             100.0
         }
     }
 
-    pub fn get_user_preset_name(&self, slot: i32) -> QString {
-        if slot >= 0 && slot < 6 {
-            QString::from(self.user_eq_names[slot as usize].clone())
+    pub fn get_user_preset_name(&self, preset: i32) -> QString {
+        if preset >= 0 && preset < 6 {
+            QString::from(self.user_eq_names[preset as usize].clone())
         } else {
             QString::default()
         }

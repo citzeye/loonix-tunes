@@ -78,7 +78,7 @@ Item {
         hoverEnabled: true
         onClicked: {
           root.appearanceContextMenuVisible = false
-          root.themeEditorSlotTarget = root.appearanceContextMenuIndex
+           root.themeEditorProfileTarget = root.appearanceContextMenuIndex
           root.themeEditorVisible = true
         }
       }
