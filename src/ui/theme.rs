@@ -4,8 +4,8 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
 macro_rules! c {
-    ($map:expr, { $($key:literal, $val:literal),* $(,)? }) => {
-        $( $map.insert($key, $val); )*
+    ($map:expr, { $($key:expr, $val:expr),* $(,)? }) => {
+        $( $map.insert($key.to_string(), $val.to_string()); )*
     };
 }
 
@@ -23,23 +23,74 @@ pub struct CustomTheme {
 
 impl Default for AppConfig {
     fn default() -> Self {
+        let default_colors = Self::get_default_colors_internal();
         Self {
-            theme: "Default".to_string(),
+            theme: "Custom 1".to_string(),
             custom_themes: vec![
                 CustomTheme {
                     name: "Custom 1".to_string(),
-                    colors: HashMap::new(),
+                    colors: default_colors.clone(),
                 },
                 CustomTheme {
                     name: "Custom 2".to_string(),
-                    colors: HashMap::new(),
+                    colors: default_colors.clone(),
                 },
                 CustomTheme {
                     name: "Custom 3".to_string(),
-                    colors: HashMap::new(),
+                    colors: default_colors.clone(),
                 },
             ],
         }
+    }
+}
+
+impl AppConfig {
+    fn get_default_colors_internal() -> HashMap<String, String> {
+        let mut map: HashMap<String, String> = HashMap::new();
+        c!(map, {
+            "bgmain", "#15141b",
+            "bgoverlay", "#201f2b",
+            "graysolid", "#6d6d6d",
+            "contextmenubg", "#2d2d2d",
+            "overlay", "#000000",
+            "headerbg", "#201f2b",
+            "headericon", "#6d6d6d",
+            "headertext", "#6d6d6d",
+            "headerhover", "#ff1ae0",
+            "playertitle", "#00ffa2",
+            "playersubtext", "#57caab",
+            "playeraccent", "#9442ff",
+            "playerhover", "#ff1ae0",
+            "tabtext", "#c6c6c6",
+            "tabborder", "#00ffa2",
+            "tabhover", "#ff1ae0",
+            "playlisttext", "#c6c6c6",
+            "playlistfolder", "#ff881a",
+            "playlistactive", "#00ffa2",
+            "playlisticon", "#ff881a",
+            "eqbg", "#201f2b",
+            "eqborder", "#00ffa2",
+            "eqtext", "#00ffa2",
+            "eqsubtext", "#57caab",
+            "eqicon", "#ff881a",
+            "eqhover", "#ff1ae0",
+            "eqactive", "#9442ff",
+            "eqsliderbg", "#201f2b",
+            "eqfader", "#ff881a",
+            "eqmix", "#ff1ae0",
+            "eqhandle", "#9442ff",
+            "fxbg", "#201f2b",
+            "fxborder", "#00ffa2",
+            "fxtext", "#00ffa2",
+            "fxsubtext", "#57caab",
+            "fxicon", "#9442ff",
+            "fxhover", "#ff1ae0",
+            "fxactive", "#9442ff",
+            "fxslider", "#9442ff",
+            "fxsliderbg", "#15141b",
+            "fxhandle", "#ff1ae0",
+        });
+        map
     }
 }
 
@@ -58,6 +109,9 @@ pub struct ThemeManager {
     pub custom_themes_changed: qt_signal!(),
     pub get_custom_theme_colors: qt_method!(fn(&self, index: i32) -> QVariantMap),
     pub set_custom_theme_colors: qt_method!(fn(&mut self, index: i32, colors: QVariantMap)),
+    pub get_default_colors: qt_method!(fn(&self) -> QVariantMap),
+    pub get_editor_starter_colors:
+        qt_method!(fn(&self, is_edit_mode: bool, index: i32) -> QVariantMap),
 
     custom_themes: Vec<CustomTheme>,
     current_raw_colors: HashMap<String, String>,
@@ -135,16 +189,64 @@ impl ThemeManager {
         }
     }
 
-    pub fn set_custom_theme_colors(&mut self, index: i32, _colors: QVariantMap) {
-        if index >= 0 && index < self.custom_themes.len() as i32 {
-            self.save_config();
-        } else if index == self.custom_themes.len() as i32 {
-            self.custom_themes.push(CustomTheme {
-                name: "Custom".to_string(),
-                colors: HashMap::new(),
-            });
-            self.save_config();
+    pub fn set_custom_theme_colors(&mut self, index: i32, colors: QVariantMap) {
+        let mut color_map: HashMap<String, String> = HashMap::new();
+        for (k, v) in &colors {
+            color_map.insert(k.to_string(), v.to_qstring().to_string());
         }
+
+        let idx = index as usize;
+        if idx < self.custom_themes.len() {
+            self.custom_themes[idx].colors = color_map;
+            self.save_config();
+            self.custom_themes_changed();
+
+            let theme_name = self.custom_themes[idx].name.clone();
+            if theme_name == self.current_theme.to_string() {
+                self.set_theme(theme_name);
+            }
+        }
+    }
+
+    pub fn get_default_colors(&self) -> QVariantMap {
+        let map = AppConfig::get_default_colors_internal();
+        map.iter()
+            .map(|(k, v)| {
+                (
+                    QString::from(k.as_str()),
+                    QVariant::from(QString::from(v.as_str())),
+                )
+            })
+            .collect()
+    }
+
+    pub fn get_editor_starter_colors(&self, is_edit_mode: bool, index: i32) -> QVariantMap {
+        if is_edit_mode {
+            if index >= 0 && index < self.custom_themes.len() as i32 {
+                let colors = &self.custom_themes[index as usize].colors;
+                if colors.is_empty() {
+                    return self.get_default_colors();
+                }
+                return colors
+                    .iter()
+                    .map(|(k, v)| {
+                        (
+                            QString::from(k.as_str()),
+                            QVariant::from(QString::from(v.as_str())),
+                        )
+                    })
+                    .collect();
+            }
+        }
+        self.current_raw_colors
+            .iter()
+            .map(|(k, v)| {
+                (
+                    QString::from(k.as_str()),
+                    QVariant::from(QString::from(v.as_str())),
+                )
+            })
+            .collect()
     }
 
     fn save_config(&self) {
@@ -182,13 +284,31 @@ impl ThemeManager {
     }
 
     pub fn set_theme(&mut self, name: String) {
-        let cfg = AppConfig {
-            theme: name.clone(),
-            custom_themes: self.custom_themes.clone(),
-        };
-        let _ = confy::store("loonix-tunes", "config", cfg);
+        if let Some(custom) = self.custom_themes.iter().find(|t| t.name == name) {
+            if !custom.colors.is_empty() {
+                let qmap: QVariantMap = custom
+                    .colors
+                    .iter()
+                    .map(|(k, v)| {
+                        (
+                            QString::from(k.as_str()),
+                            QVariant::from(QString::from(v.as_str())),
+                        )
+                    })
+                    .collect();
 
-        let mut map: HashMap<&str, &str> = HashMap::new();
+                self.colormap = qmap;
+                self.current_theme = QString::from(name);
+                self.colormap_changed();
+                self.current_theme_changed();
+
+                self.current_raw_colors = custom.colors.clone();
+                self.save_config();
+                return;
+            }
+        }
+
+        let mut map: HashMap<String, String> = HashMap::new();
 
         match name.as_str() {
             "Blue" => {
@@ -555,83 +675,19 @@ impl ThemeManager {
                     "fxhandle", "#ffea00",
                 });
             }
-            "Custom 1" | "Custom 2" | "Custom 3" => {
-                let idx = match name.as_str() {
-                    "Custom 1" => 0,
-                    "Custom 2" => 1,
-                    "Custom 3" => 2,
-                    _ => 0,
-                };
-                if idx < self.custom_themes.len() {
-                    let custom = &self.custom_themes[idx];
-                    if custom.colors.is_empty() {
-                        map.extend(
-                            self.current_raw_colors
-                                .iter()
-                                .map(|(k, v)| (k.as_str(), v.as_str())),
-                        );
-                    } else {
-                        map.extend(custom.colors.iter().map(|(k, v)| (k.as_str(), v.as_str())));
-                    }
-                }
-            }
             _ => {
-                c!(map, {
-                    // BACKGROUNDS
-                    "bgmain", "#15141b",
-                    "bgoverlay", "#201f2b",
-                    "graysolid", "#6d6d6d",
-                    "contextmenubg", "#2d2d2d",
-                    "overlay", "#000000",
-                    // HEADER
-                    "headerbg", "#201f2b",
-                    "headericon", "#6d6d6d",
-                    "headertext", "#6d6d6d",
-                    "headerhover", "#ff1ae0",
-                    // PLAYER
-                    "playertitle", "#00ffa2",
-                    "playersubtext", "#57caab",
-                    "playeraccent", "#9442ff",
-                    "playerhover", "#ff1ae0",
-                    // TABS
-                    "tabtext", "#c6c6c6",
-                    "tabborder", "#00ffa2",
-                    "tabhover", "#ff1ae0",
-                    // PLAYLIST
-                    "playlisttext", "#c6c6c6",
-                    "playlistfolder", "#ff881a",
-                    "playlistactive", "#00ffa2",
-                    "playlisticon", "#ff881a",
-                    // EQ
-                    "eqbg", "#201f2b",
-                    "eqborder", "#00ffa2",
-                    "eqtext", "#00ffa2",
-                    "eqsubtext", "#57caab",
-                    "eqicon", "#ff881a",
-                    "eqhover", "#ff1ae0",
-                    "eqactive", "#9442ff",
-                    "eqsliderbg", "#201f2b",
-                    "eqfader", "#ff881a",
-                    "eqmix", "#ff1ae0",
-                    "eqhandle", "#9442ff",
-                    // FX
-                    "fxbg", "#201f2b",
-                    "fxborder", "#00ffa2",
-                    "fxtext", "#00ffa2",
-                    "fxsubtext", "#57caab",
-                    "fxicon", "#9442ff",
-                    "fxhover", "#ff1ae0",
-                    "fxactive", "#9442ff",
-                    "fxslider", "#9442ff",
-                    "fxsliderbg", "#15141b",
-                    "fxhandle", "#ff1ae0",
-                });
+                map = AppConfig::get_default_colors_internal();
             }
         }
 
         let qmap: QVariantMap = map
             .iter()
-            .map(|(k, v)| (QString::from(*k), QVariant::from(QString::from(*v))))
+            .map(|(k, v)| {
+                (
+                    QString::from(k.clone()),
+                    QVariant::from(QString::from(v.clone())),
+                )
+            })
             .collect();
 
         self.colormap = qmap;

@@ -1,3 +1,4 @@
+/* --- loonix-tunes/qml/ui/pref/ThemeEditor.qml --- */
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
@@ -10,6 +11,7 @@ Item {
     visible: root.themeEditorVisible
 
     property int refreshTicker: 0
+    property int selectedSlotIndex: 0
 
     Connections {
         target: theme
@@ -25,56 +27,31 @@ Item {
         }
     }
 
-    function getThemeData() {
+    function scanCurrentEditorColors() {
         return {
-            "bgmain": inBgMain.inputText,
-            "bgoverlay": inBgOverlay.inputText,
-            "graysolid": inGraySolid.inputText,
-            "contextmenubg": inContextMenuBg.inputText,
-            "overlay": inOverlay.inputText,
-            "headerbg": inHeaderBg.inputText,
-            "headericon": inHeaderIcon.inputText,
-            "headertext": inHeaderText.inputText,
-            "headerhover": inHeaderHover.inputText,
-            "playertitle": inPlayerTitle.inputText,
-            "playersubtext": inPlayerSubtext.inputText,
-            "playeraccent": inPlayerAccent.inputText,
-            "playerhover": inPlayerHover.inputText,
-            "tabtext": inTabText.inputText,
-            "tabborder": inTabBorder.inputText,
-            "tabhover": inTabHover.inputText,
-            "playlisttext": inPlaylistText.inputText,
-            "playlistfolder": inPlaylistFolder.inputText,
-            "playlistactive": inPlaylistActive.inputText,
-            "playlisticon": inPlaylistIcon.inputText,
-            "eqbg": inEqBg.inputText,
-            "eqborder": inEqBorder.inputText,
-            "eqtext": inEqText.inputText,
-            "eqsubtext": inEqSubtext.inputText,
-            "eqicon": inEqIcon.inputText,
-            "eqhover": inEqHover.inputText,
-            "eqactive": inEqActive.inputText,
-            "eqsliderbg": inEqSliderBg.inputText,
-            "eqfader": inEqFader.inputText,
-            "eqmix": inEqMix.inputText,
-            "eqhandle": inEqHandle.inputText,
-            "fxbg": inFxBg.inputText,
-            "fxborder": inFxBorder.inputText,
-            "fxtext": inFxText.inputText,
-            "fxsubtext": inFxSubtext.inputText,
-            "fxicon": inFxIcon.inputText,
-            "fxhover": inFxHover.inputText,
-            "fxactive": inFxActive.inputText,
-            "fxslider": inFxSlider.inputText,
-            "fxsliderbg": inFxSliderBg.inputText,
-            "fxhandle": inFxHandle.inputText
+            "bgmain": inBgMain.inputText, "bgoverlay": inBgOverlay.inputText, "graysolid": inGraySolid.inputText,
+            "contextmenubg": inContextMenuBg.inputText, "overlay": inOverlay.inputText, "headerbg": inHeaderBg.inputText,
+            "headericon": inHeaderIcon.inputText, "headertext": inHeaderText.inputText, "headerhover": inHeaderHover.inputText,
+            "playertitle": inPlayerTitle.inputText, "playersubtext": inPlayerSubtext.inputText, "playeraccent": inPlayerAccent.inputText,
+            "playerhover": inPlayerHover.inputText, "tabtext": inTabText.inputText, "tabborder": inTabBorder.inputText,
+            "tabhover": inTabHover.inputText, "playlisttext": inPlaylistText.inputText, "playlistfolder": inPlaylistFolder.inputText,
+            "playlistactive": inPlaylistActive.inputText, "playlisticon": inPlaylistIcon.inputText, "eqbg": inEqBg.inputText,
+            "eqborder": inEqBorder.inputText, "eqtext": inEqText.inputText, "eqsubtext": inEqSubtext.inputText,
+            "eqicon": inEqIcon.inputText, "eqhover": inEqHover.inputText, "eqactive": inEqActive.inputText,
+            "eqsliderbg": inEqSliderBg.inputText, "eqfader": inEqFader.inputText, "eqmix": inEqMix.inputText,
+            "eqhandle": inEqHandle.inputText, "fxbg": inFxBg.inputText, "fxborder": inFxBorder.inputText,
+            "fxtext": inFxText.inputText, "fxsubtext": inFxSubtext.inputText, "fxicon": inFxIcon.inputText,
+            "fxhover": inFxHover.inputText, "fxactive": inFxActive.inputText, "fxslider": inFxSlider.inputText,
+            "fxsliderbg": inFxSliderBg.inputText, "fxhandle": inFxHandle.inputText
         }
     }
 
     onVisibleChanged: {
         if (visible) {
+            root.selectedSlotIndex = root.themeEditorSlotTarget >= 0 ? root.themeEditorSlotTarget : 0
+            
             if (root.themeEditorSlotTarget >= 0) {
-                // EDIT mode: load from saved slot
+                // EDIT mode
                 var savedColors = theme.get_custom_theme_colors(root.themeEditorSlotTarget)
                 inBgMain.inputText = savedColors.bgmain
                 inBgOverlay.inputText = savedColors.bgoverlay
@@ -118,7 +95,7 @@ Item {
                 inFxSliderBg.inputText = savedColors.fxsliderbg
                 inFxHandle.inputText = savedColors.fxhandle
             } else {
-                // CREATE mode: load from current theme
+                // CREATE mode
                 inBgMain.inputText = theme.colormap.bgmain
                 inBgOverlay.inputText = theme.colormap.bgoverlay
                 inGraySolid.inputText = theme.colormap.graysolid
@@ -198,6 +175,7 @@ Item {
             anchors.margins: 12
             spacing: 8
 
+            // --- HEADER ---
             RowLayout {
                 Layout.fillWidth: true
                 Text {
@@ -226,7 +204,7 @@ Item {
                 }
             }
 
-            // Theme Name Input
+            // --- THEME NAME INPUT ---
             RowLayout {
                 Layout.fillWidth: true
                 spacing: 8
@@ -242,7 +220,7 @@ Item {
                     id: themeNameInput
                     Layout.fillWidth: true
                     Layout.preferredHeight: 28
-                    text: root.themeEditorSlotTarget >= 0 ? theme.get_custom_theme_name(root.themeEditorSlotTarget) : "New Theme"
+                    text: root.themeEditorSlotTarget >= 0 ? theme.get_custom_theme_name(root.themeEditorSlotTarget) : (root.selectedSlotIndex >= 0 ? theme.get_custom_theme_name(root.selectedSlotIndex) : "New Theme")
                     color: theme.colormap.playeraccent
                     font.family: kodeMono.name
                     font.pixelSize: 12
@@ -259,8 +237,11 @@ Item {
                 Layout.fillWidth: true
                 Layout.preferredHeight: 1
                 color: theme.colormap.tabborder
+                Layout.topMargin: 4
+                Layout.bottomMargin: 4
             }
 
+            // --- SCROLLABLE AREA (Radio Buttons + Colors) ---
             ScrollView {
                 Layout.fillWidth: true
                 Layout.fillHeight: true
@@ -271,6 +252,7 @@ Item {
                     width: parent.width - 58
                     spacing: 6
 
+                    // KOMPONEN DI-DEFINE DI DALAM SINI (Aman)
                     component ColorInputRow : RowLayout {
                         property string labelText: "Color"
                         property string hexValue: "#000000"
@@ -339,6 +321,51 @@ Item {
                         Layout.bottomMargin: 4
                     }
 
+                    // --- RADIO BUTTONS (Sekarang ikut scroll) ---
+                    ColumnLayout {
+                        Layout.fillWidth: true
+                        Layout.bottomMargin: 8
+                        spacing: 2
+
+                        Text {
+                            text: "Choose which theme to replace:"
+                            color: theme.colormap.tabtext
+                            font.family: kodeMono.name
+                            font.pixelSize: 10
+                        }
+
+Repeater {
+                            model: theme.get_custom_theme_count()
+                            delegate: RadioButton {
+                                text: theme.get_custom_theme_name(index)
+                                checked: root.selectedSlotIndex === index
+                                onClicked: {
+                                    root.selectedSlotIndex = index
+                                    root.themeEditorSlotTarget = index
+                                }
+                                indicator.width: 14
+                                indicator.height: 14
+
+                                // Override contentItem buat masukin warna
+                                contentItem: Text {
+                                    text: parent.text
+                                    color: theme.colormap.tabtext
+                                    font.family: kodeMono.name
+                                    font.pixelSize: 11
+                                    leftPadding: parent.indicator.width + parent.spacing
+                                    verticalAlignment: Text.AlignVCenter
+                                }
+                            }
+                        }
+                    }
+
+                    Rectangle {
+                        Layout.fillWidth: true
+                        Layout.preferredHeight: 1
+                        color: theme.colormap.tabborder
+                        Layout.bottomMargin: 8
+                    }
+
                     // === BACKGROUNDS ===
                     SectionHeader { id: sh1; sectionTitle: "BACKGROUNDS" }
                     ColorInputRow { id: inBgMain; labelText: "bgmain"; hexValue: theme.colormap.bgmain }
@@ -403,13 +430,15 @@ Item {
                 }
             }
 
+            // --- BOTTOM BUTTONS (Satu Baris, Lebih Pendek, Tetap Nempel Bawah) ---
             RowLayout {
                 Layout.fillWidth: true
+                Layout.topMargin: 4
                 spacing: 8
 
                 Rectangle {
                     Layout.fillWidth: true
-                    Layout.preferredHeight: 36
+                    Layout.preferredHeight: 28  // Lebih compact
                     radius: 4
                     color: cancelBtnArea.containsMouse ? theme.colormap.graysolid : theme.colormap.bgoverlay
                     border.color: theme.colormap.tabborder
@@ -434,7 +463,75 @@ Item {
 
                 Rectangle {
                     Layout.fillWidth: true
-                    Layout.preferredHeight: 36
+                    Layout.preferredHeight: 28 // Lebih compact
+                    radius: 4
+                    color: resetBtnArea.containsMouse ? theme.colormap.graysolid : theme.colormap.bgoverlay
+                    border.color: theme.colormap.tabborder
+                    border.width: 1
+
+                    Text {
+                        anchors.centerIn: parent
+                        text: "RESET"
+                        color: resetBtnArea.containsMouse ? theme.colormap.bgmain : theme.colormap.tabtext
+                        font.family: kodeMono.name
+                        font.pixelSize: 11
+                        font.bold: true
+                    }
+
+                    MouseArea {
+                        id: resetBtnArea
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        onClicked: {
+                            var defaults = theme.get_default_colors()
+                            inBgMain.inputText = defaults.bgmain
+                            inBgOverlay.inputText = defaults.bgoverlay
+                            inGraySolid.inputText = defaults.graysolid
+                            inContextMenuBg.inputText = defaults.contextmenubg
+                            inOverlay.inputText = defaults.overlay
+                            inHeaderBg.inputText = defaults.headerbg
+                            inHeaderIcon.inputText = defaults.headericon
+                            inHeaderText.inputText = defaults.headertext
+                            inHeaderHover.inputText = defaults.headerhover
+                            inPlayerTitle.inputText = defaults.playertitle
+                            inPlayerSubtext.inputText = defaults.playersubtext
+                            inPlayerAccent.inputText = defaults.playeraccent
+                            inPlayerHover.inputText = defaults.playerhover
+                            inTabText.inputText = defaults.tabtext
+                            inTabBorder.inputText = defaults.tabborder
+                            inTabHover.inputText = defaults.tabhover
+                            inPlaylistText.inputText = defaults.playlisttext
+                            inPlaylistFolder.inputText = defaults.playlistfolder
+                            inPlaylistActive.inputText = defaults.playlistactive
+                            inPlaylistIcon.inputText = defaults.playlisticon
+                            inEqBg.inputText = defaults.eqbg
+                            inEqBorder.inputText = defaults.eqborder
+                            inEqText.inputText = defaults.eqtext
+                            inEqSubtext.inputText = defaults.eqsubtext
+                            inEqIcon.inputText = defaults.eqicon
+                            inEqHover.inputText = defaults.eqhover
+                            inEqActive.inputText = defaults.eqactive
+                            inEqSliderBg.inputText = defaults.eqsliderbg
+                            inEqFader.inputText = defaults.eqfader
+                            inEqMix.inputText = defaults.eqmix
+                            inEqHandle.inputText = defaults.eqhandle
+                            inFxBg.inputText = defaults.fxbg
+                            inFxBorder.inputText = defaults.fxborder
+                            inFxText.inputText = defaults.fxtext
+                            inFxSubtext.inputText = defaults.fxsubtext
+                            inFxIcon.inputText = defaults.fxicon
+                            inFxHover.inputText = defaults.fxhover
+                            inFxActive.inputText = defaults.fxactive
+                            inFxSlider.inputText = defaults.fxslider
+                            inFxSliderBg.inputText = defaults.fxsliderbg
+                            inFxHandle.inputText = defaults.fxhandle
+                        }
+                    }
+                }
+
+                Rectangle {
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: 28 // Lebih compact
                     radius: 4
                     color: saveThemeMA.containsMouse ? theme.colormap.playeraccent : theme.colormap.bgoverlay
                     border.color: theme.colormap.playeraccent
@@ -444,7 +541,7 @@ Item {
 
                     Text {
                         anchors.centerIn: parent
-                        text: "SAVE AS"
+                        text: "SAVE"
                         color: saveThemeMA.containsMouse ? theme.colormap.bgmain : theme.colormap.playeraccent
                         font.family: kodeMono.name
                         font.pixelSize: 11
@@ -456,136 +553,9 @@ Item {
                         anchors.fill: parent
                         hoverEnabled: true
                         onClicked: {
-                            saveAsPopup.visible = true
-                        }
-                    }
-                }
-            }
-        }
-
-        // SAVE AS Popup
-        Rectangle {
-            id: saveAsPopup
-            visible: false
-            anchors.fill: parent
-            color: theme.colormap["overlay"]
-
-            MouseArea {
-                anchors.fill: parent
-                onClicked: saveAsPopup.visible = false
-            }
-
-            Rectangle {
-                width: 200
-                height: 120
-                anchors.centerIn: parent
-                color: theme.colormap.bgmain
-                border.color: theme.colormap.tabborder
-                radius: 4
-
-                ColumnLayout {
-                    anchors.fill: parent
-                    anchors.margins: 12
-                    spacing: 8
-
-                    Text {
-                        text: "SAVE TO"
-                        color: theme.colormap.playeraccent
-                        font.family: kodeMono.name
-                        font.pixelSize: 12
-                        font.bold: true
-                        Layout.alignment: Qt.AlignHCenter
-                    }
-
-                    RowLayout {
-                        Layout.alignment: Qt.AlignHCenter
-                        spacing: 8
-
-                        Rectangle {
-                            Layout.preferredWidth: 50
-                            Layout.preferredHeight: 32
-                            radius: 4
-                            color: slot1MA.containsMouse ? theme.colormap.playeraccent : theme.colormap.bgoverlay
-                            border.color: theme.colormap.playeraccent
-
-                            Text {
-                                anchors.centerIn: parent
-                                text: (refreshTicker, theme.get_custom_theme_name(0) || "Custom 1")
-                                elide: Text.ElideRight
-                                color: slot1MA.containsMouse ? theme.colormap.bgmain : theme.colormap.tabtext
-                                font.family: kodeMono.name
-                                font.bold: true
-                            }
-
-                            MouseArea {
-                                id: slot1MA
-                                anchors.fill: parent
-                                hoverEnabled: true
-                                onClicked: {
-                                    theme.set_custom_theme_name(0, themeNameInput.text)
-                                    theme.set_custom_theme_colors(0, getThemeData())
-                                    saveAsPopup.visible = false
-                                    root.themeEditorVisible = false
-                                }
-                            }
-                        }
-
-                        Rectangle {
-                            Layout.preferredWidth: 50
-                            Layout.preferredHeight: 32
-                            radius: 4
-                            color: slot2MA.containsMouse ? theme.colormap.playeraccent : theme.colormap.bgoverlay
-                            border.color: theme.colormap.playeraccent
-
-                            Text {
-                                anchors.centerIn: parent
-                                text: (refreshTicker, theme.get_custom_theme_name(1) || "Custom 2")
-                                elide: Text.ElideRight
-                                color: slot2MA.containsMouse ? theme.colormap.bgmain : theme.colormap.tabtext
-                                font.family: kodeMono.name
-                                font.bold: true
-                            }
-
-                            MouseArea {
-                                id: slot2MA
-                                anchors.fill: parent
-                                hoverEnabled: true
-                                onClicked: {
-                                    theme.set_custom_theme_name(1, themeNameInput.text)
-                                    theme.set_custom_theme_colors(1, getThemeData())
-                                    saveAsPopup.visible = false
-                                    root.themeEditorVisible = false
-                                }
-                            }
-                        }
-
-                        Rectangle {
-                            Layout.preferredWidth: 50
-                            Layout.preferredHeight: 32
-                            radius: 4
-                            color: slot3MA.containsMouse ? theme.colormap.playeraccent : theme.colormap.bgoverlay
-                            border.color: theme.colormap.playeraccent
-
-                            Text {
-                                anchors.centerIn: parent
-                                text: (refreshTicker, theme.get_custom_theme_name(2) || "Custom 3")
-                                elide: Text.ElideRight
-                                color: slot3MA.containsMouse ? theme.colormap.bgmain : theme.colormap.tabtext
-                                font.family: kodeMono.name
-                                font.bold: true
-                            }
-
-                            MouseArea {
-                                id: slot3MA
-                                anchors.fill: parent
-                                hoverEnabled: true
-                                onClicked: {
-                                    theme.set_custom_theme_name(2, themeNameInput.text)
-                                    theme.set_custom_theme_colors(2, getThemeData())
-                                    saveAsPopup.visible = false
-                                    root.themeEditorVisible = false
-                                }
-                            }
+                            theme.set_custom_theme_name(root.selectedSlotIndex, themeNameInput.text)
+                            theme.set_custom_theme_colors(root.selectedSlotIndex, scanCurrentEditorColors())
+                            root.themeEditorVisible = false
                         }
                     }
                 }
