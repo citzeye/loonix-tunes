@@ -116,7 +116,7 @@ Item {
                         property bool isHovered: false
                         color: isHovered ? theme.colormap["headerhover"] : theme.colormap.headertext
                         font.family: kodeMono.name
-                        font.pixelSize: 14
+                        font.pixelSize: 18
                         Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
 
                         MouseArea {
@@ -174,28 +174,22 @@ Item {
                             onClicked: prefPage.currentTabIndex = 1
                         }
                         PrefTab {
-                            text: "Library"
-                            icon: ""
+                            text: "Appearance"
+                            icon: "󰸌"
                             isActive: prefPage.currentTabIndex === 2
                             onClicked: prefPage.currentTabIndex = 2
                         }
                         PrefTab {
-                            text: "Appearance"
-                            icon: "󰸌"
+                            text: "About"
+                            icon: "󰋽"
                             isActive: prefPage.currentTabIndex === 3
                             onClicked: prefPage.currentTabIndex = 3
                         }
                         PrefTab {
-                            text: "About"
-                            icon: "󰋽"
+                            text: "Donate"
+                            icon: "󱉛"
                             isActive: prefPage.currentTabIndex === 4
                             onClicked: prefPage.currentTabIndex = 4
-                        }
-                        PrefTab {
-                            text: "Donate"
-                            icon: ""
-                            isActive: prefPage.currentTabIndex === 5
-                            onClicked: prefPage.currentTabIndex = 5
                         }
                     }
                 }
@@ -235,13 +229,6 @@ Item {
                             Layout.fillWidth: true
                             Layout.fillHeight: true
                             PrefAudio {
-                                anchors.fill: parent
-                            }
-                        }
-                        Item {
-                            Layout.fillWidth: true
-                            Layout.fillHeight: true
-                            PrefLibrary {
                                 anchors.fill: parent
                             }
                         }

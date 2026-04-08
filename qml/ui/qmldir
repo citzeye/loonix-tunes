@@ -25,5 +25,4 @@ PrefAudio 1.0 pref/PrefAudio.qml
 PrefCollapsibleSection 1.0 pref/PrefCollapsibleSection.qml
 PrefDonate 1.0 pref/PrefDonate.qml
 PrefHardware 1.0 pref/PrefHardware.qml
-PrefLibrary 1.0 pref/PrefLibrary.qml
 ThemeEditor 1.0 pref/ThemeEditor.qml
