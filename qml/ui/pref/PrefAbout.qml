@@ -3,10 +3,29 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 
-Item {
+Flickable {
+    id: aboutFlick
+    contentHeight: aboutColumn.height
+    clip: true
+    interactive: true
+    boundsBehavior: Flickable.StopAtBounds
+    ScrollBar.vertical: ScrollBar {
+        policy: ScrollBar.AsNeeded
+        width: 6
+        z: 1
+        background: Rectangle { implicitWidth: 4; implicitHeight: 20; color: theme.colormap["bgoverlay"]; opacity: 0.3 }
+        contentItem: Rectangle {
+            implicitWidth: 4
+            implicitHeight: 30
+            radius: 2
+            color: theme.colormap.playeraccent
+            Behavior on color { ColorAnimation { duration: 200 } }
+        }
+    }
+
     ColumnLayout {
         id: aboutColumn
-        anchors.fill: parent
+        width: aboutFlick.width - 20
         anchors.leftMargin: 10
         anchors.rightMargin: 10
         anchors.topMargin: 10
