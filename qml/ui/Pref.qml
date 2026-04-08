@@ -222,12 +222,50 @@ Item {
 
                         currentIndex: prefPage.currentTabIndex
 
-                        PrefHardware {}
-                        PrefAudio {}
-                        PrefLibrary {}
-                        PrefAppearance {}
-                        PrefAbout {}
-                        PrefDonate {}
+                        Item {
+                            Layout.fillWidth: true
+                            Layout.fillHeight: true
+                            PrefHardware {
+                                anchors.top: parent.top
+                                anchors.left: parent.left
+                                anchors.right: parent.right
+                            }
+                        }
+                        Item {
+                            Layout.fillWidth: true
+                            Layout.fillHeight: true
+                            PrefAudio {
+                                anchors.fill: parent
+                            }
+                        }
+                        Item {
+                            Layout.fillWidth: true
+                            Layout.fillHeight: true
+                            PrefLibrary {
+                                anchors.fill: parent
+                            }
+                        }
+                        Item {
+                            Layout.fillWidth: true
+                            Layout.fillHeight: true
+                            PrefAppearance {
+                                anchors.fill: parent
+                            }
+                        }
+                        Item {
+                            Layout.fillWidth: true
+                            Layout.fillHeight: true
+                            PrefAbout {
+                                anchors.fill: parent
+                            }
+                        }
+                        Item {
+                            Layout.fillWidth: true
+                            Layout.fillHeight: true
+                            PrefDonate {
+                                anchors.fill: parent
+                            }
+                        }
                     }
                 }
 

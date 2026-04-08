@@ -535,12 +535,11 @@ Window {
                 }
 
                 ColumnLayout {
-                    Layout.fillWidth: true
                     anchors.left: parent.left
                     anchors.right: parent.right
+                    anchors.verticalCenter: parent.verticalCenter
                     anchors.leftMargin: 20
                     anchors.rightMargin: 20
-                    anchors.verticalCenter: parent.verticalCenter
                     spacing: 10
 
                     Text {
