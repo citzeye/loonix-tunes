@@ -59,6 +59,29 @@ Rectangle {
     clip: true
     model: musicModel
 
+    ScrollBar.vertical: ScrollBar {
+        id: vBar
+        width: 6
+        policy: ScrollBar.AsNeeded
+
+        background: Rectangle {
+            color: "transparent"
+        }
+
+        contentItem: Rectangle {
+            implicitWidth: 6
+            implicitHeight: Math.max(30, playlistView.height * playlistView.visibleArea.heightRatio)
+            radius: 3
+            color: vBar.pressed ? theme.colormap.playeraccent : 
+                   vBar.hovered ? theme.colormap.headerhover : 
+                   theme.colormap.playeraccent
+            opacity: vBar.active ? 1.0 : 0.5
+
+            Behavior on color { ColorAnimation { duration: 150 } }
+            Behavior on opacity { NumberAnimation { duration: 150 } }
+        }
+    }
+
     // Empty state message
     Rectangle {
       anchors.centerIn: parent
@@ -221,23 +244,6 @@ Rectangle {
             root.popupMenuVisible = true
           }
         }
-      }
-    }
-    ScrollBar.vertical: ScrollBar {
-      width: 4
-      z: 1
-      policy: ScrollBar.AsNeeded
-      background: Rectangle {
-        implicitWidth: 4
-        implicitHeight: 20
-        color: theme.colormap.bgmain
-        opacity: 0.0
-      }
-      contentItem: Rectangle {
-        implicitWidth: 4
-        implicitHeight: 30
-        radius: 2
-        color: theme.colormap.playeraccent
       }
     }
   }
