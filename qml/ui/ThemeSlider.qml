@@ -11,7 +11,7 @@ Slider {
         width: root.availableWidth
         height: 3
         radius: 1.5
-        color: "#1a1a1a"
+        color: theme.colormap["eqsliderbg"]
 
         Rectangle {
             width: root.visualPosition * parent.width

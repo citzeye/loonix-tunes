@@ -208,7 +208,7 @@ Popup {
                                     width: 10
                                     height: 10
                                     radius: 5
-                                    color: pitchSld.value === 0 ? "#ffffff" : (pitchSld.pressed ? theme.colormap.fxhover : theme.colormap.fxslider)
+                                    color: pitchSld.value === 0 ? theme.colormap["fxtext"] : (pitchSld.pressed ? theme.colormap.fxhover : theme.colormap.fxslider)
                                 }
                             }
 

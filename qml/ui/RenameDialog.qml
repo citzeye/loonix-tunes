@@ -15,7 +15,7 @@ Loader {
 
             Rectangle {
                 anchors.fill: parent
-                color: '#40000000'
+                color: theme.colormap["overlay"]
                 MouseArea {
                     anchors.fill: parent
                     onClicked: root.renameDialogVisible = false

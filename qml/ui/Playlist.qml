@@ -126,7 +126,7 @@ Rectangle {
             anchors.top: parent.top
             anchors.bottom: parent.bottom
             width: 1
-            color: '#606060'
+            color: theme.colormap["graysolid"]
             visible: isInFolder && musicModel.is_folder_expanded(model.parent_folder)
           }
 

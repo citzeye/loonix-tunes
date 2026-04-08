@@ -113,7 +113,7 @@ Item {
 
     Rectangle {
         anchors.fill: parent
-        color: "#99000000"
+        color: theme.colormap["overlay"]
 
         MouseArea {
             anchors.fill: parent
@@ -413,7 +413,7 @@ Item {
             id: saveAsPopup
             visible: false
             anchors.fill: parent
-            color: "#99000000"
+            color: theme.colormap["overlay"]
 
             MouseArea {
                 anchors.fill: parent

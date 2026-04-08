@@ -34,7 +34,7 @@ Window {
         width: root.width
         height: root.height
         z: 9999
-        color: "#E6000000"
+        color: theme.colormap["overlay"]
         // Akan muncul kalau ada bug OS yang maksa window lebih kecil dari 25%
         visible: root.width < (root.criticalWidth - 5) // toleransi 5px
 
@@ -67,7 +67,7 @@ Window {
 
             Text {
                 text: "Required: 25% of Screen\nCurrent: " + Math.round(root.width) + "px"
-                color: theme.colormap ? theme.colormap["playeraccent"] : "#FF69B4"
+                color: theme.colormap ? theme.colormap["playeraccent"] : theme.colormap["tabtext"]
                 font.family: kodeMono.name
                 font.pixelSize: 11
                 Layout.alignment: Qt.AlignHCenter
@@ -216,7 +216,7 @@ Window {
 
         Rectangle {
             anchors.fill: parent
-            color: '#40000000'
+            color: theme.colormap["overlay"]
 
             MouseArea {
                 anchors.fill: parent
@@ -321,7 +321,7 @@ Window {
 
         Rectangle {
             anchors.fill: parent
-            color: '#40000000'
+            color: theme.colormap["overlay"]
 
             MouseArea {
                 anchors.fill: parent
@@ -630,7 +630,7 @@ Window {
                                 y: seekbar.topPadding
                                 width: 2
                                 height: seekbar.availableHeight
-                                color: "#00FFFF" // Cyan
+                                color: theme.colormap["playeraccent"]
                             }
 
                             Rectangle {
@@ -640,7 +640,7 @@ Window {
                                 y: seekbar.topPadding
                                 width: 2
                                 height: seekbar.availableHeight
-                                color: "#FF4444" // Red
+                                color: theme.colormap["headerhover"]
                             }
 
                             background: Rectangle {

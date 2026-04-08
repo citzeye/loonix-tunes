@@ -48,7 +48,7 @@ Item {
         anchors.horizontalCenter: parent.horizontalCenter
         anchors.verticalCenter: parent.verticalCenter
         color: theme.colormap.bgmain
-        border.color: "#333333"
+        border.color: theme.colormap["graysolid"]
         border.width: 0.5
         radius: 0
 
@@ -114,7 +114,7 @@ Item {
                         id: closeButton
                         text: "󰅖"
                         property bool isHovered: false
-                        color: isHovered ? "#FF69B4" : theme.colormap.headertext
+                        color: isHovered ? theme.colormap["headerhover"] : theme.colormap.headertext
                         font.family: kodeMono.name
                         font.pixelSize: 14
                         Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
