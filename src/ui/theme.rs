@@ -32,7 +32,11 @@ pub struct ThemeManager {
     pub get_editor_starter_colors:
         qt_method!(fn(&self, is_edit_mode: bool, index: i32) -> QVariantMap),
     pub sync_with_wallpaper: qt_method!(fn(&mut self)),
+    pub set_loonix_manual: qt_method!(fn(&mut self)),
+    pub set_wallpaper_path: qt_method!(fn(&mut self, path: String)),
     pub is_matugen_available: qt_method!(fn(&self) -> bool),
+    pub get_system_report: qt_method!(fn(&self) -> QVariantMap),
+    pub wallpaper_sync_status: qt_signal!(success: bool, message: QString),
 
     custom_themes: Vec<CustomTheme>,
     current_raw_colors: HashMap<String, String>,
@@ -55,6 +59,8 @@ impl ThemeManager {
         };
 
         let custom_themes = cfg.custom_themes.clone();
+        let use_wallpaper = cfg.use_wallpaper_theme;
+        let matugen_saved = cfg.matugen_colors.clone();
         drop(cfg);
 
         self.custom_themes = custom_themes;
@@ -67,61 +73,264 @@ impl ThemeManager {
         }
 
         self.config = Some(config);
-        self.set_theme(theme_name);
         self.check_matugen();
+
+        if use_wallpaper && !matugen_saved.is_empty() {
+            let qmap: QVariantMap = matugen_saved
+                .iter()
+                .map(|(k, v)| {
+                    (
+                        QString::from(k.as_str()),
+                        QVariant::from(QString::from(v.as_str())),
+                    )
+                })
+                .collect();
+            self.colormap = qmap;
+            self.current_raw_colors = matugen_saved;
+            self.colormap_changed();
+        } else {
+            self.set_theme(theme_name);
+        }
     }
 
     fn check_matugen(&mut self) {
-        let output = Command::new("matugen").arg("--version").output();
-        self.matugen_available = output.map(|o| o.status.success()).unwrap_or(false);
+        if let Some(path) = Self::get_matugen_path() {
+            let output = Command::new(&path).arg("--version").output();
+            self.matugen_available = output.map(|o| o.status.success()).unwrap_or(false);
+        } else {
+            self.matugen_available = false;
+        }
     }
 
     pub fn is_matugen_available(&self) -> bool {
         self.matugen_available
     }
 
-    fn fetch_matugen_colors(&mut self) -> Option<HashMap<String, String>> {
-        let output = Command::new("matugen")
-            .args(&["wallpaper", "--json", "hex"])
+    fn get_matugen_path() -> Option<String> {
+        if let Ok(path) = which::which("matugen") {
+            return Some(path.to_string_lossy().into_owned());
+        }
+
+        if let Ok(home) = std::env::var("HOME") {
+            let cargo_path = format!("{}/.cargo/bin/matugen", home);
+            if std::path::Path::new(&cargo_path).exists() {
+                return Some(cargo_path);
+            }
+        }
+
+        None
+    }
+
+    fn detect_desktop_environment() -> Option<&'static str> {
+        if Command::new("gsettings")
+            .args(&["get", "org.gnome.desktop.background", "picture-uri"])
             .output()
-            .ok()?;
+            .map(|o| o.status.success())
+            .unwrap_or(false)
+        {
+            return Some("GNOME");
+        }
+        if Command::new("hyprctl")
+            .arg("version")
+            .output()
+            .map(|o| o.status.success())
+            .unwrap_or(false)
+        {
+            return Some("Hyprland");
+        }
+        if Command::new("swww")
+            .arg("--version")
+            .output()
+            .map(|o| o.status.success())
+            .unwrap_or(false)
+        {
+            return Some("swww");
+        }
+        if std::path::Path::new(&format!(
+            "{}/.fehbg",
+            std::env::var("HOME").unwrap_or_default()
+        ))
+        .exists()
+        {
+            return Some("feh");
+        }
+        None
+    }
+
+    pub fn get_system_report(&self) -> QVariantMap {
+        let mut report = std::collections::HashMap::new();
+
+        let distro = std::fs::read_to_string("/etc/os-release")
+            .ok()
+            .and_then(|s| {
+                s.lines()
+                    .find(|l| l.starts_with("PRETTY_NAME="))
+                    .map(|l| l.replace("PRETTY_NAME=", "").replace("\"", ""))
+            })
+            .unwrap_or_else(|| "Unknown Distro".to_string());
+        report.insert("distro".to_string(), distro);
+
+        let de = std::env::var("XDG_CURRENT_DESKTOP")
+            .or_else(|_| std::env::var("DESKTOP_SESSION"))
+            .unwrap_or_else(|_| "Unknown".to_string());
+        report.insert("de".to_string(), de.clone());
+
+        let de_supported = Self::detect_desktop_environment().is_some();
+        report.insert("de_supported".to_string(), de_supported.to_string());
+
+        let matugen_path = Self::get_matugen_path();
+        let has_matugen = matugen_path.is_some();
+        report.insert("has_matugen".to_string(), has_matugen.to_string());
+
+        let wall_result = Self::get_active_wallpaper();
+        let has_wallpaper = wall_result.is_ok();
+        report.insert("has_wallpaper".to_string(), has_wallpaper.to_string());
+
+        let mut status = "OK".to_string();
+        if !de_supported {
+            status = format!(
+                "DE {} tidak support. Support: GNOME, Hyprland, swww, feh.",
+                de
+            );
+        } else if !has_matugen {
+            status = "Matugen belum install. Run: cargo install matugen".to_string();
+        } else if !has_wallpaper {
+            status = "Wallpaper tidak ditemukan. Set wallpaper dulu di DE.".to_string();
+        }
+        report.insert("status".to_string(), status);
+
+        report
+            .iter()
+            .map(|(k, v)| {
+                (
+                    QString::from(k.as_str()),
+                    QVariant::from(QString::from(v.as_str())),
+                )
+            })
+            .collect()
+    }
+
+    fn get_active_wallpaper() -> Result<String, String> {
+        let de =
+            Self::detect_desktop_environment().ok_or_else(|| "DE tidak support".to_string())?;
+
+        let home = std::env::var("HOME").unwrap_or_default();
+
+        let clean = |raw: &str| -> String {
+            raw.trim()
+                .trim_matches(|c| c == '\'' || c == '"' || c == '\n' || c == '\r')
+                .replace("file://", "")
+        };
+
+        match de {
+            "GNOME" => {
+                if let Ok(out) = Command::new("gsettings")
+                    .args(&["get", "org.gnome.desktop.background", "picture-uri"])
+                    .output()
+                {
+                    let p = clean(&String::from_utf8_lossy(&out.stdout));
+                    if !p.is_empty() && std::path::Path::new(&p).exists() {
+                        return Ok(p);
+                    }
+                }
+            }
+            "Hyprland" => {
+                if let Ok(out) = Command::new("hyprctl")
+                    .args(&["hyprpaper", "listactive"])
+                    .output()
+                {
+                    let stdout = String::from_utf8_lossy(&out.stdout);
+                    if let Some(raw) = stdout.split(" = ").last() {
+                        let p = clean(raw);
+                        if !p.is_empty() && std::path::Path::new(&p).exists() {
+                            return Ok(p);
+                        }
+                    }
+                }
+            }
+            "swww" => {
+                if let Ok(out) = Command::new("swww").arg("query").output() {
+                    let stdout = String::from_utf8_lossy(&out.stdout);
+                    if let Some(raw) = stdout.split(": ").last() {
+                        let p = clean(raw);
+                        if !p.is_empty() && std::path::Path::new(&p).exists() {
+                            return Ok(p);
+                        }
+                    }
+                }
+            }
+            "feh" => {
+                let feh_path = std::path::Path::new(&home).join(".fehbg");
+                if let Ok(content) = std::fs::read_to_string(&feh_path) {
+                    if let Some(raw) = content.split('\'').nth(1) {
+                        let p = clean(raw);
+                        if !p.is_empty() && std::path::Path::new(&p).exists() {
+                            return Ok(p);
+                        }
+                    }
+                }
+            }
+            _ => {}
+        }
+
+        Err("Wallpaper tidak ditemukan".to_string())
+    }
+
+    fn fetch_matugen_colors(&self) -> Result<HashMap<String, String>, String> {
+        let matugen_bin = Self::get_matugen_path()
+            .ok_or_else(|| "Matugen tidak ditemukan. Install: cargo install matugen".to_string())?;
+
+        let wall_path = Self::get_active_wallpaper().map_err(|e| e)?;
+
+        let output = Command::new(&matugen_bin)
+            .args(&["image", &wall_path, "--json", "hex"])
+            .output()
+            .map_err(|e| format!("Gagal eksekusi Matugen: {}", e))?;
 
         if !output.status.success() {
-            return None;
+            return Err(String::from_utf8_lossy(&output.stderr).to_string());
         }
 
         let json_str = String::from_utf8_lossy(&output.stdout);
-        let v: Value = serde_json::from_str(&json_str).ok()?;
+        let v: Value = serde_json::from_str(&json_str)
+            .map_err(|_| "Gagal parsing JSON Matugen.".to_string())?;
 
-        let colors = v["colors"]["dark"].as_object()?;
+        let colors = v["colors"]["dark"]
+            .as_object()
+            .ok_or_else(|| "Struktur JSON Matugen tidak valid.".to_string())?;
 
-        let mut map = HashMap::new();
-
-        let primary = colors.get("primary")?.as_str()?;
+        let primary = colors
+            .get("primary")
+            .and_then(|v| v.as_str())
+            .ok_or_else(|| "Color 'primary' tidak ditemukan.".to_string())?;
         let secondary = colors
             .get("secondary")
-            .or(colors.get("tertiary"))?
-            .as_str()?;
-        let on_surface = colors.get("on_surface")?.as_str()?;
+            .or(colors.get("tertiary"))
+            .and_then(|v| v.as_str())
+            .ok_or_else(|| "Color 'secondary/tertiary' tidak ditemukan.".to_string())?;
+        let on_surface = colors
+            .get("on_surface")
+            .and_then(|v| v.as_str())
+            .ok_or_else(|| "Color 'on_surface' tidak ditemukan.".to_string())?;
         let on_surface_variant = colors
             .get("on_surface_variant")
-            .or(colors.get("on_surface"))?
-            .as_str()?;
+            .or(colors.get("on_surface"))
+            .and_then(|v| v.as_str())
+            .ok_or_else(|| "Color 'on_surface_variant' tidak ditemukan.".to_string())?;
         let surface = colors
             .get("surface_container")
             .or(colors.get("surface"))
             .or(colors.get("background"))
-            .or(colors.get("base"))?
-            .as_str()?;
+            .or(colors.get("base"))
+            .and_then(|v| v.as_str())
+            .ok_or_else(|| "Color 'surface' tidak ditemukan.".to_string())?;
         let outline = colors
             .get("outline")
-            .or(colors.get("outline_variant"))?
-            .as_str()?;
-        let secondary_or_tertiary = colors
-            .get("secondary")
-            .or(colors.get("tertiary"))?
-            .as_str()?;
+            .or(colors.get("outline_variant"))
+            .and_then(|v| v.as_str())
+            .ok_or_else(|| "Color 'outline' tidak ditemukan.".to_string())?;
 
+        let mut map = HashMap::new();
         map.insert("bgmain".to_string(), surface.to_string());
         map.insert("bgoverlay".to_string(), surface.to_string());
         map.insert("graysolid".to_string(), outline.to_string());
@@ -170,30 +379,62 @@ impl ThemeManager {
         map.insert("fxsliderbg".to_string(), surface.to_string());
         map.insert("fxhandle".to_string(), secondary.to_string());
 
-        Some(map)
+        Ok(map)
     }
 
     pub fn sync_with_wallpaper(&mut self) {
-        if let Some(new_colors) = self.fetch_matugen_colors() {
-            let qmap: QVariantMap = new_colors
-                .iter()
-                .map(|(k, v)| {
-                    (
-                        QString::from(k.as_str()),
-                        QVariant::from(QString::from(v.as_str())),
-                    )
-                })
-                .collect();
+        match self.fetch_matugen_colors() {
+            Ok(new_colors) => {
+                let qmap: QVariantMap = new_colors
+                    .iter()
+                    .map(|(k, v)| {
+                        (
+                            QString::from(k.as_str()),
+                            QVariant::from(QString::from(v.as_str())),
+                        )
+                    })
+                    .collect();
 
-            self.colormap = qmap;
-            self.current_raw_colors = new_colors;
-            self.colormap_changed();
+                self.colormap = qmap.clone();
+                self.current_raw_colors = new_colors.clone();
+                self.colormap_changed();
 
-            if let Some(ref config) = self.config {
-                if let Ok(mut cfg) = config.lock() {
-                    cfg.use_wallpaper_theme = true;
-                    cfg.save();
+                if let Some(ref config) = self.config {
+                    if let Ok(mut cfg) = config.lock() {
+                        cfg.use_wallpaper_theme = true;
+                        cfg.matugen_colors = new_colors;
+                        if let Ok(path) = Self::get_active_wallpaper() {
+                            cfg.wallpaper_path = path;
+                        }
+                        cfg.save();
+                    }
                 }
+
+                self.wallpaper_sync_status(true, QString::from("Tema berhasil disinkronisasi!"));
+            }
+            Err(e) => {
+                self.wallpaper_sync_status(false, QString::from(e));
+            }
+        }
+    }
+
+    pub fn set_loonix_manual(&mut self) {
+        if let Some(ref config) = self.config {
+            if let Ok(mut cfg) = config.lock() {
+                cfg.use_wallpaper_theme = false;
+                cfg.save();
+            }
+        }
+
+        let current = self.current_theme.to_string();
+        self.set_theme(current);
+    }
+
+    pub fn set_wallpaper_path(&mut self, path: String) {
+        if let Some(ref config) = self.config {
+            if let Ok(mut cfg) = config.lock() {
+                cfg.wallpaper_path = path;
+                cfg.save();
             }
         }
     }

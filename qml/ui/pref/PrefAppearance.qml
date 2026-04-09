@@ -1,16 +1,30 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
+import QtQuick.Dialogs
 import "../contextmenu"
 
 Item {
     id: root
     property int refreshTicker: 0
+    property string wallSyncError: ""
+    property string currentWallpaper: ""
+    property bool wallSyncEnabled: false
 
     Connections {
         target: theme
         function onCustom_themes_changed() {
             refreshTicker++
+        }
+        function onWallpaper_sync_status(success, message) {
+            wallSyncToggle.isSyncing = false
+            if (!success) {
+                wallSyncError = message
+                wallSyncEnabled = false
+            } else {
+                wallSyncError = ""
+                wallSyncEnabled = true
+            }
         }
     }
 
@@ -206,176 +220,172 @@ Item {
                 Layout.bottomMargin: 20 
             }
 
-            /// --- 4. THEME ENGINE (LOONIX VS WALLPAPER) ---
+            // --- 2. THEME ENGINE SECTION ---
             ColumnLayout {
                 Layout.fillWidth: true
-                spacing: 16
+                spacing: 20
 
                 Text {
-                    Layout.alignment: Qt.AlignHCenter 
+                    Layout.alignment: Qt.AlignHCenter
                     text: "THEME ENGINE"
-                    font.family: kodeMono.name
-                    font.pixelSize: 20
-                    font.bold: true
-                    color: theme.colormap.playerhover
+                    font.family: kodeMono.name; font.pixelSize: 16; font.bold: true
+                    color: theme.colormap.playeraccent
                 }
 
-                // Bungkus opsi atas-bawah
-                ColumnLayout {
+                // --- OPSI A: LOONIX MANUAL ---
+                RowLayout {
                     Layout.fillWidth: true
                     spacing: 12
+                    opacity: !theme.use_wallpaper_theme ? 1.0 : 0.5
 
-                    // --- OPSI 1: LOONIX MANUAL ---
-                    Item {
-                        Layout.fillWidth: true
-                        implicitHeight: loonixRow.implicitHeight
-                        opacity: loonixToggle.active ? 1.0 : 0.4
-                        Behavior on opacity { NumberAnimation { duration: 200 } }
-
-                        RowLayout {
-                            id: loonixRow
-                            anchors.fill: parent
-                            spacing: 12
-
-                            // Toggle (Lebar Fix)
-                            Rectangle {
-                                Layout.alignment: Qt.AlignTop 
-                                Layout.preferredWidth: 40
-                                Layout.preferredHeight: 20
-                                radius: 10
-                                color: loonixToggle.active ? theme.colormap.playeraccent : theme.colormap.graysolid
-                                border.color: theme.colormap.bgoverlay
-                                border.width: 2
-                                Behavior on color { ColorAnimation { duration: 150 } }
-
-                                Rectangle {
-                                    anchors.verticalCenter: parent.verticalCenter
-                                    x: loonixToggle.active ? parent.width - 16 - 2 : 2
-                                    width: 16
-                                    height: 16
-                                    radius: 8
-                                    color: loonixToggle.active ? theme.colormap.bgmain : theme.colormap.tabtext
-                                    Behavior on x { NumberAnimation { duration: 150 } }
-                                }
-                            }
-
-                            // Teks (Lebar Fleksibel & Word Wrap)
-                            ColumnLayout {
-                                Layout.fillWidth: true 
-                                spacing: 2
-
-                                Text {
-                                    Layout.fillWidth: true
-                                    wrapMode: Text.WordWrap
-                                    text: "Loonix Custom Theme"
-                                    font.family: kodeMono.name
-                                    font.pixelSize: 11
-                                    font.bold: true
-                                    color: theme.colormap.tabtext
-                                }
-                                Text {
-                                    Layout.fillWidth: true
-                                    wrapMode: Text.WordWrap
-                                    text: "Use color scheme from Loonix App."
-                                    font.family: kodeMono.name
-                                    font.pixelSize: 10
-                                    color: theme.colormap.playersubtext
-                                }
-                            }
+                    // Toggle Switch Manual
+                    Rectangle {
+                        width: 34; height: 18; radius: 9
+                        color: !theme.use_wallpaper_theme ? theme.colormap.playeraccent : theme.colormap.graysolid
+                        Rectangle {
+                            x: !theme.use_wallpaper_theme ? 18 : 2; y: 2; width: 14; height: 14; radius: 7
+                            color: theme.colormap.bgmain
+                            Behavior on x { NumberAnimation { duration: 150 } }
                         }
-
-                        // Area klik seluas kotaknya (gak harus ngeklik pas di toggle)
                         MouseArea {
-                            id: loonixToggle
-                            property bool active: !wallSyncToggle.active
                             anchors.fill: parent
                             cursorShape: Qt.PointingHandCursor
-                            onClicked: {
-                                wallSyncToggle.active = false
-                                active = true
-                            }
+                            onClicked: theme.set_loonix_manual()
                         }
                     }
 
-                    // --- OPSI 2: WALLPAPER SYNC ---
-                    Item {
+                    ColumnLayout {
+                        spacing: 1
+                        Text { text: "Manual Theme Mode"; font.family: kodeMono.name; font.pixelSize: 11; font.bold: true; color: theme.colormap.tabtext }
+                        Text { text: "Use presets or custom editor colors."; font.family: kodeMono.name; font.pixelSize: 9; color: theme.colormap.playersubtext }
+                    }
+                }
+
+                // --- OPSI B: WALLPAPER SYNC (MATUGEN) ---
+                ColumnLayout {
+                    Layout.fillWidth: true
+                    spacing: 10
+
+                    RowLayout {
                         Layout.fillWidth: true
-                        implicitHeight: wallSyncRow.implicitHeight
-                        opacity: wallSyncToggle.active ? 1.0 : 0.4
-                        Behavior on opacity { NumberAnimation { duration: 200 } }
+                        spacing: 12
 
-                        RowLayout {
-                            id: wallSyncRow
-                            anchors.fill: parent
-                            spacing: 12
-
-                            // Toggle (Lebar Fix)
+                        // Toggle Status (Hanya indikator)
+                        Rectangle {
+                            width: 34; height: 18; radius: 9
+                            color: theme.use_wallpaper_theme ? theme.colormap.playeraccent : theme.colormap.graysolid
                             Rectangle {
-                                Layout.alignment: Qt.AlignTop
-                                Layout.preferredWidth: 40
-                                Layout.preferredHeight: 20
-                                radius: 10
-                                color: wallSyncToggle.active ? theme.colormap.playeraccent : theme.colormap.graysolid
-                                border.color: theme.colormap.bgoverlay
-                                border.width: 2
-                                Behavior on color { ColorAnimation { duration: 150 } }
+                                x: theme.use_wallpaper_theme ? 18 : 2; y: 2; width: 14; height: 14; radius: 7
+                                color: theme.colormap.bgmain
+                                Behavior on x { NumberAnimation { duration: 150 } }
+                            }
+                        }
 
-                                Rectangle {
-                                    anchors.verticalCenter: parent.verticalCenter
-                                    x: wallSyncToggle.active ? parent.width - 16 - 2 : 2
-                                    width: 16
-                                    height: 16
-                                    radius: 8
-                                    color: wallSyncToggle.active ? theme.colormap.bgmain : theme.colormap.tabtext
-                                    Behavior on x { NumberAnimation { duration: 150 } }
-                                }
+                        ColumnLayout {
+                            Layout.fillWidth: true; spacing: 1
+                            Text { text: "Wallpaper Sync Mode"; font.family: kodeMono.name; font.pixelSize: 11; font.bold: true; color: theme.colormap.tabtext }
+                            Text { text: "Extract colors from your current wallpaper."; font.family: kodeMono.name; font.pixelSize: 9; color: theme.colormap.playersubtext }
+                        }
+                    }
+
+                    // --- ACTION BUTTONS: [SYNC] [SET] ---
+                    RowLayout {
+                        Layout.fillWidth: true
+                        Layout.leftMargin: 46
+                        spacing: 10
+
+                        // Button SYNC
+                        Rectangle {
+                            id: syncBtn
+                            property bool isSyncing: false
+                            width: 70; height: 26; radius: 4
+                            color: isSyncing ? theme.colormap.bgmain : theme.colormap.bgoverlay
+                            border.color: theme.colormap.playeraccent
+                            border.width: 1
+
+                            Text {
+                                anchors.centerIn: parent
+                                text: syncBtn.isSyncing ? "..." : "SYNC"
+                                font.family: kodeMono.name; font.pixelSize: 10; font.bold: true
+                                color: theme.colormap.playeraccent
                             }
 
-                            // Teks (Lebar Fleksibel & Word Wrap)
-                            ColumnLayout {
-                                Layout.fillWidth: true
-                                spacing: 2
-
-                                Text {
-                                    Layout.fillWidth: true
-                                    wrapMode: Text.WordWrap
-                                    text: "Wallpaper Sync (Matugen)"
-                                    font.family: kodeMono.name
-                                    font.pixelSize: 11
-                                    font.bold: true
-                                    color: theme.colormap.tabtext
-                                }
-                                Text {
-                                    Layout.fillWidth: true
-                                    wrapMode: Text.WordWrap
-                                    text: "Use color scheme from device wallpaper."
-                                    font.family: kodeMono.name
-                                    font.pixelSize: 10
-                                    color: theme.colormap.playersubtext
+                            MouseArea {
+                                anchors.fill: parent
+                                cursorShape: syncBtn.isSyncing ? Qt.WaitCursor : Qt.PointingHandCursor
+                                onClicked: {
+                                    syncBtn.isSyncing = true
+                                    theme.sync_with_wallpaper()
                                 }
                             }
                         }
 
-                        // Area klik seluas kotaknya
-                        MouseArea {
-                            id: wallSyncToggle
-                            property bool active: false
-                            anchors.fill: parent
-                            cursorShape: Qt.PointingHandCursor
-                            onClicked: {
-                                if (!active) {
-                                    active = true
-                                    loonixToggle.active = false
-                                    theme.sync_with_wallpaper()
-                                }
+                        // Button SET (Enabled only if sync successful)
+                        Rectangle {
+                            id: setBtn
+                            width: 70; height: 26; radius: 4
+                            // Nyala cuma kalau theme.is_sync_ready (dari Rust)
+                            color: theme.is_sync_ready ? theme.colormap.playeraccent : theme.colormap.bgmain
+                            opacity: theme.is_sync_ready ? 1.0 : 0.3
+                            border.color: theme.is_sync_ready ? "transparent" : theme.colormap.graysolid
+
+                            Text {
+                                anchors.centerIn: parent
+                                text: "SET"
+                                font.family: kodeMono.name; font.pixelSize: 10; font.bold: true
+                                color: theme.is_sync_ready ? theme.colormap.bgmain : theme.colormap.playersubtext
                             }
+
+                            MouseArea {
+                                anchors.fill: parent
+                                enabled: theme.is_sync_ready
+                                cursorShape: Qt.PointingHandCursor
+                                onClicked: theme.apply_wallpaper_theme()
+                            }
+                        }
+                        
+                        Text {
+                            Layout.fillWidth: true
+                            text: theme.is_sync_ready ? "← Ready to apply!" : ""
+                            font.family: kodeMono.name; font.pixelSize: 9; color: "#55ff55"
+                        }
+                    }
+                }
+
+                // --- Error Display ---
+                Rectangle {
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: errTxt.implicitHeight + 10
+                    color: "#22ff5555"; radius: 4; visible: wallSyncError !== ""
+                    Text {
+                        id: errTxt; anchors.centerIn: parent; width: parent.width - 20
+                        text: "⚠ " + wallSyncError; color: "#ff8888"
+                        font.family: kodeMono.name; font.pixelSize: 9; wrapMode: Text.Wrap
+                    }
+                }
+
+                // --- SYSTEM DIAGNOSTICS (Box Kecil) ---
+                Rectangle {
+                    Layout.fillWidth: true
+                    height: diagCol.implicitHeight + 16
+                    radius: 4; color: theme.colormap.bgoverlay
+                    border.color: theme.colormap.graysolid
+
+                    ColumnLayout {
+                        id: diagCol; anchors.fill: parent; anchors.margins: 8; spacing: 4
+                        Text { text: "SYSTEM DIAGNOSTICS"; font.family: kodeMono.name; font.pixelSize: 9; font.bold: true; color: theme.colormap.playeraccent }
+                        
+                        RowLayout {
+                            spacing: 15
+                            Text { text: "DE: " + theme.get_system_report().de; font.family: kodeMono.name; font.pixelSize: 8; color: theme.colormap.playersubtext }
+                            Text { text: "Matugen: " + (theme.get_system_report().has_matugen === "true" ? "OK" : "MISSING"); font.family: kodeMono.name; font.pixelSize: 8; color: theme.colormap.playersubtext }
+                            Text { text: "Wallpaper: " + (theme.get_system_report().has_wallpaper === "true" ? "DETECTED" : "NOT FOUND"); font.family: kodeMono.name; font.pixelSize: 8; color: theme.colormap.playersubtext }
                         }
                     }
                 }
             }
 
-            Item { Layout.preferredHeight: 20 }
-            Item { Layout.fillHeight: true } // Spacer bawah biar gak mentok
+            Item { Layout.preferredHeight: 40 }
         }
     }
 }

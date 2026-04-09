@@ -14,7 +14,7 @@ ColumnLayout {
         currentIndex: (Qt.platform.os === "linux") ? 2 : 0
         onOptionSelected: (index, value) => {
             console.log("OS: " + Qt.platform.os + " | User milih:", value)
-            musicModel.set_output_device(index)
+            // TODO: implement set_output_device in Rust backend
         }
     }
 

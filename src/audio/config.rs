@@ -74,6 +74,8 @@ pub struct AppConfig {
     pub theme: String,
     pub custom_themes: Vec<CustomTheme>,
     pub use_wallpaper_theme: bool,
+    pub matugen_colors: HashMap<String, String>,
+    pub wallpaper_path: String,
 }
 
 fn default_bass_cutoff() -> f32 {
@@ -255,6 +257,8 @@ impl Default for AppConfig {
                 },
             ],
             use_wallpaper_theme: false,
+            matugen_colors: HashMap::new(),
+            wallpaper_path: String::new(),
         }
     }
 }

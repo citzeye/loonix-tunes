@@ -44,6 +44,7 @@ qmetaobject = "0.2.10"
 # --- DESKTOP ONLY (Linux + Windows): Trash ---
 [target.'cfg(any(target_os = "linux", target_os = "windows"))'.dependencies]
 trash = "5.2.5"
+which = "6.0"
 
 # --- UI & UTILS (Universal) ---
 cstr = "0.2"
