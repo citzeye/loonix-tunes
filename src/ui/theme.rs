@@ -1,6 +1,8 @@
 /* --- LOONIX-TUNES src/ui/theme.rs --- */
 use qmetaobject::*;
+use serde_json::Value;
 use std::collections::HashMap;
+use std::process::Command;
 use std::sync::{Arc, Mutex};
 
 use crate::audio::config::{AppConfig, CustomTheme};
@@ -29,10 +31,13 @@ pub struct ThemeManager {
     pub get_default_colors: qt_method!(fn(&self) -> QVariantMap),
     pub get_editor_starter_colors:
         qt_method!(fn(&self, is_edit_mode: bool, index: i32) -> QVariantMap),
+    pub sync_with_wallpaper: qt_method!(fn(&mut self)),
+    pub is_matugen_available: qt_method!(fn(&self) -> bool),
 
     custom_themes: Vec<CustomTheme>,
     current_raw_colors: HashMap<String, String>,
     config: Option<Arc<Mutex<AppConfig>>>,
+    matugen_available: bool,
 }
 
 impl ThemeManager {
@@ -63,6 +68,134 @@ impl ThemeManager {
 
         self.config = Some(config);
         self.set_theme(theme_name);
+        self.check_matugen();
+    }
+
+    fn check_matugen(&mut self) {
+        let output = Command::new("matugen").arg("--version").output();
+        self.matugen_available = output.map(|o| o.status.success()).unwrap_or(false);
+    }
+
+    pub fn is_matugen_available(&self) -> bool {
+        self.matugen_available
+    }
+
+    fn fetch_matugen_colors(&mut self) -> Option<HashMap<String, String>> {
+        let output = Command::new("matugen")
+            .args(&["wallpaper", "--json", "hex"])
+            .output()
+            .ok()?;
+
+        if !output.status.success() {
+            return None;
+        }
+
+        let json_str = String::from_utf8_lossy(&output.stdout);
+        let v: Value = serde_json::from_str(&json_str).ok()?;
+
+        let colors = v["colors"]["dark"].as_object()?;
+
+        let mut map = HashMap::new();
+
+        let primary = colors.get("primary")?.as_str()?;
+        let secondary = colors
+            .get("secondary")
+            .or(colors.get("tertiary"))?
+            .as_str()?;
+        let on_surface = colors.get("on_surface")?.as_str()?;
+        let on_surface_variant = colors
+            .get("on_surface_variant")
+            .or(colors.get("on_surface"))?
+            .as_str()?;
+        let surface = colors
+            .get("surface_container")
+            .or(colors.get("surface"))
+            .or(colors.get("background"))
+            .or(colors.get("base"))?
+            .as_str()?;
+        let outline = colors
+            .get("outline")
+            .or(colors.get("outline_variant"))?
+            .as_str()?;
+        let secondary_or_tertiary = colors
+            .get("secondary")
+            .or(colors.get("tertiary"))?
+            .as_str()?;
+
+        map.insert("bgmain".to_string(), surface.to_string());
+        map.insert("bgoverlay".to_string(), surface.to_string());
+        map.insert("graysolid".to_string(), outline.to_string());
+        map.insert("contextmenubg".to_string(), surface.to_string());
+        map.insert("overlay".to_string(), outline.to_string());
+        map.insert("headerbg".to_string(), surface.to_string());
+        map.insert("headericon".to_string(), on_surface_variant.to_string());
+        map.insert("headertext".to_string(), on_surface_variant.to_string());
+        map.insert("headerhover".to_string(), primary.to_string());
+        map.insert("playertitle".to_string(), on_surface.to_string());
+        map.insert("playersubtext".to_string(), on_surface_variant.to_string());
+        map.insert("playeraccent".to_string(), primary.to_string());
+        map.insert("playerhover".to_string(), secondary.to_string());
+        map.insert("tabtext".to_string(), on_surface.to_string());
+        map.insert("tabborder".to_string(), outline.to_string());
+        map.insert("tabhover".to_string(), primary.to_string());
+        map.insert("playlisttext".to_string(), on_surface.to_string());
+        map.insert("playlistfolder".to_string(), secondary.to_string());
+        map.insert("playlistactive".to_string(), primary.to_string());
+        map.insert("playlisticon".to_string(), secondary.to_string());
+        map.insert("eqbg".to_string(), surface.to_string());
+        map.insert("eqborder".to_string(), outline.to_string());
+        map.insert("eqtext".to_string(), on_surface.to_string());
+        map.insert("eqsubtext".to_string(), on_surface_variant.to_string());
+        map.insert("eqicon".to_string(), secondary.to_string());
+        map.insert("eqhover".to_string(), secondary.to_string());
+        map.insert("eqpresettext".to_string(), on_surface_variant.to_string());
+        map.insert("eqpresetactive".to_string(), primary.to_string());
+        map.insert("eq10slider".to_string(), secondary.to_string());
+        map.insert("eq10handle".to_string(), primary.to_string());
+        map.insert("eq10bg".to_string(), "#111111".to_string());
+        map.insert("eqfaderslider".to_string(), secondary.to_string());
+        map.insert("eqfaderhandle".to_string(), primary.to_string());
+        map.insert("eqfaderbg".to_string(), "#111111".to_string());
+        map.insert("eqmixslider".to_string(), secondary.to_string());
+        map.insert("eqmixhandle".to_string(), primary.to_string());
+        map.insert("eqmixbg".to_string(), "#111111".to_string());
+        map.insert("fxbg".to_string(), surface.to_string());
+        map.insert("fxborder".to_string(), outline.to_string());
+        map.insert("fxtext".to_string(), on_surface.to_string());
+        map.insert("fxsubtext".to_string(), on_surface_variant.to_string());
+        map.insert("fxicon".to_string(), secondary.to_string());
+        map.insert("fxhover".to_string(), secondary.to_string());
+        map.insert("fxactive".to_string(), primary.to_string());
+        map.insert("fxslider".to_string(), primary.to_string());
+        map.insert("fxsliderbg".to_string(), surface.to_string());
+        map.insert("fxhandle".to_string(), secondary.to_string());
+
+        Some(map)
+    }
+
+    pub fn sync_with_wallpaper(&mut self) {
+        if let Some(new_colors) = self.fetch_matugen_colors() {
+            let qmap: QVariantMap = new_colors
+                .iter()
+                .map(|(k, v)| {
+                    (
+                        QString::from(k.as_str()),
+                        QVariant::from(QString::from(v.as_str())),
+                    )
+                })
+                .collect();
+
+            self.colormap = qmap;
+            self.current_raw_colors = new_colors;
+            self.colormap_changed();
+
+            if let Some(ref config) = self.config {
+                if let Ok(mut cfg) = config.lock() {
+                    cfg.use_wallpaper_theme = true;
+                    cfg.save();
+                }
+            }
+        }
     }
 
     pub fn get_custom_theme_count(&self) -> i32 {

@@ -73,6 +73,7 @@ pub struct AppConfig {
     // Theme settings
     pub theme: String,
     pub custom_themes: Vec<CustomTheme>,
+    pub use_wallpaper_theme: bool,
 }
 
 fn default_bass_cutoff() -> f32 {
@@ -253,6 +254,7 @@ impl Default for AppConfig {
                     colors: Self::default_theme_colors(),
                 },
             ],
+            use_wallpaper_theme: false,
         }
     }
 }
