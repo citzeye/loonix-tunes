@@ -10,6 +10,7 @@ Item {
     property string wallSyncError: ""
     property string currentWallpaper: ""
     property bool wallSyncEnabled: false
+    property bool wallSyncSyncing: false
 
     Connections {
         target: theme
@@ -17,7 +18,7 @@ Item {
             refreshTicker++
         }
         function onWallpaper_sync_status(success, message) {
-            wallSyncToggle.isSyncing = false
+            wallSyncSyncing = false
             if (!success) {
                 wallSyncError = message
                 wallSyncEnabled = false
