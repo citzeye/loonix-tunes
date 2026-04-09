@@ -55,11 +55,17 @@ Item {
             "eqsubtext": inEqSubtext.inputText,
             "eqicon": inEqIcon.inputText,
             "eqhover": inEqHover.inputText,
-            "eqactive": inEqActive.inputText,
-            "eqsliderbg": inEqSliderBg.inputText,
-            "eqfader": inEqFader.inputText,
-            "eqmix": inEqMix.inputText,
-            "eqhandle": inEqHandle.inputText,
+            "eqpresettext": inEqPresetText.inputText,
+            "eqpresetactive": inEqPresetActive.inputText,
+            "eq10slider": inEq10Slider.inputText,
+            "eq10handle": inEq10Handle.inputText,
+            "eq10bg": inEq10Bg.inputText,
+            "eqfaderslider": inEqFaderSlider.inputText,
+            "eqfaderhandle": inEqFaderHandle.inputText,
+            "eqfaderbg": inEqFaderBg.inputText,
+            "eqmixslider": inEqMixSlider.inputText,
+            "eqmixhandle": inEqMixHandle.inputText,
+            "eqmixbg": inEqMixBg.inputText,
             "fxbg": inFxBg.inputText,
             "fxborder": inFxBorder.inputText,
             "fxtext": inFxText.inputText,
@@ -106,11 +112,17 @@ Item {
                 inEqSubtext.inputText = savedColors.eqsubtext;
                 inEqIcon.inputText = savedColors.eqicon;
                 inEqHover.inputText = savedColors.eqhover;
-                inEqActive.inputText = savedColors.eqactive;
-                inEqSliderBg.inputText = savedColors.eqsliderbg;
-                inEqFader.inputText = savedColors.eqfader;
-                inEqMix.inputText = savedColors.eqmix;
-                inEqHandle.inputText = savedColors.eqhandle;
+                inEqPresetText.inputText = savedColors.eqpresettext;
+                inEqPresetActive.inputText = savedColors.eqpresetactive;
+                inEq10Slider.inputText = savedColors.eq10slider;
+                inEq10Handle.inputText = savedColors.eq10handle;
+                inEq10Bg.inputText = savedColors.eq10bg;
+                inEqFaderSlider.inputText = savedColors.eqfaderslider;
+                inEqFaderHandle.inputText = savedColors.eqfaderhandle;
+                inEqFaderBg.inputText = savedColors.eqfaderbg;
+                inEqMixSlider.inputText = savedColors.eqmixslider;
+                inEqMixHandle.inputText = savedColors.eqmixhandle;
+                inEqMixBg.inputText = savedColors.eqmixbg;
                 inFxBg.inputText = savedColors.fxbg;
                 inFxBorder.inputText = savedColors.fxborder;
                 inFxText.inputText = savedColors.fxtext;
@@ -149,11 +161,17 @@ Item {
                 inEqSubtext.inputText = theme.colormap.eqsubtext;
                 inEqIcon.inputText = theme.colormap.eqicon;
                 inEqHover.inputText = theme.colormap.eqhover;
-                inEqActive.inputText = theme.colormap.eqactive;
-                inEqSliderBg.inputText = theme.colormap.eqsliderbg;
-                inEqFader.inputText = theme.colormap.eqfader;
-                inEqMix.inputText = theme.colormap.eqmix;
-                inEqHandle.inputText = theme.colormap.eqhandle;
+                inEqPresetText.inputText = theme.colormap.eqpresettext;
+                inEqPresetActive.inputText = theme.colormap.eqpresetactive;
+                inEq10Slider.inputText = theme.colormap.eq10slider;
+                inEq10Handle.inputText = theme.colormap.eq10handle;
+                inEq10Bg.inputText = theme.colormap.eq10bg;
+                inEqFaderSlider.inputText = theme.colormap.eqfaderslider;
+                inEqFaderHandle.inputText = theme.colormap.eqfaderhandle;
+                inEqFaderBg.inputText = theme.colormap.eqfaderbg;
+                inEqMixSlider.inputText = theme.colormap.eqmixslider;
+                inEqMixHandle.inputText = theme.colormap.eqmixhandle;
+                inEqMixBg.inputText = theme.colormap.eqmixbg;
                 inFxBg.inputText = theme.colormap.fxbg;
                 inFxBorder.inputText = theme.colormap.fxborder;
                 inFxText.inputText = theme.colormap.fxtext;
@@ -502,29 +520,59 @@ Item {
                         hexValue: theme.colormap.eqhover
                     }
                     ColorInputRow {
-                        id: inEqActive
-                        labelText: "eqactive"
-                        hexValue: theme.colormap.eqactive
+                        id: inEqPresetText
+                        labelText: "eqpresettext"
+                        hexValue: theme.colormap.eqpresettext
                     }
                     ColorInputRow {
-                        id: inEqSliderBg
-                        labelText: "eqsliderbg"
-                        hexValue: theme.colormap.eqsliderbg
+                        id: inEqPresetActive
+                        labelText: "eqpresetactive"
+                        hexValue: theme.colormap.eqpresetactive
                     }
                     ColorInputRow {
-                        id: inEqFader
-                        labelText: "eqfader"
-                        hexValue: theme.colormap.eqfader
+                        id: inEq10Slider
+                        labelText: "eq10slider"
+                        hexValue: theme.colormap.eq10slider
                     }
                     ColorInputRow {
-                        id: inEqMix
-                        labelText: "eqmix"
-                        hexValue: theme.colormap.eqmix
+                        id: inEq10Handle
+                        labelText: "eq10handle"
+                        hexValue: theme.colormap.eq10handle
                     }
                     ColorInputRow {
-                        id: inEqHandle
-                        labelText: "eqhandle"
-                        hexValue: theme.colormap.eqhandle
+                        id: inEq10Bg
+                        labelText: "eq10bg"
+                        hexValue: theme.colormap.eq10bg
+                    }
+                    ColorInputRow {
+                        id: inEqFaderSlider
+                        labelText: "eqfaderslider"
+                        hexValue: theme.colormap.eqfaderslider
+                    }
+                    ColorInputRow {
+                        id: inEqFaderHandle
+                        labelText: "eqfaderhandle"
+                        hexValue: theme.colormap.eqfaderhandle
+                    }
+                    ColorInputRow {
+                        id: inEqFaderBg
+                        labelText: "eqfaderbg"
+                        hexValue: theme.colormap.eqfaderbg
+                    }
+                    ColorInputRow {
+                        id: inEqMixSlider
+                        labelText: "eqmixslider"
+                        hexValue: theme.colormap.eqmixslider
+                    }
+                    ColorInputRow {
+                        id: inEqMixHandle
+                        labelText: "eqmixhandle"
+                        hexValue: theme.colormap.eqmixhandle
+                    }
+                    ColorInputRow {
+                        id: inEqMixBg
+                        labelText: "eqmixbg"
+                        hexValue: theme.colormap.eqmixbg
                     }
 
                     // === FX ===
@@ -665,11 +713,17 @@ Item {
                             inEqSubtext.inputText = defaults.eqsubtext;
                             inEqIcon.inputText = defaults.eqicon;
                             inEqHover.inputText = defaults.eqhover;
-                            inEqActive.inputText = defaults.eqactive;
-                            inEqSliderBg.inputText = defaults.eqsliderbg;
-                            inEqFader.inputText = defaults.eqfader;
-                            inEqMix.inputText = defaults.eqmix;
-                            inEqHandle.inputText = defaults.eqhandle;
+                            inEqPresetText.inputText = defaults.eqpresettext;
+                            inEqPresetActive.inputText = defaults.eqpresetactive;
+                            inEq10Slider.inputText = defaults.eq10slider;
+                            inEq10Handle.inputText = defaults.eq10handle;
+                            inEq10Bg.inputText = defaults.eq10bg;
+                            inEqFaderSlider.inputText = defaults.eqfaderslider;
+                            inEqFaderHandle.inputText = defaults.eqfaderhandle;
+                            inEqFaderBg.inputText = defaults.eqfaderbg;
+                            inEqMixSlider.inputText = defaults.eqmixslider;
+                            inEqMixHandle.inputText = defaults.eqmixhandle;
+                            inEqMixBg.inputText = defaults.eqmixbg;
                             inFxBg.inputText = defaults.fxbg;
                             inFxBorder.inputText = defaults.fxborder;
                             inFxText.inputText = defaults.fxtext;

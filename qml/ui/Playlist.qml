@@ -195,22 +195,23 @@ Rectangle {
           onEntered: parent.isHovered = true
           onExited: parent.isHovered = false
 
-          onClicked: function(mouse) {
-            if (mouse.button === Qt.LeftButton) {
-              if (model.is_folder) {
-                musicModel.toggle_folder(model.path)
-              } else {
-                musicModel.play_at(index)
-              }
-            } else if (mouse.button === Qt.RightButton) {
-              root.popupMenuVisible = false
-              root.tabContextMenuVisible = false
-              root.externalFilesContextMenuVisible = false
-              root.rightClickedIndex = index
-              root.playlistContextItemIndex = index
-              root.playlistContextItemName = String(model.name || "")
-              root.playlistContextItemPath = String(model.path || "")
-              root.playlistContextIsFolder = Boolean(model.is_folder)
+           onClicked: function(mouse) {
+             if (mouse.button === Qt.LeftButton) {
+               if (model.is_folder) {
+                 musicModel.toggle_folder(model.path)
+               } else {
+                 musicModel.play_at(index)
+               }
+             } else if (mouse.button === Qt.RightButton) {
+               parent.isHovered = false
+               root.popupMenuVisible = false
+               root.tabContextMenuVisible = false
+               root.externalFilesContextMenuVisible = false
+               root.rightClickedIndex = index
+               root.playlistContextItemIndex = index
+               root.playlistContextItemName = String(model.name || "")
+               root.playlistContextItemPath = String(model.path || "")
+               root.playlistContextIsFolder = Boolean(model.is_folder)
 
               var menuHeight = 170
               var menuWidth = 170

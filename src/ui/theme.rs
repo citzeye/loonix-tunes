@@ -1,97 +1,14 @@
 /* --- LOONIX-TUNES src/ui/theme.rs --- */
 use qmetaobject::*;
-use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use std::sync::{Arc, Mutex};
+
+use crate::audio::config::{AppConfig, CustomTheme};
 
 macro_rules! c {
     ($map:expr, { $($key:expr, $val:expr),* $(,)? }) => {
         $( $map.insert($key.to_string(), $val.to_string()); )*
     };
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-pub struct AppConfig {
-    pub theme: String,
-    pub custom_themes: Vec<CustomTheme>,
-}
-
-#[derive(Serialize, Deserialize, Debug, Clone, Default)]
-pub struct CustomTheme {
-    pub name: String,
-    pub colors: HashMap<String, String>,
-}
-
-impl Default for AppConfig {
-    fn default() -> Self {
-        let default_colors = Self::get_default_colors_internal();
-        Self {
-            theme: "Custom 1".to_string(),
-            custom_themes: vec![
-                CustomTheme {
-                    name: "Custom 1".to_string(),
-                    colors: default_colors.clone(),
-                },
-                CustomTheme {
-                    name: "Custom 2".to_string(),
-                    colors: default_colors.clone(),
-                },
-                CustomTheme {
-                    name: "Custom 3".to_string(),
-                    colors: default_colors.clone(),
-                },
-            ],
-        }
-    }
-}
-
-impl AppConfig {
-    fn get_default_colors_internal() -> HashMap<String, String> {
-        let mut map: HashMap<String, String> = HashMap::new();
-        c!(map, {
-            "bgmain", "#15141b",
-            "bgoverlay", "#201f2b",
-            "graysolid", "#6d6d6d",
-            "contextmenubg", "#2d2d2d",
-            "overlay", "#000000",
-            "headerbg", "#201f2b",
-            "headericon", "#6d6d6d",
-            "headertext", "#6d6d6d",
-            "headerhover", "#ff1ae0",
-            "playertitle", "#00ffa2",
-            "playersubtext", "#57caab",
-            "playeraccent", "#9442ff",
-            "playerhover", "#ff1ae0",
-            "tabtext", "#c6c6c6",
-            "tabborder", "#00ffa2",
-            "tabhover", "#ff1ae0",
-            "playlisttext", "#c6c6c6",
-            "playlistfolder", "#ff881a",
-            "playlistactive", "#00ffa2",
-            "playlisticon", "#ff881a",
-            "eqbg", "#201f2b",
-            "eqborder", "#00ffa2",
-            "eqtext", "#00ffa2",
-            "eqsubtext", "#57caab",
-            "eqicon", "#ff881a",
-            "eqhover", "#ff1ae0",
-            "eqactive", "#9442ff",
-            "eqsliderbg", "#201f2b",
-            "eqfader", "#ff881a",
-            "eqmix", "#ff1ae0",
-            "eqhandle", "#9442ff",
-            "fxbg", "#201f2b",
-            "fxborder", "#00ffa2",
-            "fxtext", "#00ffa2",
-            "fxsubtext", "#57caab",
-            "fxicon", "#9442ff",
-            "fxhover", "#ff1ae0",
-            "fxactive", "#9442ff",
-            "fxslider", "#9442ff",
-            "fxsliderbg", "#15141b",
-            "fxhandle", "#ff1ae0",
-        });
-        map
-    }
 }
 
 #[derive(QObject, Default)]
@@ -115,29 +32,37 @@ pub struct ThemeManager {
 
     custom_themes: Vec<CustomTheme>,
     current_raw_colors: HashMap<String, String>,
+    config: Option<Arc<Mutex<AppConfig>>>,
 }
 
 impl ThemeManager {
     pub fn new() -> Self {
-        let mut s = Self::default();
-        let cfg: AppConfig = confy::load("loonix-tunes", "config").unwrap_or_default();
+        Self::default()
+    }
+
+    pub fn set_config(&mut self, config: Arc<Mutex<AppConfig>>) {
+        let cfg = config.lock().unwrap();
 
         let theme_name = if cfg.theme.is_empty() {
             "Default".to_string()
         } else {
-            cfg.theme
+            cfg.theme.clone()
         };
-        s.custom_themes = cfg.custom_themes;
 
-        while s.custom_themes.len() < 3 {
-            s.custom_themes.push(CustomTheme {
-                name: format!("Custom {}", s.custom_themes.len() + 1),
+        let custom_themes = cfg.custom_themes.clone();
+        drop(cfg);
+
+        self.custom_themes = custom_themes;
+
+        while self.custom_themes.len() < 3 {
+            self.custom_themes.push(CustomTheme {
+                name: format!("Custom {}", self.custom_themes.len() + 1),
                 colors: HashMap::new(),
             });
         }
 
-        s.set_theme(theme_name);
-        s
+        self.config = Some(config);
+        self.set_theme(theme_name);
     }
 
     pub fn get_custom_theme_count(&self) -> i32 {
@@ -154,9 +79,17 @@ impl ThemeManager {
 
     pub fn set_custom_theme_name(&mut self, index: i32, name: String) {
         if index >= 0 && index < self.custom_themes.len() as i32 {
-            self.custom_themes[index as usize].name = name;
+            let old_name = self.custom_themes[index as usize].name.clone();
+            let is_current_theme = old_name == self.current_theme.to_string();
+
+            self.custom_themes[index as usize].name = name.clone();
             self.save_config();
             self.custom_themes_changed();
+
+            // Smart Apply: Refresh UI if renaming the active theme
+            if is_current_theme {
+                self.set_theme(name);
+            }
         }
     }
 
@@ -202,15 +135,13 @@ impl ThemeManager {
             self.custom_themes_changed();
 
             let theme_name = self.custom_themes[idx].name.clone();
-            if theme_name == self.current_theme.to_string() {
-                self.set_theme(theme_name);
-            }
+            self.set_theme(theme_name);
         }
     }
 
     pub fn get_default_colors(&self) -> QVariantMap {
-        let map = AppConfig::get_default_colors_internal();
-        map.iter()
+        AppConfig::default_theme_colors()
+            .iter()
             .map(|(k, v)| {
                 (
                     QString::from(k.as_str()),
@@ -250,11 +181,13 @@ impl ThemeManager {
     }
 
     fn save_config(&self) {
-        let cfg = AppConfig {
-            theme: self.current_theme.to_string(),
-            custom_themes: self.custom_themes.clone(),
-        };
-        let _ = confy::store("loonix-tunes", "config", cfg);
+        if let Some(ref config) = self.config {
+            if let Ok(mut cfg) = config.lock() {
+                cfg.theme = self.current_theme.to_string();
+                cfg.custom_themes = self.custom_themes.clone();
+                cfg.save();
+            }
+        }
     }
 
     pub fn available_themes() -> Vec<String> {
@@ -313,44 +246,43 @@ impl ThemeManager {
         match name.as_str() {
             "Blue" => {
                 c!(map, {
-                    // BACKGROUNDS
                     "bgmain", "#121212",
                     "bgoverlay", "#1e1e1e",
                     "graysolid", "#333333",
                     "contextmenubg", "#181818",
                     "overlay", "#80000000",
-                    // HEADER
                     "headerbg", "#1e1e1e",
                     "headericon", "#6d6d6d",
                     "headertext", "#6d6d6d",
                     "headerhover", "#00ddff",
-                    // PLAYER
                     "playertitle", "#00ffdd",
                     "playersubtext", "#6d6d6d",
                     "playeraccent", "#00ffdd",
                     "playerhover", "#843ff3",
-                    // TABS
                     "tabtext", "#d1d8e6",
                     "tabborder", "#8a8a8a",
                     "tabhover", "#00ffdd",
-                    // PLAYLIST
                     "playlisttext", "#d1d8e6",
                     "playlistfolder", "#f5a623",
                     "playlistactive", "#843ff3",
                     "playlisticon", "#00ffdd",
-                    // EQ
-                    "eqbg", "#121a2f",
+                    "eqbg", "#121212",
                     "eqborder", "#8a8a8a",
                     "eqtext", "#00e5ff",
                     "eqsubtext", "#6d6d6d",
                     "eqicon", "#00ffdd",
                     "eqhover", "#843ff3",
-                    "eqactive", "#00e5ff",
-                    "eqsliderbg", "#121a2f",
-                    "eqfader", "#f5a623",
-                    "eqmix", "#843ff3",
-                    "eqhandle", "#00ffdd",
-                    // FX
+                    "eqpresettext", "#6d6d6d",
+                    "eqpresetactive", "#00e5ff",
+                    "eq10slider", "#843ff3",
+                    "eq10handle", "#00ffdd",
+                    "eq10bg", "#1e1e1e",
+                    "eqfaderslider", "#f5a623",
+                    "eqfaderhandle", "#8b0000",
+                    "eqfaderbg", "#1e1e1e",
+                    "eqmixslider", "#00ffdd",
+                    "eqmixhandle", "#843ff3",
+                    "eqmixbg", "#1e1e1e",
                     "fxbg", "#1e1e1e",
                     "fxborder", "#8a8a8a",
                     "fxtext", "#00e5ff",
@@ -365,44 +297,43 @@ impl ThemeManager {
             }
             "Green" => {
                 c!(map, {
-                    // BACKGROUNDS
                     "bgmain", "#121212",
                     "bgoverlay", "#1e1e1e",
                     "graysolid", "#333333",
                     "contextmenubg", "#181818",
                     "overlay", "#80000000",
-                    // HEADER
                     "headerbg", "#1e1e1e",
                     "headericon", "#6d6d6d",
                     "headertext", "#6d6d6d",
                     "headerhover", "#00ff26",
-                    // PLAYER
                     "playertitle", "#00ff26",
                     "playersubtext", "#6d6d6d",
                     "playeraccent", "#00ff26",
                     "playerhover", "#ffcc00",
-                    // TABS
                     "tabtext", "#d1e6d8",
                     "tabborder", "#6d6d6d",
                     "tabhover", "#00ff26",
-                    // PLAYLIST
                     "playlisttext", "#d1e6d8",
                     "playlistfolder", "#00ff26",
                     "playlistactive", "#ffcc00",
                     "playlisticon", "#00ff26",
-                    // EQ
                     "eqbg", "#121c15",
                     "eqborder", "#6d6d6d",
                     "eqtext", "#00ff66",
                     "eqsubtext", "#6d6d6d",
                     "eqicon", "#00ff26",
                     "eqhover", "#ffcc00",
-                    "eqactive", "#00ff66",
-                    "eqsliderbg", "#121c15",
-                    "eqfader", "#ff3300",
-                    "eqmix", "#ff00ff",
-                    "eqhandle", "#00ff26",
-                    // FX
+                    "eqpresettext", "#6d6d6d",
+                    "eqpresetactive", "#00ff66",
+                    "eq10slider", "#ffcc00",
+                    "eq10handle", "#00ff26",
+                    "eq10bg", "#1e1e1e",
+                    "eqfaderslider", "#f5a623",
+                    "eqfaderhandle", "#8b0000",
+                    "eqfaderbg", "#1e1e1e",
+                    "eqmixslider", "#00ff26",
+                    "eqmixhandle", "#ffcc00",
+                    "eqmixbg", "#1e1e1e",
                     "fxbg", "#1e1e1e",
                     "fxborder", "#6d6d6d",
                     "fxtext", "#00ff66",
@@ -417,44 +348,43 @@ impl ThemeManager {
             }
             "Monochrome" => {
                 c!(map, {
-                    // BACKGROUNDS
                     "bgmain", "#121212",
                     "bgoverlay", "#1e1e1e",
                     "graysolid", "#333333",
                     "contextmenubg", "#181818",
                     "overlay", "#80000000",
-                    // HEADER
                     "headerbg", "#1e1e1e",
                     "headericon", "#6d6d6d",
                     "headertext", "#6d6d6d",
                     "headerhover", "#ffffff",
-                    // PLAYER
                     "playertitle", "#ffffff",
                     "playersubtext", "#6d6d6d",
                     "playeraccent", "#555555",
                     "playerhover", "#ffffff",
-                    // TABS
                     "tabtext", "#e0e0e0",
                     "tabborder", "#ffffff",
                     "tabhover", "#ffffff",
-                    // PLAYLIST
                     "playlisttext", "#e0e0e0",
                     "playlistfolder", "#d4d4d4",
                     "playlistactive", "#ffffff",
                     "playlisticon", "#d4d4d4",
-                    // EQ
                     "eqbg", "#1e1e1e",
                     "eqborder", "#ffffff",
                     "eqtext", "#ffffff",
                     "eqsubtext", "#8b8b8b",
                     "eqicon", "#d4d4d4",
                     "eqhover", "#ffffff",
-                    "eqactive", "#ffffff",
-                    "eqsliderbg", "#1e1e1e",
-                    "eqfader", "#d4d4d4",
-                    "eqmix", "#ffffff",
-                    "eqhandle", "#d4d4d4",
-                    // FX
+                    "eqpresettext", "#8b8b8b",
+                    "eqpresetactive", "#ffffff",
+                    "eq10slider", "#ffffff",
+                    "eq10handle", "#555555",
+                    "eq10bg", "#1e1e1e",
+                    "eqfaderslider", "#f5a623",
+                    "eqfaderhandle", "#8b0000",
+                    "eqfaderbg", "#1e1e1e",
+                    "eqmixslider", "#555555",
+                    "eqmixhandle", "#ffffff",
+                    "eqmixbg", "#1e1e1e",
                     "fxbg", "#1e1e1e",
                     "fxborder", "#ffffff",
                     "fxtext", "#ffffff",
@@ -469,44 +399,43 @@ impl ThemeManager {
             }
             "Orange" => {
                 c!(map, {
-                    // BACKGROUNDS
                     "bgmain", "#121212",
                     "bgoverlay", "#1e1e1e",
                     "graysolid", "#333333",
                     "contextmenubg", "#181818",
                     "overlay", "#80000000",
-                    // HEADER
                     "headerbg", "#1e1e1e",
                     "headericon", "#6d6d6d",
                     "headertext", "#6d6d6d",
                     "headerhover", "#ffea00",
-                    // PLAYER
                     "playertitle", "#ff5500",
                     "playersubtext", "#6d6d6d",
                     "playeraccent", "#ff5500",
                     "playerhover", "#ffea00",
-                    // TABS
                     "tabtext", "#ecdcd9",
                     "tabborder", "#6d6d6d",
                     "tabhover", "#ff5500",
-                    // PLAYLIST
                     "playlisttext", "#ecdcd9",
                     "playlistfolder", "#ffea00",
                     "playlistactive", "#ff5500",
                     "playlisticon", "#ff5500",
-                    // EQ
                     "eqbg", "#1c1210",
                     "eqborder", "#6d6d6d",
                     "eqtext", "#ff5500",
                     "eqsubtext", "#6d6d6d",
                     "eqicon", "#ff5500",
                     "eqhover", "#ffea00",
-                    "eqactive", "#ff5500",
-                    "eqsliderbg", "#1c1210",
-                    "eqfader", "#00e5ff",
-                    "eqmix", "#ffea00",
-                    "eqhandle", "#ff5500",
-                    // FX
+                    "eqpresettext", "#6d6d6d",
+                    "eqpresetactive", "#ff5500",
+                    "eq10slider", "#ffea00",
+                    "eq10handle", "#ff5500",
+                    "eq10bg", "#1e1e1e",
+                    "eqfaderslider", "#f5a623",
+                    "eqfaderhandle", "#8b0000",
+                    "eqfaderbg", "#1e1e1e",
+                    "eqmixslider", "#ff5500",
+                    "eqmixhandle", "#ffea00",
+                    "eqmixbg", "#1e1e1e",
                     "fxbg", "#1e1e1e",
                     "fxborder", "#6d6d6d",
                     "fxtext", "#ff5500",
@@ -521,44 +450,43 @@ impl ThemeManager {
             }
             "Pink" => {
                 c!(map, {
-                    // BACKGROUNDS
                     "bgmain", "#121212",
                     "bgoverlay", "#1e1e1e",
                     "graysolid", "#333333",
                     "contextmenubg", "#181818",
                     "overlay", "#80000000",
-                    // HEADER
                     "headerbg", "#1e1e1e",
                     "headericon", "#6d6d6d",
                     "headertext", "#6d6d6d",
                     "headerhover", "#00ffcc",
-                    // PLAYER
                     "playertitle", "#f965d9",
                     "playersubtext", "#6d6d6d",
                     "playeraccent", "#f965d9",
                     "playerhover", "#00ffcc",
-                    // TABS
                     "tabtext", "#eedef2",
                     "tabborder", "#6d6d6d",
                     "tabhover", "#f965d9",
-                    // PLAYLIST
                     "playlisttext", "#eedef2",
                     "playlistfolder", "#d59407",
                     "playlistactive", "#65f996",
                     "playlisticon", "#f965d9",
-                    // EQ
                     "eqbg", "#1b101f",
                     "eqborder", "#6d6d6d",
                     "eqtext", "#f965d9",
                     "eqsubtext", "#6d6d6d",
                     "eqicon", "#f965d9",
                     "eqhover", "#00ffcc",
-                    "eqactive", "#f965d9",
-                    "eqsliderbg", "#1b101f",
-                    "eqfader", "#ccff00",
-                    "eqmix", "#00ffcc",
-                    "eqhandle", "#f965d9",
-                    // FX
+                    "eqpresettext", "#6d6d6d",
+                    "eqpresetactive", "#f965d9",
+                    "eq10slider", "#00ffcc",
+                    "eq10handle", "#f965d9",
+                    "eq10bg", "#1e1e1e",
+                    "eqfaderslider", "#f5a623",
+                    "eqfaderhandle", "#8b0000",
+                    "eqfaderbg", "#1e1e1e",
+                    "eqmixslider", "#f965d9",
+                    "eqmixhandle", "#00ffcc",
+                    "eqmixbg", "#1e1e1e",
                     "fxbg", "#1e1e1e",
                     "fxborder", "#6d6d6d",
                     "fxtext", "#f965d9",
@@ -568,49 +496,48 @@ impl ThemeManager {
                     "fxactive", "#f965d9",
                     "fxslider", "#f965d9",
                     "fxsliderbg", "#121212",
-                    "fxhandle", "#f965d9",
+                    "fxhandle", "#00ffcc",
                 });
             }
             "Red" => {
                 c!(map, {
-                    // BACKGROUNDS
                     "bgmain", "#121212",
                     "bgoverlay", "#1e1e1e",
                     "graysolid", "#333333",
                     "contextmenubg", "#181818",
                     "overlay", "#80000000",
-                    // HEADER
                     "headerbg", "#1e1e1e",
                     "headericon", "#6d6d6d",
                     "headertext", "#6d6d6d",
                     "headerhover", "#ff003c",
-                    // PLAYER
                     "playertitle", "#ff003c",
                     "playersubtext", "#bdbdbd",
                     "playeraccent", "#ff003c",
                     "playerhover", "#2b00ff",
-                    // TABS
                     "tabtext", "#bdbdbd",
                     "tabborder", "#6d6d6d",
                     "tabhover", "#ff003c",
-                    // PLAYLIST
                     "playlisttext", "#bdbdbd",
                     "playlistfolder", "#d59407",
                     "playlistactive", "#ff003c",
                     "playlisticon", "#2b00ff",
-                    // EQ
                     "eqbg", "#1c0d0d",
                     "eqborder", "#6d6d6d",
                     "eqtext", "#ff003c",
                     "eqsubtext", "#bdbdbd",
                     "eqicon", "#ff003c",
                     "eqhover", "#2b00ff",
-                    "eqactive", "#ff003c",
-                    "eqsliderbg", "#1c0d0d",
-                    "eqfader", "#bdbdbd",
-                    "eqmix", "#2b00ff",
-                    "eqhandle", "#ff003c",
-                    // FX
+                    "eqpresettext", "#bdbdbd",
+                    "eqpresetactive", "#ff003c",
+                    "eq10slider", "#2b00ff",
+                    "eq10handle", "#ff003c",
+                    "eq10bg", "#1e1e1e",
+                    "eqfaderslider", "#f5a623",
+                    "eqfaderhandle", "#8b0000",
+                    "eqfaderbg", "#1e1e1e",
+                    "eqmixslider", "#ff003c",
+                    "eqmixhandle", "#2b00ff",
+                    "eqmixbg", "#1e1e1e",
                     "fxbg", "#1e1e1e",
                     "fxborder", "#6d6d6d",
                     "fxtext", "#ff003c",
@@ -620,49 +547,48 @@ impl ThemeManager {
                     "fxactive", "#ff003c",
                     "fxslider", "#ff003c",
                     "fxsliderbg", "#121212",
-                    "fxhandle", "#ff003c",
+                    "fxhandle", "#2b00ff",
                 });
             }
             "Yellow" => {
                 c!(map, {
-                    // BACKGROUNDS
                     "bgmain", "#0d1012",
                     "bgoverlay", "#15191c",
                     "graysolid", "#2d353b",
                     "contextmenubg", "#0a0c0e",
                     "overlay", "#000000",
-                    // HEADER
                     "headerbg", "#15191c",
                     "headericon", "#6d6d6d",
                     "headertext", "#6d6d6d",
                     "headerhover", "#f965d9",
-                    // PLAYER
                     "playertitle", "#ffea00",
                     "playersubtext", "#6d6d6d",
                     "playeraccent", "#ffea00",
                     "playerhover", "#f965d9",
-                    // TABS
                     "tabtext", "#dde0d1",
                     "tabborder", "#6d6d6d",
                     "tabhover", "#ffea00",
-                    // PLAYLIST
                     "playlisttext", "#dde0d1",
                     "playlistfolder", "#d59407",
                     "playlistactive", "#ffea00",
                     "playlisticon", "#f965d9",
-                    // EQ
                     "eqbg", "#15191c",
                     "eqborder", "#6d6d6d",
                     "eqtext", "#ffea00",
                     "eqsubtext", "#6d6d6d",
                     "eqicon", "#ffea00",
                     "eqhover", "#f965d9",
-                    "eqactive", "#ffea00",
-                    "eqsliderbg", "#15191c",
-                    "eqfader", "#b000ff",
-                    "eqmix", "#f965d9",
-                    "eqhandle", "#ffea00",
-                    // FX
+                    "eqpresettext", "#6d6d6d",
+                    "eqpresetactive", "#ffea00",
+                    "eq10slider", "#f965d9",
+                    "eq10handle", "#ffea00",
+                    "eq10bg", "#1e1e1e",
+                    "eqfaderslider", "#f5a623",
+                    "eqfaderhandle", "#8b0000",
+                    "eqfaderbg", "#1e1e1e",
+                    "eqmixslider", "#ffea00",
+                    "eqmixhandle", "#f965d9",
+                    "eqmixbg", "#1e1e1e",
                     "fxbg", "#15191c",
                     "fxborder", "#6d6d6d",
                     "fxtext", "#ffea00",
@@ -672,11 +598,13 @@ impl ThemeManager {
                     "fxactive", "#ffea00",
                     "fxslider", "#ffea00",
                     "fxsliderbg", "#0d1012",
-                    "fxhandle", "#ffea00",
+                    "fxhandle", "#f965d9",
                 });
             }
             _ => {
-                map = AppConfig::get_default_colors_internal();
+                map = AppConfig::default_theme_colors();
+                // Save config when setting to Default or unknown theme
+                self.save_config();
             }
         }
 
@@ -699,5 +627,8 @@ impl ThemeManager {
             .into_iter()
             .map(|(k, v)| (k.to_string(), v.to_string()))
             .collect();
+
+        // Save config for preset themes (Blue, Green, etc.)
+        self.save_config();
     }
 }

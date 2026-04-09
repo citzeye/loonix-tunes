@@ -107,7 +107,7 @@ Item {
                     Layout.preferredHeight: 32
                     Layout.alignment: Qt.AlignHCenter 
                     radius: 4
-                    color: String(index + 1) === theme.current_theme ? theme.colormap["playeraccent"] : theme.colormap["bgoverlay"]
+                    color: presetName === theme.current_theme ? theme.colormap["playeraccent"] : theme.colormap["bgoverlay"]
                     border.color: {
                          if (root.appearanceContextMenuVisible && root.appearanceContextMenuIndex === presetIndex) {
                             return theme.colormap["playeraccent"]
@@ -127,8 +127,8 @@ Item {
                          text: presetName
                         font.family: kodeMono.name
                         font.pixelSize: 12
-                        color: String(index + 1) === theme.current_theme ? theme.colormap["bgmain"] : theme.colormap["playlisttext"]
-                        font.bold: String(index + 1) === theme.current_theme
+                        color: presetName === theme.current_theme ? theme.colormap["bgmain"] : theme.colormap["playlisttext"]
+                        font.bold: presetName === theme.current_theme
                     }
 
                     MouseArea {
@@ -147,7 +147,7 @@ Item {
                                 root.playlistContextMenuVisible = false
                             } else if (mouse.button === Qt.LeftButton) {
                                 root.appearanceContextMenuVisible = false
-                                 theme.set_theme(String(presetIndex + 1))
+                                 theme.set_theme(presetName)
                             }
                         }
                     }

@@ -202,8 +202,9 @@ pub struct MusicModel {
     fx_presets: Vec<crate::audio::config::FxPreset>,
     reverb_preset: u32,
 
-    // Saved config for persistence
-    pub(crate) saved_config: Option<crate::audio::config::AppConfig>,
+    // Saved config for persistence (shared with ThemeManager)
+    pub(crate) saved_config:
+        Option<std::sync::Arc<std::sync::Mutex<crate::audio::config::AppConfig>>>,
 
     pub scan_music: qt_method!(fn(&mut self)),
     pub scan_folder: qt_method!(fn(&mut self, path: String)),
@@ -324,6 +325,10 @@ pub struct MusicModel {
     pub pitch_changed: qt_signal!(),
     pub pitch_active: qt_property!(bool; NOTIFY pitch_changed),
     pub pitch_semitones: qt_property!(f64; NOTIFY pitch_changed),
+
+    // Theme sync - allow ThemeManager to update MusicModel's saved config
+    pub sync_theme_to_config:
+        qt_method!(fn(&mut self, theme_name: QString, custom_themes_json: QString)),
 
     // External files support
     pub external_files_count: qt_property!(i32; NOTIFY external_files_changed),
@@ -545,8 +550,8 @@ impl MusicModel {
             ff.set_volume(model.volume as f32);
         }
 
-        // Store config for saving later
-        model.saved_config = Some(saved_config.clone());
+        // Store config for saving later (wrap in Arc<Mutex> for sharing with ThemeManager)
+        model.saved_config = Some(std::sync::Arc::new(std::sync::Mutex::new(saved_config)));
 
         // Scan default Music folder on startup
         model.scan_music();
@@ -940,11 +945,13 @@ impl MusicModel {
     }
 
     pub fn save_custom_folders(&mut self) {
-        if let Some(ref mut config) = self.saved_config {
-            config.custom_folders = self.custom_folders.clone();
-            config.volume = self.volume as f64;
-            config.balance = self.balance as f64;
-            config.save();
+        if let Some(ref config) = &self.saved_config {
+            if let Ok(mut cfg) = config.lock() {
+                cfg.custom_folders = self.custom_folders.clone();
+                cfg.volume = self.volume as f64;
+                cfg.balance = self.balance as f64;
+                cfg.save();
+            }
         }
     }
 
@@ -1039,9 +1046,11 @@ impl MusicModel {
     }
 
     fn save_favorites(&mut self) {
-        if let Some(ref mut config) = self.saved_config {
-            config.favorites = self.favorites.clone();
-            config.save();
+        if let Some(ref config) = &self.saved_config {
+            if let Ok(mut cfg) = config.lock() {
+                cfg.favorites = self.favorites.clone();
+                cfg.save();
+            }
         }
     }
 
@@ -1055,9 +1064,11 @@ impl MusicModel {
                 self.custom_folders[index as usize] = (name_str, new_path.clone());
                 self.custom_folders_changed();
                 self.save_dsp_config();
-                if let Some(ref mut config) = self.saved_config {
-                    config.custom_folders = self.custom_folders.clone();
-                    config.save();
+                if let Some(ref config) = &self.saved_config {
+                    if let Ok(mut cfg) = config.lock() {
+                        cfg.custom_folders = self.custom_folders.clone();
+                        cfg.save();
+                    }
                 }
                 self.switch_to_folder(new_path);
             }
@@ -1068,7 +1079,20 @@ impl MusicModel {
         let path = Path::new(&folder_path);
 
         self.current_folder_path = folder_path.clone();
-        if let Some(name) = path.file_name() {
+
+        // Try to find display name from custom_folders first
+        let display_name = self
+            .custom_folders
+            .iter()
+            .find(|(_, p)| p == &folder_path)
+            .map(|(name, _)| name.clone());
+
+        if let Some(name) = display_name {
+            // Use display name (which can be renamed)
+            self.current_folder = name.clone();
+            self.current_folder_qml = QString::from(name);
+        } else if let Some(name) = path.file_name() {
+            // Fallback to actual folder name
             self.current_folder = name.to_string_lossy().to_string();
             self.current_folder_qml = QString::from(self.current_folder.clone());
         }
@@ -1164,9 +1188,11 @@ impl MusicModel {
         self.custom_folders_changed();
         self.save_dsp_config();
 
-        if let Some(ref mut config) = self.saved_config {
-            config.custom_folders = self.custom_folders.clone();
-            config.save();
+        if let Some(ref config) = &self.saved_config {
+            if let Ok(mut cfg) = config.lock() {
+                cfg.custom_folders = self.custom_folders.clone();
+                cfg.save();
+            }
         }
     }
 
@@ -1193,29 +1219,32 @@ impl MusicModel {
 
     pub fn toggle_folder_lock(&mut self, index: i32) {
         if index >= 0 && (index as usize) < self.custom_folders.len() {
-            if let Some(ref mut config) = self.saved_config {
-                if config.locked_folders.contains(&index) {
-                    config.locked_folders.retain(|&i| i != index);
-                } else {
-                    config.locked_folders.push(index);
+            if let Some(ref config) = &self.saved_config {
+                if let Ok(mut cfg) = config.lock() {
+                    if cfg.locked_folders.contains(&index) {
+                        cfg.locked_folders.retain(|&i| i != index);
+                    } else {
+                        cfg.locked_folders.push(index);
+                    }
+                    cfg.custom_folders = self.custom_folders.clone();
+                    cfg.volume = self.volume as f64;
+                    cfg.balance = self.balance as f64;
+                    cfg.save();
                 }
-                config.custom_folders = self.custom_folders.clone();
-                config.volume = self.volume as f64;
-                config.balance = self.balance as f64;
-                config.save();
-                self.folder_lock_version += 1;
-                self.folder_lock_changed();
-                self.custom_folders_changed();
             }
+            self.folder_lock_version += 1;
+            self.folder_lock_changed();
+            self.custom_folders_changed();
         }
     }
 
     pub fn is_folder_locked(&self, index: i32) -> bool {
-        if let Some(ref config) = self.saved_config {
-            config.locked_folders.contains(&index)
-        } else {
-            false
+        if let Some(ref config) = &self.saved_config {
+            if let Ok(cfg) = config.lock() {
+                return cfg.locked_folders.contains(&index);
+            }
         }
+        false
     }
 
     pub fn show_tab_context_menu(&mut self, _index: i32) {
@@ -1518,6 +1547,7 @@ impl MusicModel {
         }
 
         self.volume_changed();
+        self.save_state();
     }
 
     pub fn set_balance(&mut self, balance: f64) {
@@ -1528,6 +1558,7 @@ impl MusicModel {
         }
 
         self.balance_changed();
+        self.save_state();
     }
 
     pub fn set_reverb(&mut self, reverb: QString) {
@@ -1915,9 +1946,11 @@ impl MusicModel {
         self.highres_enabled = enabled;
         self.output.set_highres_enabled(enabled);
         self.highres_changed();
-        if let Some(ref mut config) = self.saved_config {
-            config.highres_enabled = enabled;
-            config.save();
+        if let Some(ref config) = &self.saved_config {
+            if let Ok(mut cfg) = config.lock() {
+                cfg.highres_enabled = enabled;
+                cfg.save();
+            }
         }
     }
 
@@ -1930,9 +1963,11 @@ impl MusicModel {
         }
 
         println!("[DAC] Exclusive Mode: {}", self.exclusive_mode);
-        if let Some(ref mut config) = self.saved_config {
-            config.dac_exclusive_mode = self.exclusive_mode;
-            config.save();
+        if let Some(ref config) = &self.saved_config {
+            if let Ok(mut cfg) = config.lock() {
+                cfg.dac_exclusive_mode = self.exclusive_mode;
+                cfg.save();
+            }
         }
     }
 
@@ -1944,9 +1979,11 @@ impl MusicModel {
             ff.set_normalizer_enabled(self.normalizer_enabled);
         }
 
-        if let Some(ref mut config) = self.saved_config {
-            config.normalizer_enabled = self.normalizer_enabled;
-            config.save();
+        if let Some(ref config) = &self.saved_config {
+            if let Ok(mut cfg) = config.lock() {
+                cfg.normalizer_enabled = self.normalizer_enabled;
+                cfg.save();
+            }
         }
     }
 
@@ -1962,9 +1999,11 @@ impl MusicModel {
                 self.normalizer_max_gain_db as f32,
             );
         }
-        if let Some(ref mut config) = self.saved_config {
-            config.normalizer_target_lufs = clamped as f32;
-            config.save();
+        if let Some(ref config) = &self.saved_config {
+            if let Ok(mut cfg) = config.lock() {
+                cfg.normalizer_target_lufs = clamped as f32;
+                cfg.save();
+            }
         }
     }
 
@@ -1980,9 +2019,11 @@ impl MusicModel {
                 self.normalizer_max_gain_db as f32,
             );
         }
-        if let Some(ref mut config) = self.saved_config {
-            config.normalizer_true_peak_dbtp = clamped as f32;
-            config.save();
+        if let Some(ref config) = &self.saved_config {
+            if let Ok(mut cfg) = config.lock() {
+                cfg.normalizer_true_peak_dbtp = clamped as f32;
+                cfg.save();
+            }
         }
     }
 
@@ -1998,9 +2039,11 @@ impl MusicModel {
                 clamped as f32,
             );
         }
-        if let Some(ref mut config) = self.saved_config {
-            config.normalizer_max_gain_db = clamped as f32;
-            config.save();
+        if let Some(ref config) = &self.saved_config {
+            if let Ok(mut cfg) = config.lock() {
+                cfg.normalizer_max_gain_db = clamped as f32;
+                cfg.save();
+            }
         }
     }
 
@@ -2015,9 +2058,11 @@ impl MusicModel {
             std::sync::atomic::Ordering::Relaxed,
         );
 
-        if let Some(ref mut config) = self.saved_config {
-            config.normalizer_smoothing = clamped as f32;
-            config.save();
+        if let Some(ref config) = &self.saved_config {
+            if let Ok(mut cfg) = config.lock() {
+                cfg.normalizer_smoothing = clamped as f32;
+                cfg.save();
+            }
         }
     }
 
@@ -2258,41 +2303,43 @@ impl MusicModel {
     }
 
     fn save_dsp_config(&mut self) {
-        if let Some(ref mut config) = self.saved_config {
-            config.dsp_enabled = self.dsp_enabled;
-            config.eq_bands = self.eq_bands;
-            config.eq_enabled = self.eq_enabled;
-            config.eq_dry = self.eq_dry as f32;
-            config.eq_wet = self.eq_wet as f32;
-            config.active_preset_index = self.active_preset_index;
-            config.bass_enabled = self.bassbooster_active;
-            config.bass_gain = self.bass_gain as f32;
-            config.bass_cutoff = self.bass_cutoff as f32;
-            config.crystal_enabled = self.crystalizer_active;
-            config.crystal_amount = self.crystal_amount as f32;
-            config.surround_enabled = self.surround_active;
-            config.surround_width = self.surround_width as f32;
-            config.mono_enabled = self.mono_active;
-            config.mono_width = self.mono_width as f32;
-            config.pitch_enabled = self.pitch_active;
-            config.pitch_semitones = self.pitch_semitones as f32;
-            config.middle_enabled = self.middle_active;
-            config.middle_amount = self.middle_amount as f32;
-            config.reverb_preset = self.reverb_preset;
-            config.compressor_enabled = self.compressor_active;
-            let threshold_bits = crate::audio::dsp::compressor::get_compressor_threshold_arc()
-                .load(std::sync::atomic::Ordering::Relaxed);
-            config.compressor_threshold = f32::from_bits(threshold_bits);
-            config.stereo_enabled = self.stereo_active;
-            config.stereo_amount = self.stereo_amount as f32;
-            config.crossfeed_enabled = self.crossfeed_active;
-            config.crossfeed_amount = self.crossfeed_amount as f32;
-            config.user_preset_names = self.user_eq_names.clone();
-            config.user_preset_gains = self.user_eq_gains;
-            config.user_preset_macro = self.user_eq_macro;
-            config.user_preset_dry = self.user_eq_dry;
-            config.user_preset_wet = self.user_eq_wet;
-            config.save();
+        if let Some(ref config) = &self.saved_config {
+            if let Ok(mut cfg) = config.lock() {
+                cfg.dsp_enabled = self.dsp_enabled;
+                cfg.eq_bands = self.eq_bands;
+                cfg.eq_enabled = self.eq_enabled;
+                cfg.eq_dry = self.eq_dry as f32;
+                cfg.eq_wet = self.eq_wet as f32;
+                cfg.active_preset_index = self.active_preset_index;
+                cfg.bass_enabled = self.bassbooster_active;
+                cfg.bass_gain = self.bass_gain as f32;
+                cfg.bass_cutoff = self.bass_cutoff as f32;
+                cfg.crystal_enabled = self.crystalizer_active;
+                cfg.crystal_amount = self.crystal_amount as f32;
+                cfg.surround_enabled = self.surround_active;
+                cfg.surround_width = self.surround_width as f32;
+                cfg.mono_enabled = self.mono_active;
+                cfg.mono_width = self.mono_width as f32;
+                cfg.pitch_enabled = self.pitch_active;
+                cfg.pitch_semitones = self.pitch_semitones as f32;
+                cfg.middle_enabled = self.middle_active;
+                cfg.middle_amount = self.middle_amount as f32;
+                cfg.reverb_preset = self.reverb_preset;
+                cfg.compressor_enabled = self.compressor_active;
+                let threshold_bits = crate::audio::dsp::compressor::get_compressor_threshold_arc()
+                    .load(std::sync::atomic::Ordering::Relaxed);
+                cfg.compressor_threshold = f32::from_bits(threshold_bits);
+                cfg.stereo_enabled = self.stereo_active;
+                cfg.stereo_amount = self.stereo_amount as f32;
+                cfg.crossfeed_enabled = self.crossfeed_active;
+                cfg.crossfeed_amount = self.crossfeed_amount as f32;
+                cfg.user_preset_names = self.user_eq_names.clone();
+                cfg.user_preset_gains = self.user_eq_gains;
+                cfg.user_preset_macro = self.user_eq_macro;
+                cfg.user_preset_dry = self.user_eq_dry;
+                cfg.user_preset_wet = self.user_eq_wet;
+                cfg.save();
+            }
         }
     }
 
@@ -2481,9 +2528,13 @@ impl MusicModel {
     pub fn start_update_loop(&mut self) {
         // Restore last track if available (but start from beginning)
         let last_track = {
-            if let Some(ref config) = self.saved_config {
-                if !config.last_track_path.is_empty() {
-                    Some(config.last_track_path.clone())
+            if let Some(ref config) = &self.saved_config {
+                if let Ok(cfg) = config.lock() {
+                    if !cfg.last_track_path.is_empty() {
+                        Some(cfg.last_track_path.clone())
+                    } else {
+                        None
+                    }
                 } else {
                     None
                 }
@@ -2524,68 +2575,101 @@ impl MusicModel {
     }
 
     pub fn save_state(&mut self) {
-        if let Some(ref mut config) = self.saved_config {
-            config.volume = self.volume as f64;
-            config.balance = self.balance as f64;
-            config.shuffle = self.shuffle_active;
-            config.loop_playlist = self.loop_active;
-            config.dsp_enabled = self.dsp_enabled;
-            config.eq_enabled = self.eq_enabled;
-            config.eq_dry = self.eq_dry as f32;
-            config.eq_wet = self.eq_wet as f32;
-            config.bass_enabled = self.bassbooster_active;
-            config.bass_gain = self.bass_gain as f32;
-            config.bass_cutoff = self.bass_cutoff as f32;
-            config.crystal_enabled = self.crystalizer_active;
-            config.crystal_amount = self.crystal_amount as f32;
-            config.surround_enabled = self.surround_active;
-            config.surround_width = self.surround_width as f32;
-            config.mono_enabled = self.mono_active;
-            config.mono_width = self.mono_width as f32;
-            config.pitch_enabled = self.pitch_active;
-            config.pitch_semitones = self.pitch_semitones as f32;
-            config.middle_enabled = self.middle_active;
-            config.middle_amount = self.middle_amount as f32;
-            config.reverb_preset = self.reverb_preset;
-            config.compressor_enabled = self.compressor_active;
-            let threshold_bits = crate::audio::dsp::compressor::get_compressor_threshold_arc()
-                .load(std::sync::atomic::Ordering::Relaxed);
-            config.compressor_threshold = f32::from_bits(threshold_bits);
+        if let Some(ref config) = &self.saved_config {
+            if let Ok(mut cfg) = config.lock() {
+                cfg.volume = self.volume as f64;
+                cfg.balance = self.balance as f64;
+                cfg.shuffle = self.shuffle_active;
+                cfg.loop_playlist = self.loop_active;
+                cfg.dsp_enabled = self.dsp_enabled;
+                cfg.eq_enabled = self.eq_enabled;
+                cfg.eq_dry = self.eq_dry as f32;
+                cfg.eq_wet = self.eq_wet as f32;
+                cfg.bass_enabled = self.bassbooster_active;
+                cfg.bass_gain = self.bass_gain as f32;
+                cfg.bass_cutoff = self.bass_cutoff as f32;
+                cfg.crystal_enabled = self.crystalizer_active;
+                cfg.crystal_amount = self.crystal_amount as f32;
+                cfg.surround_enabled = self.surround_active;
+                cfg.surround_width = self.surround_width as f32;
+                cfg.mono_enabled = self.mono_active;
+                cfg.mono_width = self.mono_width as f32;
+                cfg.pitch_enabled = self.pitch_active;
+                cfg.pitch_semitones = self.pitch_semitones as f32;
+                cfg.middle_enabled = self.middle_active;
+                cfg.middle_amount = self.middle_amount as f32;
+                cfg.reverb_preset = self.reverb_preset;
+                cfg.compressor_enabled = self.compressor_active;
+                let threshold_bits = crate::audio::dsp::compressor::get_compressor_threshold_arc()
+                    .load(std::sync::atomic::Ordering::Relaxed);
+                cfg.compressor_threshold = f32::from_bits(threshold_bits);
 
-            // Save current track only (not position)
-            if self.current_index >= 0 && (self.current_index as usize) < self.display_list.len() {
-                config.last_track_path =
-                    self.display_list[self.current_index as usize].path.clone();
+                // Save current track only (not position)
+                if self.current_index >= 0
+                    && (self.current_index as usize) < self.display_list.len()
+                {
+                    cfg.last_track_path =
+                        self.display_list[self.current_index as usize].path.clone();
+                }
+
+                cfg.save();
             }
-
-            config.save();
         }
     }
 
     pub fn save_window_position(&mut self, x: i32, y: i32, width: i32, height: i32) {
-        if let Some(ref mut config) = self.saved_config {
-            config.window_x = x;
-            config.window_y = y;
-            config.window_width = width;
-            config.window_height = height;
-            config.save();
+        if let Some(ref config) = &self.saved_config {
+            if let Ok(mut cfg) = config.lock() {
+                cfg.window_x = x;
+                cfg.window_y = y;
+                cfg.window_width = width;
+                cfg.window_height = height;
+                cfg.save();
+            }
         }
     }
 
     pub fn get_window_config(&self) -> QVariantMap {
         let mut map = QVariantMap::default();
-        if let Some(ref config) = self.saved_config {
-            map.insert(QString::from("window_x"), QVariant::from(config.window_x));
-            map.insert(QString::from("window_y"), QVariant::from(config.window_y));
-            map.insert(
-                QString::from("window_width"),
-                QVariant::from(config.window_width),
-            );
-            map.insert(
-                QString::from("window_height"),
-                QVariant::from(config.window_height),
-            );
+        if let Some(ref config) = &self.saved_config {
+            if let Ok(cfg) = config.lock() {
+                map.insert(QString::from("window_x"), QVariant::from(cfg.window_x));
+                map.insert(QString::from("window_y"), QVariant::from(cfg.window_y));
+                map.insert(
+                    QString::from("window_width"),
+                    QVariant::from(cfg.window_width),
+                );
+                map.insert(
+                    QString::from("window_height"),
+                    QVariant::from(cfg.window_height),
+                );
+            }
         }
         map
+    }
+
+    pub fn get_shared_config(
+        &self,
+    ) -> Option<std::sync::Arc<std::sync::Mutex<crate::audio::config::AppConfig>>> {
+        self.saved_config.clone()
+    }
+
+    pub fn sync_theme_to_config(&mut self, theme_name: QString, custom_themes_json: QString) {
+        if let Some(ref config) = &self.saved_config {
+            if let Ok(mut cfg) = config.lock() {
+                cfg.theme = theme_name.to_string();
+
+                // Parse custom themes JSON
+                let json_str = custom_themes_json.to_string();
+                if let Ok(custom_themes) =
+                    serde_json::from_str::<Vec<crate::audio::config::CustomTheme>>(&json_str)
+                {
+                    cfg.custom_themes = custom_themes;
+                }
+
+                // Save the config
+                cfg.save();
+            }
+        }
     }
 }

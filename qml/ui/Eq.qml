@@ -135,7 +135,7 @@ Popup {
                         Text {
                             Layout.alignment: Qt.AlignHCenter
                             text: Math.round(gainSlider.value)
-                            color: gainSlider.pressed ? theme.colormap.eqfader : theme.colormap.eqsubtext
+                            color: gainSlider.pressed ? theme.colormap.eqfaderslider : theme.colormap.eqtext
                             font.family: sansSerif.name
                             font.pixelSize: 10
                         }
@@ -179,16 +179,16 @@ Popup {
 
                                 background: Rectangle {
                                     anchors.horizontalCenter: parent.horizontalCenter
-                                    width: 3; height: parent.height; radius: 1.5; color: "#111"
+                                    width: 3; height: parent.height; radius: 1.5; color: theme.colormap.eqfaderbg
                                     Rectangle {
                                         width: parent.width; y: gainSlider.visualPosition * parent.height
-                                        height: parent.height - y; color: theme.colormap.eqfader; radius: 1.5; opacity: 0.6
+                                        height: parent.height - y; color: theme.colormap.eqfaderslider; radius: 1.5; opacity: 0.6
                                     }
                                 }
                                 handle: Rectangle {
                                     anchors.horizontalCenter: parent.horizontalCenter
                                     y: gainSlider.topPadding + gainSlider.visualPosition * (gainSlider.availableHeight - height)
-                                    width: 10; height: 10; radius: 5; color: gainSlider.pressed ? theme.colormap.eqhover : theme.colormap.eqfader
+                                    width: 10; height: 10; radius: 5; color: gainSlider.pressed ? theme.colormap.eqfaderslider : theme.colormap.eqfaderhandle
                                     border.color: theme.colormap.eqborder; border.width: 1
                                 }
                             }
@@ -242,7 +242,7 @@ Popup {
                                     Text {
                                         Layout.alignment: Qt.AlignHCenter
                                         text: Math.round(innerSlider.value)
-                                        color: innerSlider.pressed ? theme.colormap.eqactive : theme.colormap.eqsubtext
+                                        color: innerSlider.pressed ? theme.colormap.eqpresetactive : theme.colormap.eqsubtext
                                         font.family: sansSerif.name
                                         font.pixelSize: 11
                                     }
@@ -269,13 +269,13 @@ Popup {
                                             width: 3
                                             height: parent.height
                                             radius: 1.5
-                                            color: "#111"
+                                            color: theme.colormap.eq10bg
 
                                             Rectangle {
                                                 width: parent.width
                                                 y: innerSlider.visualPosition * parent.height
                                                 height: parent.height - y
-                                                color: theme.colormap.eqactive
+                                                color: theme.colormap.eq10slider
                                                 radius: 1.5
                                                 opacity: 0.6
                                             }
@@ -285,7 +285,7 @@ Popup {
                                             anchors.horizontalCenter: parent.horizontalCenter
                                             y: innerSlider.topPadding + innerSlider.visualPosition * (innerSlider.availableHeight - height)
                                             width: 10; height: 10; radius: 5
-                                            color: innerSlider.pressed ? theme.colormap.eqhover : theme.colormap.eqactive
+                                            color: innerSlider.pressed ? theme.colormap.eq10slider : theme.colormap.eq10handle
                                             border.color: theme.colormap.eqborder
                                             border.width: 1
                                         }
@@ -322,7 +322,7 @@ Popup {
                         Text {
                             Layout.alignment: Qt.AlignHCenter
                             text: "MIX"
-                            color: theme.colormap.eqmix
+                            color: theme.colormap.eqtext
                             font.family: kodeMono.name
                             font.pixelSize: 10
                             font.bold: true
@@ -340,7 +340,7 @@ Popup {
                                 Text {
                                     Layout.alignment: Qt.AlignHCenter
                                     text: Math.round(drySlider.value)
-                                    color: drySlider.pressed ? theme.colormap.eqmix : theme.colormap.eqsubtext
+                                    color: drySlider.pressed ? theme.colormap.eqmixslider : theme.colormap.eqtext
                                     font.family: sansSerif.name
                                     font.pixelSize: 10
                                 }
@@ -362,13 +362,13 @@ Popup {
                                         width: 3
                                         height: parent.height
                                         radius: 1.5
-                                        color: "#111"
+                                        color: theme.colormap.eqmixbg
 
                                         Rectangle {
                                             width: parent.width
                                             y: drySlider.visualPosition * parent.height
                                             height: parent.height - y
-                                            color: theme.colormap.eqmix
+                                            color: theme.colormap.eqmixslider
                                             radius: 1.5
                                             opacity: 0.6
                                         }
@@ -378,7 +378,7 @@ Popup {
                                         anchors.horizontalCenter: parent.horizontalCenter
                                         y: drySlider.topPadding + drySlider.visualPosition * (drySlider.availableHeight - height)
                                         width: 10; height: 10; radius: 5
-                                        color: drySlider.pressed ? theme.colormap.eqhover : theme.colormap.eqmix
+                                        color: drySlider.pressed ? theme.colormap.eqmixslider : theme.colormap.eqmixhandle
                                         border.color: theme.colormap.eqborder
                                         border.width: 1
                                     }
@@ -413,7 +413,7 @@ Popup {
                                 Text {
                                     Layout.alignment: Qt.AlignHCenter
                                     text: Math.round(wetSlider.value)
-                                    color: wetSlider.pressed ? theme.colormap.eqmix : theme.colormap.eqsubtext
+                                    color: wetSlider.pressed ? theme.colormap.eqmixslider : theme.colormap.eqtext
                                     font.family: sansSerif.name
                                     font.pixelSize: 10
                                 }
@@ -435,13 +435,13 @@ Popup {
                                         width: 3
                                         height: parent.height
                                         radius: 1.5
-                                        color: "#111"
+                                        color: theme.colormap.eqmixbg
 
                                         Rectangle {
                                             width: parent.width
                                             y: wetSlider.visualPosition * parent.height
                                             height: parent.height - y
-                                            color: theme.colormap.eqmix
+                                            color: theme.colormap.eqmixslider
                                             radius: 1.5
                                             opacity: 0.6
                                         }
@@ -451,7 +451,7 @@ Popup {
                                         anchors.horizontalCenter: parent.horizontalCenter
                                         y: wetSlider.topPadding + wetSlider.visualPosition * (wetSlider.availableHeight - height)
                                         width: 10; height: 10; radius: 5
-                                        color: wetSlider.pressed ? theme.colormap.eqhover : theme.colormap.eqmix
+                                        color: wetSlider.pressed ? theme.colormap.eqmixslider : theme.colormap.eqmixhandle
                                         border.color: theme.colormap.eqborder
                                         border.width: 1
                                     }
@@ -498,7 +498,7 @@ Popup {
                     }
 
                     background: Rectangle {
-                        color: musicModel.eq_enabled ? theme.colormap.eqactive : (eqOnOffBtn.hovered ? theme.colormap.eqactive : theme.colormap.eqbg)
+                        color: musicModel.eq_enabled ? theme.colormap.eqpresetactive : (eqOnOffBtn.hovered ? theme.colormap.eqpresetactive : theme.colormap.eqbg)
                         border.color: musicModel.eq_enabled ? theme.colormap.eqtext : theme.colormap.eqborder
                         radius: 2
                     }
@@ -527,7 +527,7 @@ Popup {
                     }
 
                     background: Rectangle {
-                        color: resetBtn.hovered ? theme.colormap.eqactive : theme.colormap.eqbg
+                        color: resetBtn.hovered ? theme.colormap.eqpresetactive : theme.colormap.eqbg
                         border.color: theme.colormap.eqborder
                         radius: 2
                     }
@@ -555,7 +555,7 @@ Popup {
                     }
 
                     background: Rectangle {
-                        color: saveBtn.hovered ? theme.colormap.eqactive : theme.colormap.eqbg
+                        color: saveBtn.hovered ? theme.colormap.eqpresetactive : theme.colormap.eqbg
                         border.color: theme.colormap.eqborder
                         radius: 2
                     }
@@ -594,7 +594,7 @@ Popup {
                             verticalAlignment: Text.AlignVCenter
                         }
                         background: Rectangle {
-                            color: pBtn.isActive ? theme.colormap.eqactive : (pBtn.hovered ? theme.colormap.eqactive : theme.colormap.eqbg)
+                            color: pBtn.isActive ? theme.colormap.eqpresetactive : (pBtn.hovered ? theme.colormap.eqpresetactive : theme.colormap.eqbg)
                             border.color: pBtn.isActive ? theme.colormap.eqtext : theme.colormap.eqborder
                             radius: 2
                         }
@@ -619,7 +619,7 @@ Popup {
 
             background: Rectangle {
                 color: theme.colormap.eqbg
-                border.color: theme.colormap.eqactive
+                border.color: theme.colormap.eqpresetactive
                 border.width: 1
                 radius: 6
                 Rectangle {
@@ -643,7 +643,7 @@ Popup {
                     font.family: kodeMono.name
                     font.pixelSize: 12
                     font.bold: true
-                    color: theme.colormap.eqactive
+                    color: theme.colormap.eqpresetactive
                 }
 
                  ComboBox {
@@ -669,7 +669,7 @@ Popup {
                     }
 
                     background: Rectangle {
-                        color: theme.colormap.eqsliderbg
+                        color: theme.colormap.eqbg
                         border.color: theme.colormap.eqborder
                         radius: 2
                     }
@@ -683,13 +683,13 @@ Popup {
                             font.family: kodeMono.name
                             font.pixelSize: 10
                             verticalAlignment: Text.AlignVCenter
-                            color: (hovered || highlighted) ? theme.colormap.eqactive : theme.colormap.eqtext
+                            color: (hovered || highlighted) ? theme.colormap.eqpresetactive : theme.colormap.eqtext
 
                             Behavior on color { ColorAnimation { duration: 100 } }
                         }
 
                         background: Rectangle {
-                            color: theme.colormap.eqsliderbg
+                            color: theme.colormap.eqbg
                         }
                     }
 
@@ -707,7 +707,7 @@ Popup {
                         }
 
                         background: Rectangle {
-                            color: theme.colormap.eqsliderbg
+                            color: theme.colormap.eqbg
                             border.color: theme.colormap.eqborder
                             radius: 2
                         }
@@ -736,7 +736,7 @@ Popup {
 
                     background: Rectangle {
                         color: theme.colormap.eqbg
-                        border.color: nameInput.activeFocus ? theme.colormap.eqactive : theme.colormap.eqborder
+                        border.color: nameInput.activeFocus ? theme.colormap.eqpresetactive : theme.colormap.eqborder
                         radius: 2
                     }
                 }
@@ -764,7 +764,7 @@ Popup {
                         text: "SAVE"
                         font.family: kodeMono.name
                         font.pixelSize: 10
-                        color: saveMA.containsMouse ? theme.colormap.eqicon : theme.colormap.eqactive
+                        color: saveMA.containsMouse ? theme.colormap.eqicon : theme.colormap.eqpresetactive
                         MouseArea {
                             id: saveMA
                             anchors.fill: parent

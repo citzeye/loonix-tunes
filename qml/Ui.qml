@@ -844,8 +844,8 @@ Window {
                                 width: 10
                                 height: 10
                                 radius: 5
-                                color: balanceSlider.pressed ? theme.colormap.playerhover : theme.colormap.playerhover
-                                antialiasing: false
+                                color: balanceSlider.pressed ? theme.colormap.playerhover : theme.colormap.playeraccent
+                                
                             }
 
                             background: Rectangle {
@@ -855,7 +855,7 @@ Window {
                                 height: 4
                                 radius: 2
                                 color: theme.colormap.bgoverlay
-                                antialiasing: false
+                                
 
                                 Rectangle {
                                     width: 2

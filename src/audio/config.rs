@@ -1,7 +1,14 @@
 /* --- LOONIX-TUNES src/audio/config.rs --- */
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 use std::fs;
 use std::path::PathBuf;
+
+#[derive(Serialize, Deserialize, Debug, Clone, Default)]
+pub struct CustomTheme {
+    pub name: String,
+    pub colors: HashMap<String, String>,
+}
 
 #[derive(Serialize, Deserialize, Clone)]
 pub struct AppConfig {
@@ -63,6 +70,9 @@ pub struct AppConfig {
     pub user_preset_macro: [f32; 6],
     pub user_preset_dry: [f32; 6],
     pub user_preset_wet: [f32; 6],
+    // Theme settings
+    pub theme: String,
+    pub custom_themes: Vec<CustomTheme>,
 }
 
 fn default_bass_cutoff() -> f32 {
@@ -227,7 +237,80 @@ impl Default for AppConfig {
             user_preset_macro: [0.0; 6],
             user_preset_dry: [100.0; 6],
             user_preset_wet: [100.0; 6],
+            // Theme settings
+            theme: "Default".to_string(),
+            custom_themes: vec![
+                CustomTheme {
+                    name: "Custom 1".to_string(),
+                    colors: Self::default_theme_colors(),
+                },
+                CustomTheme {
+                    name: "Custom 2".to_string(),
+                    colors: Self::default_theme_colors(),
+                },
+                CustomTheme {
+                    name: "Custom 3".to_string(),
+                    colors: Self::default_theme_colors(),
+                },
+            ],
         }
+    }
+}
+
+impl AppConfig {
+    pub fn default_theme_colors() -> HashMap<String, String> {
+        let mut map: HashMap<String, String> = HashMap::new();
+        map.insert("bgmain".to_string(), "#15141b".to_string());
+        map.insert("bgoverlay".to_string(), "#201f2b".to_string());
+        map.insert("graysolid".to_string(), "#6d6d6d".to_string());
+        map.insert("contextmenubg".to_string(), "#2d2d2d".to_string());
+        map.insert("overlay".to_string(), "#000000".to_string());
+        map.insert("headerbg".to_string(), "#201f2b".to_string());
+        map.insert("headericon".to_string(), "#6d6d6d".to_string());
+        map.insert("headertext".to_string(), "#6d6d6d".to_string());
+        map.insert("headerhover".to_string(), "#ff1ae0".to_string());
+        map.insert("playertitle".to_string(), "#00ffa2".to_string());
+        map.insert("playersubtext".to_string(), "#57caab".to_string());
+        map.insert("playeraccent".to_string(), "#9442ff".to_string());
+        map.insert("playerhover".to_string(), "#ff1ae0".to_string());
+        map.insert("tabtext".to_string(), "#c6c6c6".to_string());
+        map.insert("tabborder".to_string(), "#00ffa2".to_string());
+        map.insert("tabhover".to_string(), "#ff1ae0".to_string());
+        map.insert("playlisttext".to_string(), "#c6c6c6".to_string());
+        map.insert("playlistfolder".to_string(), "#ff881a".to_string());
+        map.insert("playlistactive".to_string(), "#00ffa2".to_string());
+        map.insert("playlisticon".to_string(), "#ff881a".to_string());
+        map.insert("eqbg".to_string(), "#201f2b".to_string());
+        map.insert("eqborder".to_string(), "#00ffa2".to_string());
+        map.insert("eqtext".to_string(), "#00ffa2".to_string());
+        map.insert("eqsubtext".to_string(), "#57caab".to_string());
+        map.insert("eqicon".to_string(), "#ff881a".to_string());
+        map.insert("eqhover".to_string(), "#ff1ae0".to_string());
+        map.insert("eqpresettext".to_string(), "#57caab".to_string());
+        map.insert("eqpresetactive".to_string(), "#00ffa2".to_string());
+        // 10 band EQ slider colors
+        map.insert("eq10slider".to_string(), "#ff1ae0".to_string());
+        map.insert("eq10handle".to_string(), "#9442ff".to_string());
+        map.insert("eq10bg".to_string(), "#111111".to_string());
+        // Fader slider colors
+        map.insert("eqfaderslider".to_string(), "#ff1ae0".to_string());
+        map.insert("eqfaderhandle".to_string(), "#9442ff".to_string());
+        map.insert("eqfaderbg".to_string(), "#111111".to_string());
+        // Mix slider colors
+        map.insert("eqmixslider".to_string(), "#ff1ae0".to_string());
+        map.insert("eqmixhandle".to_string(), "#9442ff".to_string());
+        map.insert("eqmixbg".to_string(), "#111111".to_string());
+        map.insert("fxbg".to_string(), "#201f2b".to_string());
+        map.insert("fxborder".to_string(), "#00ffa2".to_string());
+        map.insert("fxtext".to_string(), "#00ffa2".to_string());
+        map.insert("fxsubtext".to_string(), "#57caab".to_string());
+        map.insert("fxicon".to_string(), "#9442ff".to_string());
+        map.insert("fxhover".to_string(), "#ff1ae0".to_string());
+        map.insert("fxactive".to_string(), "#9442ff".to_string());
+        map.insert("fxslider".to_string(), "#9442ff".to_string());
+        map.insert("fxsliderbg".to_string(), "#15141b".to_string());
+        map.insert("fxhandle".to_string(), "#ff1ae0".to_string());
+        map
     }
 }
 

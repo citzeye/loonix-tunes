@@ -66,6 +66,12 @@ fn main() {
     // ==========================================
     let boxed_model = QObjectBox::new(MusicModel::new());
     let boxed_theme = QObjectBox::new(ThemeManager::new());
+    
+    // Inject shared config from MusicModel to ThemeManager
+    if let Some(shared_config) = boxed_model.pinned().borrow().get_shared_config() {
+        boxed_theme.pinned().borrow_mut().set_config(shared_config);
+    }
+    
     let boxed_popup = QObjectBox::new(PopupMenu::default());
     let boxed_bridge = QObjectBox::new(PlayerBridge::new());
     let boxed_sysmedia = QObjectBox::new(SysMediaManager::new());
