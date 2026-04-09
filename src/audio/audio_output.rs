@@ -71,6 +71,8 @@ pub struct AudioOutput {
     // PipeWire thread for exclusive mode on Linux
     #[cfg(target_os = "linux")]
     pw_thread: Option<std::thread::JoinHandle<()>>,
+    // Selected audio device (None = use default)
+    selected_device_index: Arc<Mutex<Option<usize>>>,
 }
 
 impl Default for AudioOutput {
@@ -112,6 +114,7 @@ impl AudioOutput {
             ))),
             #[cfg(target_os = "linux")]
             pw_thread: None,
+            selected_device_index: Arc::new(Mutex::new(None)),
         }
     }
 
@@ -285,6 +288,39 @@ impl AudioOutput {
         self.normalizer.clone()
     }
 
+    pub fn get_output_devices(&self) -> Vec<String> {
+        let host = cpal::default_host();
+        let mut devices = Vec::new();
+
+        if let Ok(device_list) = host.output_devices() {
+            for device in device_list {
+                let name = device
+                    .name()
+                    .unwrap_or_else(|_| "Unknown Device".to_string());
+                devices.push(name);
+            }
+        }
+
+        if devices.is_empty() {
+            devices.push("Default".to_string());
+        }
+
+        devices
+    }
+
+    pub fn set_output_device(&self, index: usize) {
+        if let Ok(mut selected) = self.selected_device_index.lock() {
+            *selected = Some(index);
+        }
+    }
+
+    pub fn get_selected_device_index(&self) -> Option<usize> {
+        self.selected_device_index
+            .lock()
+            .ok()
+            .and_then(|guard| *guard)
+    }
+
     pub fn start(&mut self, consumer: HeapCons<f32>, clear_old: bool, buffer_capacity: usize) {
         // Store buffer capacity for buffer level checks
         self.ring_buffer_capacity = buffer_capacity;
@@ -335,15 +371,48 @@ impl AudioOutput {
             return;
         }
 
-        // Normal mode - use cpal with default device
+        // Normal mode - use cpal with selected device or default
         let device = {
             let host = cpal::default_host();
-            match host.default_output_device() {
-                Some(d) => d,
-                None => {
-                    eprintln!("[AudioOutput] No output device found, skipping playback");
-                    return;
+
+            // Try to use selected device
+            let selected_device = if let Ok(selected_idx) = self.selected_device_index.lock() {
+                if let Some(idx) = *selected_idx {
+                    if let Ok(devices) = host.output_devices() {
+                        let devices: Vec<_> = devices.collect();
+                        if idx < devices.len() {
+                            devices.into_iter().nth(idx)
+                        } else {
+                            None
+                        }
+                    } else {
+                        None
+                    }
+                } else {
+                    None
                 }
+            } else {
+                None
+            };
+
+            // Use selected device or fallback to default
+            match selected_device {
+                Some(d) => {
+                    let name = d.name().unwrap_or_else(|_| "Unknown".to_string());
+                    eprintln!(
+                        "[AudioOutput] Using device index {}: {}",
+                        self.selected_device_index.lock().unwrap().unwrap_or(0),
+                        name
+                    );
+                    d
+                }
+                None => match host.default_output_device() {
+                    Some(d) => d,
+                    None => {
+                        eprintln!("[AudioOutput] No output device found, skipping playback");
+                        return;
+                    }
+                },
             }
         };
 

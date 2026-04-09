@@ -7,14 +7,11 @@ ColumnLayout {
     PrefDropdown {
         label: "Audio Output Device"
         description: "Select the audio backend to route your music."
-        model: (Qt.platform.os === "windows") ? ["WASAPI (Shared)", "WASAPI (Exclusive)", "ASIO"] :
-               (Qt.platform.os === "android") ? ["AAudio (High-Res)", "OpenSL ES"] :
-               ["PipeWire", "PulseAudio", "ALSA"]
-        
-        currentIndex: (Qt.platform.os === "linux") ? 2 : 0
+        model: musicModel.output_devices
+        currentIndex: 0
         onOptionSelected: (index, value) => {
-            console.log("OS: " + Qt.platform.os + " | User milih:", value)
-            // TODO: implement set_output_device in Rust backend
+            console.log("OS: " + Qt.platform.os + " | User milih:", value, "index:", index)
+            musicModel.set_output_device(index)
         }
     }
 

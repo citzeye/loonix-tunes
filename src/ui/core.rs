@@ -262,6 +262,8 @@ pub struct MusicModel {
     pub set_normalizer_max_gain_db: qt_method!(fn(&mut self, val: f64)),
     pub set_normalizer_smoothing: qt_method!(fn(&mut self, val: f64)),
     pub get_normalizer_smoothing_label: qt_method!(fn(&self) -> QString),
+    pub get_output_devices: qt_method!(fn(&self) -> QVariantList),
+    pub set_output_device: qt_method!(fn(&mut self, index: i32)),
     pub set_eq_band: qt_method!(fn(&mut self, index: i32, gain: f64)),
     pub set_eq_enabled: qt_method!(fn(&mut self, enabled: bool)),
     pub set_eq_instant_apply: qt_method!(fn(&mut self)),
@@ -2071,6 +2073,19 @@ impl MusicModel {
             self.normalizer_smoothing as f32,
         );
         QString::from(label)
+    }
+
+    pub fn get_output_devices(&self) -> QVariantList {
+        let devices = self.output.get_output_devices();
+        let mut list = QVariantList::default();
+        for device in devices {
+            list.push(QString::from(device).into());
+        }
+        list
+    }
+
+    pub fn set_output_device(&mut self, index: i32) {
+        self.output.set_output_device(index as usize);
     }
 
     pub fn set_eq_band(&mut self, index: i32, gain: f64) {
