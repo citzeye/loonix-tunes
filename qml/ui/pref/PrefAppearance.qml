@@ -11,6 +11,11 @@ Item {
     property string currentWallpaper: ""
     property bool wallSyncEnabled: false
     property bool wallSyncSyncing: false
+    property bool appearanceContextMenuVisible: false
+    property int appearanceContextMenuX: 0
+    property int appearanceContextMenuY: 0
+    property int appearanceContextMenuIndex: -1
+    property bool playlistContextMenuVisible: false
 
     Connections {
         target: theme
@@ -157,7 +162,7 @@ Item {
                             acceptedButtons: Qt.LeftButton | Qt.RightButton
                             onClicked: (mouse) => {
                                 if (mouse.button === Qt.RightButton) {
-                                    var mappedPos = customItemArea.mapToItem(root.contentItem, 0, customItemArea.height)
+                                    var mappedPos = customItemArea.mapToItem(root, 0, customItemArea.height)
                                     root.appearanceContextMenuX = mappedPos.x
                                     root.appearanceContextMenuY = mappedPos.y
                                     root.appearanceContextMenuIndex = presetIndex
@@ -339,16 +344,12 @@ Item {
 
                             MouseArea {
                                 anchors.fill: parent
-                                enabled: theme.is_sync_ready
-                                cursorShape: Qt.PointingHandCursor
-                                onClicked: theme.apply_wallpaper_theme()
+                                enabled: wallSyncEnabled
+                                cursorShape: wallSyncEnabled ? Qt.PointingHandCursor : Qt.ForbiddenCursor
+                                onClicked: {
+                                    if (wallSyncEnabled) theme.set_loonix_manual()
+                                }
                             }
-                        }
-                        
-                        Text {
-                            Layout.fillWidth: true
-                            text: theme.is_sync_ready ? "← Ready to apply!" : ""
-                            font.family: kodeMono.name; font.pixelSize: 9; color: "#55ff55"
                         }
                     }
                 }
@@ -361,7 +362,7 @@ Item {
                     Text {
                         id: errTxt; anchors.centerIn: parent; width: parent.width - 20
                         text: "⚠ " + wallSyncError; color: "#ff8888"
-                        font.family: kodeMono.name; font.pixelSize: 9; wrapMode: Text.Wrap
+                        font.family: kodeMono.name; font.pixelSize: 10; wrapMode: Text.Wrap
                     }
                 }
 
@@ -378,9 +379,9 @@ Item {
                         
                         RowLayout {
                             spacing: 15
-                            Text { text: "DE: " + theme.get_system_report().de; font.family: kodeMono.name; font.pixelSize: 8; color: theme.colormap.playersubtext }
-                            Text { text: "Matugen: " + (theme.get_system_report().has_matugen === "true" ? "OK" : "MISSING"); font.family: kodeMono.name; font.pixelSize: 8; color: theme.colormap.playersubtext }
-                            Text { text: "Wallpaper: " + (theme.get_system_report().has_wallpaper === "true" ? "DETECTED" : "NOT FOUND"); font.family: kodeMono.name; font.pixelSize: 8; color: theme.colormap.playersubtext }
+                            Text { text: "DE: " + theme.get_system_report().de; font.family: kodeMono.name; font.pixelSize: 10; color: theme.colormap.playersubtext }
+                            Text { text: "Matugen: " + (theme.get_system_report().has_matugen === "true" ? "OK" : "MISSING"); font.family: kodeMono.name; font.pixelSize: 10; color: theme.colormap.playersubtext }
+                            Text { text: "Wallpaper: " + (theme.get_system_report().has_wallpaper === "true" ? "DETECTED" : "NOT FOUND"); font.family: kodeMono.name; font.pixelSize: 10; color: theme.colormap.playersubtext }
                         }
                     }
                 }
@@ -388,5 +389,12 @@ Item {
 
             Item { Layout.preferredHeight: 40 }
         }
+    }
+
+    AppearanceContextMenu {
+        id: appearanceMenu
+        visible: root.appearanceContextMenuVisible
+        x: root.appearanceContextMenuX
+        y: root.appearanceContextMenuY
     }
 }

@@ -36,6 +36,7 @@ pub struct ThemeManager {
     pub set_wallpaper_path: qt_method!(fn(&mut self, path: String)),
     pub is_matugen_available: qt_method!(fn(&self) -> bool),
     pub get_system_report: qt_method!(fn(&self) -> QVariantMap),
+    pub report_bug_on_github: qt_method!(fn(&self, bug_title: QString, bug_desc: QString)),
     pub wallpaper_sync_status: qt_signal!(success: bool, message: QString),
 
     custom_themes: Vec<CustomTheme>,
@@ -208,6 +209,29 @@ impl ThemeManager {
                 )
             })
             .collect()
+    }
+
+    pub fn report_bug_on_github(&self, bug_title: QString, bug_desc: QString) {
+        let repo_url = "https://github.com/citzeye/loonix-tunes/issues/new";
+        let os_info = std::env::consts::OS;
+        let arch = std::env::consts::ARCH;
+        let version = env!("CARGO_PKG_VERSION");
+
+        let title_str = bug_title.to_string();
+        let desc_str = bug_desc.to_string();
+
+        let body = format!(
+            "### Describe the bug\n{}\n\n### System Info\n- OS: {}\n- Arch: {}\n- Version: v{}",
+            desc_str, os_info, arch, version
+        );
+
+        let encoded_title = urlencoding::encode(&title_str);
+        let encoded_body = urlencoding::encode(&body);
+        let final_url = format!("{}?title={}&body={}", repo_url, encoded_title, encoded_body);
+
+        let _ = std::process::Command::new("xdg-open")
+            .arg(final_url)
+            .spawn();
     }
 
     fn get_active_wallpaper() -> Result<String, String> {

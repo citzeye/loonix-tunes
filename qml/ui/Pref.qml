@@ -162,34 +162,40 @@ Item {
                         spacing: 8
 
                         PrefTab {
-                            text: "Hardware"
-                            icon: "󰍛"
+                            text: "About"
+                            icon: "󰋽"
                             isActive: prefPage.currentTabIndex === 0
                             onClicked: prefPage.currentTabIndex = 0
                         }
                         PrefTab {
-                            text: "Audio"
-                            icon: "󰗅"
+                            text: "Appearance"
+                            icon: "󰸌"
                             isActive: prefPage.currentTabIndex === 1
                             onClicked: prefPage.currentTabIndex = 1
                         }
                         PrefTab {
-                            text: "Appearance"
-                            icon: "󰸌"
+                            text: "Audio"
+                            icon: "󰗅"
                             isActive: prefPage.currentTabIndex === 2
                             onClicked: prefPage.currentTabIndex = 2
                         }
                         PrefTab {
-                            text: "About"
-                            icon: "󰋽"
+                            text: "Donate"
+                            icon: "󱉛"
                             isActive: prefPage.currentTabIndex === 3
                             onClicked: prefPage.currentTabIndex = 3
                         }
                         PrefTab {
-                            text: "Donate"
-                            icon: "󱉛"
+                            text: "Hardware"
+                            icon: "󰍛"
                             isActive: prefPage.currentTabIndex === 4
                             onClicked: prefPage.currentTabIndex = 4
+                        }
+                        PrefTab {
+                            text: "Report Bug"
+                            icon: "󰈮"
+                            isActive: prefPage.currentTabIndex === 5
+                            onClicked: prefPage.currentTabIndex = 5
                         }
                     }
                 }
@@ -219,16 +225,7 @@ Item {
                         Item {
                             Layout.fillWidth: true
                             Layout.fillHeight: true
-                            PrefHardware {
-                                anchors.top: parent.top
-                                anchors.left: parent.left
-                                anchors.right: parent.right
-                            }
-                        }
-                        Item {
-                            Layout.fillWidth: true
-                            Layout.fillHeight: true
-                            PrefAudio {
+                            PrefAbout {
                                 anchors.fill: parent
                             }
                         }
@@ -242,7 +239,7 @@ Item {
                         Item {
                             Layout.fillWidth: true
                             Layout.fillHeight: true
-                            PrefAbout {
+                            PrefAudio {
                                 anchors.fill: parent
                             }
                         }
@@ -250,6 +247,22 @@ Item {
                             Layout.fillWidth: true
                             Layout.fillHeight: true
                             PrefDonate {
+                                anchors.fill: parent
+                            }
+                        }
+                        Item {
+                            Layout.fillWidth: true
+                            Layout.fillHeight: true
+                            PrefHardware {
+                                anchors.top: parent.top
+                                anchors.left: parent.left
+                                anchors.right: parent.right
+                            }
+                        }
+                        Item {
+                            Layout.fillWidth: true
+                            Layout.fillHeight: true
+                            ReportBug {
                                 anchors.fill: parent
                             }
                         }

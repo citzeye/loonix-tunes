@@ -21,6 +21,17 @@
         <file alias="fonts/Oswald-Regular.ttf">../assets/fonts/Oswald-Regular.ttf</file>
         <file>ui/vst/vstwindow.qml</file>
         <file>ui/pref/PrefButton.qml</file>
+        <file>ui/pref/PrefAbout.qml</file>
+        <file>ui/pref/PrefAppearance.qml</file>
+        <file>ui/pref/PrefAudio.qml</file>
+        <file>ui/pref/PrefCollapsibleSection.qml</file>
+        <file>ui/pref/PrefDonate.qml</file>
+        <file>ui/pref/PrefDropdown.qml</file>
+        <file>ui/pref/PrefHardware.qml</file>
+        <file>ui/pref/PrefSlider.qml</file>
+        <file>ui/pref/PrefSwitch.qml</file>
+        <file>ui/pref/PrefTab.qml</file>
+        <file>ui/pref/ReportBug.qml</file>
         <file>ui/contextmenu/TabContextMenu.qml</file>
         <file>ui/contextmenu/PlaylistContextMenu.qml</file>
         <file>ui/contextmenu/AppearanceContextMenu.qml</file>
