@@ -53,4 +53,6 @@ cargo build --release
 🤝 Contributing
 Contributions, issues, and feature requests are welcome! Feel free to check the issues page.
 
+[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/A0A51WLUW4)
+
 Created with ❤️ by citzeye
