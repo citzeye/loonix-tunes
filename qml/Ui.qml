@@ -762,7 +762,7 @@ Window {
             // LOONIX DRAWER REMOVED - EQ/FX now use popup dialogs
 
             // ==========================================
-            // SECTION: SPECIAL CONTROLS
+            // SECTION: MAGIC BUTTON
             // ==========================================
             Rectangle {
                 id: specialControlsSection
@@ -867,7 +867,7 @@ Window {
                             }
                         }
 
-                        // AB REPEAT
+                        // AB REPEAT 󰇉
                         Text {
                             id: abRepeatIcon
                             text: '󰇉'
@@ -894,7 +894,7 @@ Window {
                         anchors.bottom: parent.bottom
                         spacing: 15
 
-                        // BASSBOOSTER
+                        // BASSBOOSTER toggle B
                         Item {
                             id: bassboosterContainer
                             width: bassboosterIcon.width
@@ -916,21 +916,21 @@ Window {
                             Text {
                                 id: bassboosterIcon
                                 anchors.verticalCenter: parent.verticalCenter
-                                text: musicModel.bassbooster_active ? '󰬉' : '󰯮'
+                                text: musicModel.bass_magic_active ? '󰬉' : '󰯮'
                                 font.family: symbols.name
                                 font.pixelSize: 18
-                                color: musicModel.bassbooster_active || bassboosterMA.containsMouse ? theme.colormap.playerhover : theme.colormap.playersubtext
+                                color: musicModel.bass_magic_active || bassboosterMA.containsMouse ? theme.colormap.playerhover : theme.colormap.playersubtext
                             }
 
                             MouseArea {
                                 id: bassboosterMA
                                 anchors.fill: bassboosterIcon
                                 hoverEnabled: true
-                                onClicked: musicModel.toggle_bassbooster()
+                                onClicked: musicModel.toggle_bassbooster_magic()
                             }
                         }
 
-                        // CRYSTALIZER
+                        // CRYSTALIZER toggle C
                         Item {
                             id: crystalizerContainer
                             width: crystalizerIcon.width
@@ -952,21 +952,21 @@ Window {
                             Text {
                                 id: crystalizerIcon
                                 anchors.verticalCenter: parent.verticalCenter
-                                text: musicModel.crystalizer_active ? '󰬊' : '󰯱'
+                                text: musicModel.crystal_magic_active ? '󰬊' : '󰯱'
                                 font.family: symbols.name
                                 font.pixelSize: 18
-                                color: musicModel.crystalizer_active || crystalizerMA.containsMouse ? theme.colormap.playerhover : theme.colormap.playersubtext
+                                color: musicModel.crystal_magic_active || crystalizerMA.containsMouse ? theme.colormap.playerhover : theme.colormap.playersubtext
                             }
 
                             MouseArea {
                                 id: crystalizerMA
                                 anchors.fill: crystalizerIcon
                                 hoverEnabled: true
-                                onClicked: musicModel.toggle_crystalizer()
+                                onClicked: musicModel.toggle_crystalizer_magic()
                             }
                         }
 
-                        // EQUALIZER
+                        // EQUALIZER toggle E
                         Item {
                             id: eqContainer
                             width: eqIconSlider.width
@@ -1008,7 +1008,7 @@ Window {
                             }
                         }
 
-                        // FX
+                        // FX toggle F
                         Item {
                             id: fxContainer
                             width: fxIconSlider.width
@@ -1051,7 +1051,7 @@ Window {
                             }
                         }
 
-                        // SURROUND
+                        // SURROUND toggle S
                         Item {
                             id: surroundContainer
                             width: surroundIcon.width
@@ -1073,21 +1073,21 @@ Window {
                             Text {
                                 id: surroundIcon
                                 anchors.verticalCenter: parent.verticalCenter
-                                text: musicModel.surround_active ? '󰬚' : '󰰡'
+                                text: musicModel.surround_magic_active ? '󰬚' : '󰰡'
                                 font.family: symbols.name
                                 font.pixelSize: 18
-                                color: musicModel.surround_active || surroundMA.containsMouse ? theme.colormap.playerhover : theme.colormap.playersubtext
+                                color: musicModel.surround_magic_active || surroundMA.containsMouse ? theme.colormap.playerhover : theme.colormap.playersubtext
                             }
 
                             MouseArea {
                                 id: surroundMA
                                 anchors.fill: surroundIcon
                                 hoverEnabled: true
-                                onClicked: musicModel.toggle_surround()
+                                onClicked: musicModel.toggle_surround_magic()
                             }
                         }
 
-                        // THEME icon 󰰤
+                        // THEME icon 󰰤 toggle T
                         Item {
                             id: themeContainer
                             width: themeIcon.width

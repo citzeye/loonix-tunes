@@ -1,6 +1,6 @@
 # Maintainer: citz <citz@loonix>
 pkgname=loonix-tunes
-pkgver=1.0.2
+pkgver=2.0.0
 pkgrel=1
 pkgdesc="Native desktop music player - Rust back end, Qt6 front end"
 arch=('x86_64')

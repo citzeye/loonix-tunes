@@ -23,3 +23,7 @@ node_modules
 Output/
 release_windows/
 .aider*
+
+# Fitur Berbayar (DILARANG UPLOAD)
+src/audio/dsp/pro/
+qml/ui/pref/ProAudio.qml

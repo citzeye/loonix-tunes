@@ -1,40 +1,31 @@
 /* --- LOONIX-TUNES src/audio/dsp/mod.rs --- */
 
+use std::sync::atomic::AtomicBool;
+use std::sync::OnceLock;
+
+// SHARED ATOMICS - used by both fx/ and pro/ folders
+static PRO_UNLOCKED: OnceLock<AtomicBool> = OnceLock::new();
+
+pub fn get_pro_unlocked_arc() -> &'static AtomicBool {
+    PRO_UNLOCKED.get_or_init(|| AtomicBool::new(false))
+}
+
 pub mod abrepeat;
-pub mod bassbooster;
-pub mod biquad;
 pub mod chain;
-pub mod compressor;
-pub mod crossfeed;
-pub mod crystalizer;
 pub mod eq;
+pub mod fx;
 pub mod limiter;
-pub mod middleclarity;
+pub mod magic;
 pub mod normalizer;
-pub mod pitchshifter;
+pub mod pro;
 pub mod rack;
-pub mod reverb;
-pub mod rubberband_ffi;
-pub mod stereoenhance;
-pub mod stereowidth;
-pub mod surround;
+
+// Only re-export core items - let submodules handle their own
 pub use self::abrepeat::{ABRepeat, ABRepeatState};
-pub use self::bassbooster::BassBooster;
-pub use self::biquad::BiquadLowShelf;
 pub use self::chain::DspChain;
-pub use self::compressor::Compressor;
-pub use self::crossfeed::Crossfeed;
-pub use self::crystalizer::{get_crystalizer_amount_arc, Crystalizer};
-pub use self::eq::EqProcessor;
 pub use self::limiter::Limiter;
-pub use self::middleclarity::MiddleClarity;
 pub use self::normalizer::AudioNormalizer;
-pub use self::pitchshifter::{get_pitch_ratio_arc, PitchShifter};
 pub use self::rack::DspRack;
-pub use self::reverb::Reverb;
-pub use self::stereoenhance::StereoEnhance;
-pub use self::stereowidth::StereoWidth;
-pub use self::surround::SurroundProcessor;
 
 use crate::audio::engine::ProAudioEngine;
 
@@ -47,13 +38,18 @@ pub trait DspProcessor {
 
 #[derive(Clone)]
 pub struct DspSettings {
+    pub preamp_db: f32,
     pub bass_enabled: bool,
     pub bass_gain: f32,
     pub bass_cutoff: f32,
+    pub bass_q: f32,
     pub crystal_enabled: bool,
     pub crystal_amount: f32,
+    pub crystal_freq: f32,
     pub surround_enabled: bool,
     pub surround_width: f32,
+    pub surround_room_size: f32,
+    pub surround_bass_safe: bool,
     pub mono_enabled: bool,
     pub mono_width: f32,
     pub pitch_enabled: bool,
@@ -73,13 +69,18 @@ pub struct DspSettings {
 impl Default for DspSettings {
     fn default() -> Self {
         Self {
+            preamp_db: 0.0,
             bass_enabled: false,
             bass_gain: 6.0,
-            bass_cutoff: 180.0,
+            bass_cutoff: 80.0,
+            bass_q: 0.7,
             crystal_enabled: false,
             crystal_amount: 0.20,
+            crystal_freq: 4000.0,
             surround_enabled: false,
-            surround_width: 1.8,
+            surround_width: 1.3,
+            surround_room_size: 15.0,
+            surround_bass_safe: true,
             mono_enabled: false,
             mono_width: 1.0,
             pitch_enabled: false,
@@ -151,25 +152,25 @@ impl DspManager {
         let mut rack = DspRack::new();
 
         if include_eq {
-            rack.add_processor(Box::new(EqProcessor::new()));
+            rack.add_processor(Box::new(pro::EqProcessor::new()));
         }
         if include_compressor {
-            rack.add_processor(Box::new(Compressor::new()));
+            rack.add_processor(Box::new(pro::Compressor::new()));
         }
         if include_reverb {
-            rack.add_processor(Box::new(Reverb::new()));
+            rack.add_processor(Box::new(pro::Reverb::new()));
         }
         if include_surround {
-            rack.add_processor(Box::new(SurroundProcessor::new()));
+            rack.add_processor(Box::new(pro::SurroundProcessor::new()));
         }
         if include_limiter {
             rack.add_processor(Box::new(Limiter::new()));
         }
         if include_bassbooster {
-            rack.add_processor(Box::new(BassBooster::new()));
+            rack.add_processor(Box::new(pro::BassBooster::new()));
         }
         if include_crystalizer {
-            rack.add_processor(Box::new(Crystalizer::new(0.3)));
+            rack.add_processor(Box::new(pro::Crystalizer::new()));
         }
 
         rack
@@ -191,7 +192,7 @@ impl DspController {
             _ => 0,
         };
 
-        let arc = reverb::get_reverb_preset_arc();
+        let arc = pro::get_reverb_preset_arc();
         arc.store(preset_id, std::sync::atomic::Ordering::Relaxed);
 
         preset_id
@@ -208,20 +209,20 @@ impl DspController {
             0
         };
 
-        let arc = reverb::get_reverb_preset_arc();
+        let arc = pro::get_reverb_preset_arc();
         arc.store(preset_id, std::sync::atomic::Ordering::Relaxed);
 
         preset_id
     }
 
     pub fn set_compressor_enabled(enabled: bool) {
-        let arc = compressor::get_compressor_enabled_arc();
+        let arc = pro::get_compressor_enabled_arc();
         arc.store(enabled, std::sync::atomic::Ordering::Relaxed);
     }
 
     pub fn set_compressor_threshold(val: f64) {
         let threshold_db = -60.0 + (val * 60.0);
-        let arc = compressor::get_compressor_threshold_arc();
+        let arc = pro::get_compressor_threshold_arc();
         arc.store(
             (threshold_db as f32).to_bits(),
             std::sync::atomic::Ordering::Relaxed,
@@ -229,7 +230,7 @@ impl DspController {
     }
 
     pub fn get_compressor_threshold() -> f64 {
-        let arc = compressor::get_compressor_threshold_arc();
+        let arc = pro::get_compressor_threshold_arc();
         let bits = arc.load(std::sync::atomic::Ordering::Relaxed);
         let threshold_db = f32::from_bits(bits);
         ((threshold_db + 60.0) / 60.0) as f64
@@ -243,7 +244,7 @@ impl DspController {
             2.0_f32.powf((raw as f32) / 12.0)
         };
 
-        let arc = get_pitch_ratio_arc();
+        let arc = pro::get_pitch_ratio_arc();
         arc.store(ratio.to_bits(), std::sync::atomic::Ordering::Relaxed);
     }
 
@@ -254,8 +255,6 @@ impl DspController {
     }
 
     pub fn set_crystalizer_amount(amount: f32) {
-        if let Some(arc) = get_crystalizer_amount_arc() {
-            arc.store(amount.to_bits(), std::sync::atomic::Ordering::Relaxed);
-        }
+        pro::get_crystal_amount_arc().store(amount.to_bits(), std::sync::atomic::Ordering::Relaxed);
     }
 }

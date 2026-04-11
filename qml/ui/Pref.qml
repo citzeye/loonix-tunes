@@ -21,18 +21,12 @@ Item {
         
         MouseArea {
             anchors.fill: parent
-            // TANGKAP SEMUA! Jangan dikasih no button
             acceptedButtons: Qt.AllButtons 
-            hoverEnabled: true // Cegah tooltip dari Ui.qml muncul pas di-hover
+            hoverEnabled: true 
             
-            // HAPUS propagateComposedEvents: true
-            
-            // Tangkap scroll wheel biar nggak bisa scroll playlist di bawahnya
             onWheel: (wheel) => { wheel.accepted = true } 
             
             onClicked: {
-                // Karena popupContainer di bawah punya tameng sendiri,
-                // klik yang sampai ke sini PASTI di luar popup. Langsung tutup.
                 root.prefDialogVisible = false
             }
         }
@@ -55,7 +49,6 @@ Item {
         // ==========================================
         // 2. TAMENG POPUP (Tembok Dalam)
         // ==========================================
-        // Mencegah klik di area kosong dalam popup tembus ke background (yang bikin ketutup)
         MouseArea {
             anchors.fill: parent
             acceptedButtons: Qt.AllButtons
@@ -186,7 +179,7 @@ Item {
                             onClicked: prefPage.currentTabIndex = 3
                         }
                         PrefTab {
-                            text: "Hardware"
+                            text: "Pro Audio"
                             icon: "󰍛"
                             isActive: prefPage.currentTabIndex === 4
                             onClicked: prefPage.currentTabIndex = 4

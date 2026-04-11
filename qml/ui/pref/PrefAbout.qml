@@ -72,7 +72,7 @@ Flickable {
                 }
 
                 Text {
-                    text: "v1.0.2"
+                    text: "v2.0.0"
                     Layout.alignment: Qt.AlignHCenter
                     color: theme.colormap["playersubtext"]
                     font.family: kodeMono.name

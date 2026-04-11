@@ -1,8 +1,8 @@
 /* --- LOONIX-TUNES src/audio/audio_output.rs --- */
-use crate::audio::dsp::crystalizer::get_crystalizer_amount_arc;
+use crate::audio::dsp::magic::get_crystal_amount_arc;
+use crate::audio::dsp::pro::prohighres::HighResProcessor;
 use crate::audio::dsp::{DspChain, DspProcessor};
 use crate::audio::engine::OutputMode;
-use crate::audio::highres::HighResProcessor;
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
 use ringbuf::traits::{Consumer, Observer};
 use ringbuf::HeapCons;
@@ -10,7 +10,6 @@ use std::sync::atomic::{AtomicBool, AtomicU32, AtomicU64, Ordering};
 use std::sync::{Arc, Mutex};
 
 #[cfg(target_os = "linux")]
-use std::thread;
 
 // Helper to convert f32 to u32 bits for atomic storage
 fn f32_to_bits(f: f32) -> u32 {
@@ -68,9 +67,9 @@ pub struct AudioOutput {
     normalizer_enabled: Arc<AtomicBool>,
     // Normalizer processor (EBU R128) - wrapped in Arc<Mutex> for thread-safe mutable access
     normalizer: Arc<Mutex<crate::audio::dsp::AudioNormalizer>>,
-    // PipeWire thread for exclusive mode on Linux
-    #[cfg(target_os = "linux")]
-    pw_thread: Option<std::thread::JoinHandle<()>>,
+    // Normalizer buffers (pre-allocated, zero-alloc in callback)
+    norm_input: Vec<f32>,
+    norm_output: Vec<f32>,
     // Selected audio device (None = use default)
     selected_device_index: Arc<Mutex<Option<usize>>>,
 }
@@ -112,8 +111,8 @@ impl AudioOutput {
             normalizer: Arc::new(Mutex::new(crate::audio::dsp::AudioNormalizer::new(
                 true, -14.0,
             ))),
-            #[cfg(target_os = "linux")]
-            pw_thread: None,
+            norm_input: vec![0.0f32; 16384],
+            norm_output: vec![0.0f32; 16384],
             selected_device_index: Arc::new(Mutex::new(None)),
         }
     }
@@ -229,13 +228,13 @@ impl AudioOutput {
         let mut current_settings = settings.clone();
 
         // Read current crystal amount from atomic (real-time from UI)
-        if let Some(arc) = get_crystalizer_amount_arc() {
-            let bits = arc.load(Ordering::Relaxed);
-            let amount = bits_to_f32(bits);
-            current_settings.crystal_amount = amount;
-        }
+        let bits = get_crystal_amount_arc().load(Ordering::Relaxed);
+        let amount = f32::from_bits(bits);
+        current_settings.crystal_amount = amount;
 
-        let rack = crate::audio::dsp::DspRack::build_chain(&current_settings);
+        let processors = crate::audio::dsp::DspRack::build_processors(&current_settings);
+        let mut rack = crate::audio::dsp::DspRack::new();
+        rack.processors = processors;
         self.dsp_chain.swap_chain(rack);
     }
 
@@ -288,6 +287,7 @@ impl AudioOutput {
         self.normalizer.clone()
     }
 
+    #[allow(deprecated)]
     pub fn get_output_devices(&self) -> Vec<String> {
         let host = cpal::default_host();
         let mut devices = Vec::new();
@@ -333,28 +333,10 @@ impl AudioOutput {
             self.crossfade_frames.store(0, Ordering::SeqCst);
         }
 
-        let is_exclusive = self.exclusive_mode.load(Ordering::SeqCst);
+        let _is_exclusive = self.exclusive_mode.load(Ordering::SeqCst);
 
-        // HYBRID MODE: Linux + Exclusive = Native PipeWire
-        #[cfg(target_os = "linux")]
-        if is_exclusive {
-            // Stop existing cpal stream if any
-            self.stream = None;
-
-            let sample_rate = self.sample_rate;
-            let volume_bits = self.volume_bits.clone();
-            let is_running = self.is_running.clone();
-
-            // Spawn native PipeWire thread
-            let handle = thread::spawn(move || {
-                spawn_pipewire_exclusive(sample_rate, volume_bits, is_running);
-            });
-
-            self.pw_thread = Some(handle);
-            self.is_running.store(true, Ordering::SeqCst);
-            self.is_started.store(true, Ordering::SeqCst);
-            return;
-        }
+        // Linux exclusive mode handled by cpal automatically (uses PipeWire/ALSA)
+        // Removed broken native PipeWire implementation
 
         // If stream already exists (reuse for crossfade), just update consumer
         if self.stream.is_some() {
@@ -396,6 +378,7 @@ impl AudioOutput {
             };
 
             // Use selected device or fallback to default
+            #[allow(deprecated)]
             match selected_device {
                 Some(d) => {
                     let name = d.name().unwrap_or_else(|_| "Unknown".to_string());
@@ -444,13 +427,14 @@ impl AudioOutput {
         let mode_shared = self.mode_shared.clone();
         let dsp_chain = self.dsp_chain.clone();
         let dsp_enabled = self.dsp_enabled.clone();
-        let highres_enabled = self.highres_enabled.clone();
         let normalizer_enabled = self.normalizer_enabled.clone();
         let normalizer = self.normalizer.clone();
         let samples_played = self.samples_played.clone();
         let crossfade_frames = self.crossfade_frames.clone();
         let sample_rate = self.sample_rate;
         let empty_count_clone = self.empty_callback_count.clone();
+        let mut norm_input_for_callback = self.norm_input.clone();
+        let mut norm_output_for_callback = self.norm_output.clone();
 
         is_running.store(true, Ordering::SeqCst);
         self.is_started.store(true, Ordering::SeqCst);
@@ -476,18 +460,21 @@ impl AudioOutput {
                     // FIX #1: Zero-fill di awal callback (KRITIS)
                     data.fill(0.0);
 
-                    // EBU R128 Normalizer buffers (zero-alloc inside closure)
-                    let mut norm_input = vec![0.0f32; 16384];
-                    let mut norm_output = vec![0.0f32; 16384];
+                    // EBU R128 Normalizer buffers (pre-allocated, zero-alloc)
+                    let norm_input = &mut norm_input_for_callback[..];
+                    let norm_output = &mut norm_output_for_callback[..];
 
                     if !is_running.load(Ordering::SeqCst) {
                         return;
                     }
 
                     // Lock primary consumer
-                    let mut cons_lock = match shared_for_callback.lock() {
+                    let mut cons_lock = match shared_for_callback.try_lock() {
                         Ok(l) => l,
-                        Err(_) => return,
+                        Err(_) => {
+                            data.fill(0.0);
+                            return;
+                        }
                     };
                     let cons = match cons_lock.as_mut() {
                         Some(c) => c,
@@ -502,8 +489,11 @@ impl AudioOutput {
 
                     // Check if crossfade consumer has data (track transition vs seek fade-in)
                     let has_crossfade_consumer = {
-                        let xf_lock = crossfade_consumer_for_callback.lock().unwrap();
-                        xf_lock.is_some()
+                        if let Ok(xf_lock) = crossfade_consumer_for_callback.try_lock() {
+                            xf_lock.is_some()
+                        } else {
+                            false
+                        }
                     };
 
                     // Track samples actually read from consumer (for Master Clock)
@@ -524,18 +514,19 @@ impl AudioOutput {
 
                         // Scope the crossfade lock to minimize hold time
                         {
-                            let mut xf_lock = crossfade_consumer_for_callback.lock().unwrap();
-                            if let Some(ref mut xf_cons) = *xf_lock {
-                                let xfade_safe_len = samples_needed.min(crossfade_buffer.len());
-                                xfade_read =
-                                    xf_cons.pop_slice(&mut crossfade_buffer[..xfade_safe_len]);
-                                // Auto-cleanup: old consumer exhausted -> drop -> Rust Drop
-                                if xfade_read == 0 {
-                                    *xf_lock = None;
+                            if let Ok(mut xf_lock) = crossfade_consumer_for_callback.try_lock() {
+                                if let Some(ref mut xf_cons) = *xf_lock {
+                                    let xfade_safe_len = samples_needed.min(crossfade_buffer.len());
+                                    xfade_read =
+                                        xf_cons.pop_slice(&mut crossfade_buffer[..xfade_safe_len]);
+                                    // Auto-cleanup: old consumer exhausted -> drop -> Rust Drop
+                                    if xfade_read == 0 {
+                                        *xf_lock = None;
+                                        xfade_dropped = true;
+                                    }
+                                } else {
                                     xfade_dropped = true;
                                 }
-                            } else {
-                                xfade_dropped = true;
                             }
                         }
 
@@ -651,20 +642,11 @@ impl AudioOutput {
                             .copy_from_slice(&read_buffer[..process_len]);
                     }
 
-                    // High-Res processing (f64 internal depth)
-                    if highres_enabled.load(Ordering::SeqCst) {
-                        let mut temp = vec![0.0f32; process_len];
-                        for (i, &sample) in processed_buffer[..process_len].iter().enumerate() {
-                            temp[i] = (sample as f64 * 0.99999999) as f32;
-                        }
-                        processed_buffer[..process_len].copy_from_slice(&temp);
-                    }
-
                     // EBU R128 Normalizer (Fixed gain per track)
                     if normalizer_enabled.load(Ordering::SeqCst) {
                         let safe_len = process_len.min(norm_input.len());
                         norm_input[..safe_len].copy_from_slice(&processed_buffer[..safe_len]);
-                        if let Ok(mut norm) = normalizer.lock() {
+                        if let Ok(mut norm) = normalizer.try_lock() {
                             norm.process(&norm_input[..safe_len], &mut norm_output[..safe_len]);
                             processed_buffer[..safe_len].copy_from_slice(&norm_output[..safe_len]);
                         }
@@ -801,69 +783,6 @@ impl AudioOutput {
     }
 }
 
-#[cfg(target_os = "linux")]
-fn spawn_pipewire_exclusive(
-    sample_rate: u32,
-    _volume_bits: Arc<AtomicU32>,
-    is_running: Arc<AtomicBool>,
-) {
-    use pipewire as pw;
-    use pw::properties::properties;
-    use std::sync::atomic::Ordering;
-    use std::time::Duration;
-
-    pw::init();
-
-    let mainloop = match pw::main_loop::MainLoopRc::new(None) {
-        Ok(m) => m,
-        Err(e) => {
-            eprintln!("[PIPEWIRE] Failed to create main loop: {}", e);
-            return;
-        }
-    };
-
-    let context = match pw::context::ContextRc::new(&mainloop, None) {
-        Ok(c) => c,
-        Err(e) => {
-            eprintln!("[PIPEWIRE] Failed to create context: {}", e);
-            return;
-        }
-    };
-
-    let core = match context.connect_rc(None) {
-        Ok(c) => c,
-        Err(e) => {
-            eprintln!("[PIPEWIRE] Failed to connect to core: {}", e);
-            return;
-        }
-    };
-
-    let props = properties! {
-        *pw::keys::MEDIA_TYPE => "Audio",
-        *pw::keys::MEDIA_CATEGORY => "Playback",
-        *pw::keys::MEDIA_ROLE => "Music",
-        *pw::keys::NODE_NAME => "LoonixTunesExclusive",
-        "node.exclusive" => "true",
-    };
-
-    let _stream = match pw::stream::StreamBox::new(&core, "loonix-tunes-exclusive", props) {
-        Ok(s) => s,
-        Err(e) => {
-            eprintln!("[PIPEWIRE] Failed to create stream: {}", e);
-            return;
-        }
-    };
-
-    println!(
-        "[PIPEWIRE] Exclusive mode ACTIVE - direct hardware access at {}Hz",
-        sample_rate
-    );
-
-    while is_running.load(Ordering::SeqCst) {
-        std::thread::sleep(Duration::from_millis(10));
-    }
-}
-
 impl Drop for AudioOutput {
     fn drop(&mut self) {
         // Stop processing first
@@ -872,13 +791,5 @@ impl Drop for AudioOutput {
 
         // Explicitly drop the stream to release audio device resources
         let _ = self.stream.take();
-
-        // Join PipeWire thread to ensure clean shutdown
-        #[cfg(target_os = "linux")]
-        {
-            if let Some(handle) = self.pw_thread.take() {
-                let _ = handle.join();
-            }
-        }
     }
 }

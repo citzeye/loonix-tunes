@@ -1,6 +1,17 @@
 /* --- LOONIX-TUNES src/audio/dsp/limiter.rs --- */
 
 use crate::audio::dsp::DspProcessor;
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::{Arc, OnceLock};
+
+// Global atomics for real-time UI control (lock-free, like compressor pattern)
+static LIMITER_ENABLED: OnceLock<Arc<AtomicBool>> = OnceLock::new();
+
+pub fn get_limiter_enabled_arc() -> Arc<AtomicBool> {
+    LIMITER_ENABLED
+        .get_or_init(|| Arc::new(AtomicBool::new(false)))
+        .clone()
+}
 
 pub struct Limiter {
     threshold_lin: f32,
@@ -27,6 +38,13 @@ impl Limiter {
 impl DspProcessor for Limiter {
     #[inline(always)]
     fn process(&mut self, input: &[f32], output: &mut [f32]) {
+        // Check enabled state from atomic (set by UI toggle)
+        let enabled = get_limiter_enabled_arc().load(Ordering::Relaxed);
+        if !enabled {
+            output.copy_from_slice(input);
+            return;
+        }
+
         let safe_len = input.len() - (input.len() % 2);
 
         for i in (0..safe_len).step_by(2) {
@@ -51,10 +69,13 @@ impl DspProcessor for Limiter {
                 gain = self.threshold_lin / self.envelope;
             }
 
-            // 4. APPLY GAIN & SAFETY SOFT-CLIP
-            // Clamp -0.99 to 0.99 untuk jaminan gak digital clipping
-            output[i] = (l * gain).clamp(-0.99, 0.99);
-            output[i + 1] = (r * gain).clamp(-0.99, 0.99);
+            // 4. APPLY GAIN with SOFT CLIPPING using tanh
+            // Soft clip: tanh rounds the signal smoothly at peaks
+            let soft_clip_gain = 1.0;
+            let l_limited = (l * gain * soft_clip_gain).tanh();
+            let r_limited = (r * gain * soft_clip_gain).tanh();
+            output[i] = l_limited;
+            output[i + 1] = r_limited;
         }
     }
 

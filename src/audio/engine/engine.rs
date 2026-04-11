@@ -1,8 +1,8 @@
 /* --- LOONIX-TUNES src/audio/engine/engine.rs | The Boss --- */
 
 use crate::audio::audio_output::AudioOutput;
-use crate::audio::dac::DacManager;
 use crate::audio::decoder::{DecoderControl, DecoderEvent, SEEK_STATE_DECODING};
+use crate::audio::dsp::pro::prodac::DacManager;
 use crate::audio::dsp::DspSettings;
 use crate::audio::scanner;
 use ringbuf::traits::Split;

@@ -7,13 +7,11 @@ pub mod engine;
 pub mod audio_bus;
 pub mod audio_output;
 pub mod buffer;
-pub mod dac;
 pub mod decoder;
 pub mod resample;
 
 // DSP
 pub mod dsp;
-pub mod highres;
 
 // Pre-scan loudness
 pub mod scanner;
