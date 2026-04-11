@@ -7,7 +7,7 @@ pub mod audio;
 pub mod ui;
 
 #[cfg(target_os = "linux")]
-pub mod dbus_service;
+pub mod dbusservice;
 
 use crate::audio::popup::PopupMenu;
 use crate::audio::sysmedia::SysMediaManager;
@@ -53,7 +53,7 @@ fn main() {
 
     #[cfg(target_os = "linux")]
     {
-        if let Err(e) = dbus_service::init_dbus() {
+        if let Err(e) = dbusservice::init_dbus() {
             eprintln!("[DBUS] Failed to setup: {}", e);
         }
     }
@@ -65,6 +65,10 @@ fn main() {
     // (Wajib di atas Engine biar gak Access Violation pas close app)
     // ==========================================
     let boxed_model = QObjectBox::new(MusicModel::new());
+    
+    // Start PulseAudio monitor once at startup
+    crate::audio::pulsebt::startSystemMonitor();
+    
     let boxed_theme = QObjectBox::new(ThemeManager::new());
     
     // Inject shared config from MusicModel to ThemeManager

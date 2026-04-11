@@ -1,6 +1,6 @@
 /* --- LOONIX-TUNES src/audio/engine/engine.rs | The Boss --- */
 
-use crate::audio::audio_output::AudioOutput;
+use crate::audio::audiooutput::AudioOutput;
 use crate::audio::decoder::{DecoderControl, DecoderEvent, SEEK_STATE_DECODING};
 use crate::audio::dsp::pro::prodac::DacManager;
 use crate::audio::dsp::DspSettings;
@@ -80,7 +80,7 @@ pub struct Engine {
 
     pub decoder_control: Option<Arc<DecoderControl>>,
 
-    pub audio_output: Option<AudioOutput>,
+    pub audiooutput: Option<AudioOutput>,
 
     pub dac_manager: DacManager,
 
@@ -125,7 +125,7 @@ impl Engine {
         Self {
             producer: None,
             decoder_control: None,
-            audio_output: None,
+            audiooutput: None,
             dac_manager: DacManager::new(),
             volume: 1.0,
             balance: 0.0,
@@ -155,7 +155,7 @@ impl Engine {
     /* START AUDIO                                      */
     /* ------------------------------------------------ */
 
-    pub fn start_audio_output(&mut self, path: String) {
+    pub fn start_audiooutput(&mut self, path: String) {
         // 1. Setup Ring Buffer - 500ms buffer
         let sample_rate = 48000; // frames per second
         let channels = 2; // Output always forced to STEREO by resampler (see decoder.rs)
@@ -204,29 +204,29 @@ impl Engine {
         }
 
         // 7. Setup Audio Output - reuse existing for crossfade (persistent device)
-        if let Some(ref mut audio_output) = self.audio_output {
+        if let Some(ref mut audiooutput) = self.audiooutput {
             // Reuse existing AudioOutput - device stream stays open
-            audio_output.mode = self.output_mode;
-            audio_output.update_mode_internal();
-            audio_output.set_volume(self.volume);
-            audio_output.set_balance(self.balance);
-            audio_output.update_dsp(&self.dsp_settings);
-            audio_output.reset_dsp();
-            audio_output.reset_samples_played(0);
+            audiooutput.mode = self.output_mode;
+            audiooutput.update_mode_internal();
+            audiooutput.set_volume(self.volume);
+            audiooutput.set_balance(self.balance);
+            audiooutput.update_dsp(&self.dsp_settings);
+            audiooutput.reset_dsp();
+            audiooutput.reset_samples_played(0);
             // clear_old=true: fresh track start, don't crossfade from old track's buffer
-            audio_output.start(cons, true, buffer_size);
+            audiooutput.start(cons, true, buffer_size);
         } else {
             // First track - create new AudioOutput
-            let mut audio_output = AudioOutput::new();
-            audio_output.mode = self.output_mode;
-            audio_output.update_mode_internal();
-            audio_output.set_volume(self.volume);
-            audio_output.set_balance(self.balance);
-            audio_output.update_dsp(&self.dsp_settings);
-            audio_output.reset_dsp();
-            audio_output.reset_samples_played(0);
-            audio_output.start(cons, true, buffer_size);
-            self.audio_output = Some(audio_output);
+            let mut audiooutput = AudioOutput::new();
+            audiooutput.mode = self.output_mode;
+            audiooutput.update_mode_internal();
+            audiooutput.set_volume(self.volume);
+            audiooutput.set_balance(self.balance);
+            audiooutput.update_dsp(&self.dsp_settings);
+            audiooutput.reset_dsp();
+            audiooutput.reset_samples_played(0);
+            audiooutput.start(cons, true, buffer_size);
+            self.audiooutput = Some(audiooutput);
         }
 
         self.is_playing = true;
@@ -260,12 +260,12 @@ impl Engine {
             return;
         }
 
-        if let Some(ref audio_output) = self.audio_output {
-            self.samples_played = audio_output.get_samples_played();
+        if let Some(ref audiooutput) = self.audiooutput {
+            self.samples_played = audiooutput.get_samples_played();
 
-            if audio_output.is_seek_mode() && audio_output.get_buffer_len() > 4096 {
-                audio_output.set_seek_mode(false);
-                audio_output.trigger_delayed_resume();
+            if audiooutput.is_seek_mode() && audiooutput.get_buffer_len() > 4096 {
+                audiooutput.set_seek_mode(false);
+                audiooutput.trigger_delayed_resume();
             }
         }
 
@@ -306,13 +306,13 @@ impl Engine {
 
         if self.decoder_eof && self.is_playing {
             let starvation_ok = self
-                .audio_output
+                .audiooutput
                 .as_ref()
                 .map(|ao| ao.is_truly_buffer_empty())
                 .unwrap_or(false);
 
             let buffer_physically_empty = self
-                .audio_output
+                .audiooutput
                 .as_ref()
                 .map(|ao| ao.get_buffer_len() == 0)
                 .unwrap_or(true);
@@ -383,8 +383,8 @@ impl Engine {
         // stop() moves the consumer to the crossfade shadow preset
         // The cpal stream stays open (persistent device)
         // Only on explicit FfmpegEngine::stop() is AudioOutput dropped
-        if let Some(ref audio_output) = self.audio_output {
-            audio_output.stop();
+        if let Some(ref audiooutput) = self.audiooutput {
+            audiooutput.stop();
         }
 
         self.producer = None;
@@ -395,20 +395,20 @@ impl Engine {
     /* ------------------------------------------------ */
 
     pub fn pause(&mut self) {
-        if let Some(ref audio_output) = self.audio_output {
-            self.paused_samples_played = audio_output.get_samples_played();
+        if let Some(ref audiooutput) = self.audiooutput {
+            self.paused_samples_played = audiooutput.get_samples_played();
         }
         self.is_playing = false;
 
-        if let Some(ref mut audio_output) = self.audio_output {
-            audio_output.pause();
+        if let Some(ref mut audiooutput) = self.audiooutput {
+            audiooutput.pause();
         }
     }
 
     pub fn resume(&mut self) {
-        if let Some(ref mut audio_output) = self.audio_output {
-            audio_output.set_samples_played(self.paused_samples_played);
-            audio_output.resume();
+        if let Some(ref mut audiooutput) = self.audiooutput {
+            audiooutput.set_samples_played(self.paused_samples_played);
+            audiooutput.resume();
         }
         self.is_playing = true;
     }
@@ -418,57 +418,57 @@ impl Engine {
     pub fn set_volume(&mut self, volume: f32) {
         self.volume = volume;
 
-        if let Some(ref audio_output) = self.audio_output {
-            audio_output.set_volume(volume);
+        if let Some(ref audiooutput) = self.audiooutput {
+            audiooutput.set_volume(volume);
         }
     }
 
     pub fn set_balance(&mut self, balance: f32) {
         self.balance = balance;
 
-        if let Some(ref audio_output) = self.audio_output {
-            audio_output.set_balance(balance);
+        if let Some(ref audiooutput) = self.audiooutput {
+            audiooutput.set_balance(balance);
         }
     }
 
     pub fn set_dsp_settings(&mut self, settings: DspSettings) {
         self.dsp_settings = settings;
-        if let Some(ref mut audio_output) = self.audio_output {
-            audio_output.update_dsp(&self.dsp_settings);
+        if let Some(ref mut audiooutput) = self.audiooutput {
+            audiooutput.update_dsp(&self.dsp_settings);
         }
     }
 
     pub fn set_dsp_enabled(&mut self, enabled: bool) {
         self.dsp_enabled = enabled;
-        if let Some(ref mut audio_output) = self.audio_output {
-            audio_output.set_dsp_enabled(enabled);
+        if let Some(ref mut audiooutput) = self.audiooutput {
+            audiooutput.set_dsp_enabled(enabled);
         }
     }
 
     pub fn set_exclusive_mode(&mut self, enabled: bool) {
         self.dac_manager.set_exclusive_mode(enabled);
 
-        if let Some(ref mut audio_output) = self.audio_output {
-            audio_output.set_exclusive_mode(enabled);
+        if let Some(ref mut audiooutput) = self.audiooutput {
+            audiooutput.set_exclusive_mode(enabled);
         }
     }
 
     pub fn set_normalizer_enabled(&mut self, enabled: bool) {
-        if let Some(ref mut audio_output) = self.audio_output {
-            audio_output.set_normalizer_enabled(enabled);
+        if let Some(ref mut audiooutput) = self.audiooutput {
+            audiooutput.set_normalizer_enabled(enabled);
         }
     }
 
     pub fn set_normalizer_gain(&mut self, gain: f32) {
-        if let Some(ref audio_output) = self.audio_output {
-            audio_output.set_normalizer_gain(gain);
+        if let Some(ref audiooutput) = self.audiooutput {
+            audiooutput.set_normalizer_gain(gain);
         }
     }
 
     pub fn get_normalizer_arc(
         &self,
     ) -> Option<std::sync::Arc<std::sync::Mutex<crate::audio::dsp::AudioNormalizer>>> {
-        self.audio_output.as_ref().map(|ao| ao.get_normalizer_arc())
+        self.audiooutput.as_ref().map(|ao| ao.get_normalizer_arc())
     }
 
     pub fn set_normalizer_smoothing(&mut self, smoothing: f32) {
@@ -479,8 +479,8 @@ impl Engine {
     }
 
     pub fn reset_dsp(&mut self) {
-        if let Some(ref mut audio_output) = self.audio_output {
-            audio_output.reset_dsp();
+        if let Some(ref mut audiooutput) = self.audiooutput {
+            audiooutput.reset_dsp();
         }
     }
 
@@ -492,9 +492,9 @@ impl Engine {
         self.output_mode = mode;
         self.is_mono = mode == OutputMode::Mono;
 
-        if let Some(ref mut audio_output) = self.audio_output {
-            audio_output.mode = mode;
-            audio_output.update_mode_internal();
+        if let Some(ref mut audiooutput) = self.audiooutput {
+            audiooutput.mode = mode;
+            audiooutput.update_mode_internal();
         }
     }
 
@@ -518,7 +518,7 @@ impl Engine {
             return 0.0;
         }
         // Guard: don't return garbage if audio output not initialized
-        if self.audio_output.is_none() {
+        if self.audiooutput.is_none() {
             return 0.0;
         }
         // samples_played / sample_rate = seconds
@@ -528,7 +528,7 @@ impl Engine {
     pub fn get_duration(&self) -> f64 {
         // Prioritaskan self.duration_ms yang sudah dikoreksi oleh EndOfTrack
         // Fallback ke metadata kalau belum tersedia
-        if self.audio_output.is_none() {
+        if self.audiooutput.is_none() {
             return 0.0;
         }
 
@@ -552,8 +552,8 @@ impl Engine {
     // Single source of truth: callback-based position from audio clock
     pub fn get_position_ms(&self) -> u64 {
         if self.is_playing {
-            if let Some(ref audio_output) = self.audio_output {
-                let samples = audio_output.get_samples_played();
+            if let Some(ref audiooutput) = self.audiooutput {
+                let samples = audiooutput.get_samples_played();
                 if self.sample_rate > 0 {
                     return ((samples as f64 * 1000.0)
                         / (self.sample_rate as f64 * self.channels as f64))
@@ -597,11 +597,11 @@ impl Engine {
         self.samples_played = target_samples;
 
         // 2. Audio: set seek mode + CLEAR OLD BUFFER
-        if let Some(ref audio_output) = self.audio_output {
-            audio_output.set_seek_mode(true);
-            audio_output.reset_samples_played(target_samples);
-            audio_output.reset_dsp();
-            audio_output.clear_buffer(); // Clear old data before decoder seeks
+        if let Some(ref audiooutput) = self.audiooutput {
+            audiooutput.set_seek_mode(true);
+            audiooutput.reset_samples_played(target_samples);
+            audiooutput.reset_dsp();
+            audiooutput.clear_buffer(); // Clear old data before decoder seeks
         }
 
         // 3. Command decoder to seek and pre-buffer
@@ -640,21 +640,21 @@ impl Engine {
         };
 
         // FIX 1: Hard buffer threshold with failsafe
-        if let Some(ref audio_output) = self.audio_output {
-            let buffer_len = audio_output.get_buffer_len();
+        if let Some(ref audiooutput) = self.audiooutput {
+            let buffer_len = audiooutput.get_buffer_len();
             let min_required = 4096;
 
             if buffer_len >= min_required && decoder_ready {
                 // Normal path - buffer is ready
-                audio_output.reset_samples_played(exact_samples);
-                audio_output.set_seek_mode(false);
-                audio_output.trigger_delayed_resume();
-                audio_output.trigger_crossfade();
+                audiooutput.reset_samples_played(exact_samples);
+                audiooutput.set_seek_mode(false);
+                audiooutput.trigger_delayed_resume();
+                audiooutput.trigger_crossfade();
             } else if buffer_len > 0 {
                 // Failsafe path - buffer has some data, force unmute
                 // Worst case: slight audio glitch, but never stuck muted
-                audio_output.set_seek_mode(false);
-                audio_output.trigger_delayed_resume();
+                audiooutput.set_seek_mode(false);
+                audiooutput.trigger_delayed_resume();
             }
         }
     }
@@ -761,7 +761,7 @@ impl FfmpegEngine {
             engine.set_normalizer_gain(1.0);
 
             // Start new playback
-            engine.start_audio_output(path.to_string());
+            engine.start_audiooutput(path.to_string());
             self.current_path = Some(path.to_string());
 
             // Get normalizer handle for background scanner callback

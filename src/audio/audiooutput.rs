@@ -1,13 +1,30 @@
-/* --- LOONIX-TUNES src/audio/audio_output.rs --- */
+/* --- LOONIX-TUNES src/audio/audiooutput.rs --- */
 use crate::audio::dsp::magic::get_crystal_amount_arc;
 use crate::audio::dsp::pro::prohighres::HighResProcessor;
 use crate::audio::dsp::{DspChain, DspProcessor};
 use crate::audio::engine::OutputMode;
+use crate::audio::pulsebt;
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
 use ringbuf::traits::{Consumer, Observer};
 use ringbuf::HeapCons;
 use std::sync::atomic::{AtomicBool, AtomicU32, AtomicU64, Ordering};
 use std::sync::{Arc, Mutex};
+
+// Get list of available output devices
+pub fn getAvailableDevices() -> Vec<String> {
+    let host = cpal::default_host();
+    let mut devices = Vec::new();
+
+    if let Ok(enumerated) = host.output_devices() {
+        for device in enumerated {
+            if let Ok(name) = device.name() {
+                devices.push(name);
+            }
+        }
+    }
+
+    devices
+}
 
 #[cfg(target_os = "linux")]
 
@@ -72,6 +89,8 @@ pub struct AudioOutput {
     norm_output: Vec<f32>,
     // Selected audio device (None = use default)
     selected_device_index: Arc<Mutex<Option<usize>>>,
+    // Bluetooth detection (PulseAudio-based)
+    is_bluetooth_detected: Arc<AtomicBool>,
 }
 
 impl Default for AudioOutput {
@@ -114,6 +133,7 @@ impl AudioOutput {
             norm_input: vec![0.0f32; 16384],
             norm_output: vec![0.0f32; 16384],
             selected_device_index: Arc::new(Mutex::new(None)),
+            is_bluetooth_detected: Arc::new(AtomicBool::new(false)),
         }
     }
 
@@ -319,6 +339,25 @@ impl AudioOutput {
             .lock()
             .ok()
             .and_then(|guard| *guard)
+    }
+
+    pub fn selectDevice(&mut self, deviceName: String) {
+        // Find device index by name
+        let devices = getAvailableDevices();
+        for (i, name) in devices.iter().enumerate() {
+            if name == &deviceName {
+                if let Ok(mut selected) = self.selected_device_index.lock() {
+                    *selected = Some(i);
+                    eprintln!("[AudioOutput] Selected device {}: {}", i, name);
+                }
+                return;
+            }
+        }
+        // Not found - use default
+        if let Ok(mut selected) = self.selected_device_index.lock() {
+            *selected = None;
+        }
+        eprintln!("[AudioOutput] Device not found, using default");
     }
 
     pub fn start(&mut self, consumer: HeapCons<f32>, clear_old: bool, buffer_capacity: usize) {

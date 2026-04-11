@@ -1,5 +1,5 @@
 /* --- LOONIX-TUNES src/ui/core.rs | The Bridge (QML)--- */
-use crate::audio::audio_output::AudioOutput;
+use crate::audio::audiooutput::AudioOutput;
 use crate::audio::engine::{is_audio_file, AudioState, FfmpegEngine, MusicItem};
 
 use crate::audio::dsp::abrepeat::ABRepeat;
@@ -8,6 +8,7 @@ use crate::audio::dsp::DspSettings;
 use dirs;
 use qmetaobject::prelude::*;
 use qmetaobject::QAbstractListModel;
+use qmetaobject::QStringList;
 use qmetaobject::QVariantList;
 use qmetaobject::QVariantMap;
 
@@ -355,6 +356,16 @@ pub struct MusicModel {
     pub check_for_updates: qt_method!(fn(&mut self)),
     pub poll_update_result: qt_method!(fn(&mut self)),
     update_rx: Option<std::sync::mpsc::Receiver<String>>,
+
+    // Device selector
+    pub device_list: qt_property!(QStringList; NOTIFY device_list_changed),
+    pub selected_device: qt_property!(QString; NOTIFY device_list_changed),
+    pub device_list_changed: qt_signal!(),
+    pub bluetooth_detected: qt_property!(bool; NOTIFY device_status_changed),
+    pub system_muted: qt_property!(bool; NOTIFY device_status_changed),
+    pub device_status_changed: qt_signal!(),
+    pub refreshDeviceList: qt_method!(fn(&mut self)),
+    pub selectDevice: qt_method!(fn(&mut self, deviceName: String)),
 
     // Favorites support
     pub favorites_count: qt_property!(i32; NOTIFY favorites_changed),
@@ -1292,6 +1303,9 @@ impl MusicModel {
             }
         }
 
+        // Detect Bluetooth on play start (simple check)
+        self.refreshDeviceStatus();
+
         self.current_index_changed();
         self.title_changed();
         self.playing_changed();
@@ -2036,6 +2050,54 @@ impl MusicModel {
         }
     }
 
+    pub fn refreshDeviceList(&mut self) {
+        let devices = crate::audio::audiooutput::getAvailableDevices();
+        self.device_list = QStringList::from(devices);
+
+        // Get current selected device name
+        if let Some(idx) = self.output.get_selected_device_index() {
+            if let Some(name) = crate::audio::audiooutput::getAvailableDevices()
+                .into_iter()
+                .nth(idx)
+            {
+                self.selected_device = QString::from(name);
+            }
+        }
+
+        self.device_list_changed();
+    }
+
+    pub fn selectDevice(&mut self, deviceName: String) {
+        self.output.selectDevice(deviceName.clone());
+        self.selected_device = QString::from(deviceName);
+        self.device_list_changed();
+    }
+
+    pub fn refreshDeviceStatus(&mut self) {
+        // Non-blocking: get latest status from background monitor
+        let status = crate::audio::pulsebt::getSystemAudioStatus();
+
+        let mut changed = false;
+
+        if self.system_muted != status.isMuted {
+            self.system_muted = status.isMuted;
+            changed = true;
+        }
+
+        if self.bluetooth_detected != status.isBluetooth {
+            self.bluetooth_detected = status.isBluetooth;
+            changed = true;
+        }
+
+        if changed {
+            self.device_status_changed();
+            eprintln!(
+                "[StatusUpdate] Mute: {}, BT: {}",
+                self.system_muted, self.bluetooth_detected
+            );
+        }
+    }
+
     pub fn toggle_exclusive_mode(&mut self) {
         self.exclusive_mode = !self.exclusive_mode;
         self.exclusive_mode_changed();
@@ -2578,6 +2640,11 @@ impl MusicModel {
         }
 
         self.tick_counter += 1;
+
+        // Periodic patroli ogni 50 tick (sekitar 2.5 detik)
+        if self.tick_counter % 50 == 0 {
+            self.refreshDeviceStatus();
+        }
 
         let should_play_next = {
             if let Ok(mut ff) = self.ffmpeg.lock() {

@@ -4,14 +4,18 @@
 pub mod engine;
 
 // Core audio functionality
-pub mod audio_bus;
-pub mod audio_output;
+pub mod audiobus;
+pub mod audiooutput;
 pub mod buffer;
 pub mod decoder;
 pub mod resample;
 
 // DSP
 pub mod dsp;
+
+// PulseAudio Bluetooth Detection
+#[cfg(target_os = "linux")]
+pub mod pulsebt;
 
 // Pre-scan loudness
 pub mod scanner;
@@ -29,7 +33,7 @@ pub mod popup;
 pub mod sysmedia;
 
 // Re-export key types
-pub use self::audio_output::AudioOutput;
+pub use self::audiooutput::AudioOutput;
 pub use self::decoder::DecoderControl;
 pub use self::engine::{
     is_audio_file, AudioState, Engine, FfmpegEngine, MusicItem, OutputMode, ProAudioEngine,

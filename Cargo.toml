@@ -10,6 +10,9 @@ license = "GPL-3.0"
 eula = false
 
 [dependencies]
+# --- PULSEAUDIO for Bluetooth Detection ---
+libpulse-binding = "2.30"
+
 # --- CORE AUDIO ENGINE (Universal) ---
 ffmpeg-next = "8.0"
 cpal = "0.17.3"

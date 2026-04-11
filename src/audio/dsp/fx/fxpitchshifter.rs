@@ -1,5 +1,5 @@
 /* --- LOONIX-TUNES src/audio/dsp/fx/fxpitchshifter.rs --- */
-use crate::audio::dsp::fx::fxrubberband_ffi::{
+use crate::audio::dsp::fx::fxrubberbandffi::{
     rubberband_available, rubberband_delete, rubberband_get_latency, rubberband_new,
     rubberband_process, rubberband_reset, rubberband_retrieve, rubberband_set_pitch_scale,
     RubberBandState, RB_OPTION_FORMANT_PRESERVED, RB_OPTION_PITCH_HIGH_QUALITY,

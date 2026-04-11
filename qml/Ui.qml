@@ -1131,15 +1131,16 @@ Window {
                         anchors.bottom: parent.bottom
                         spacing: 8
 
+                        // VOLUME icon - Shows mute status + system muted
                         Text {
                             id: volIcon
-                            text: musicModel.muted ? '󰝟' : '󰕾'
+                            text: musicModel.system_muted || musicModel.muted ? '󰝟' : '󰕾'
                             font.family: symbols.name
                             font.pixelSize: 18
                             Layout.alignment: Qt.AlignVCenter
                             horizontalAlignment: Text.AlignHCenter
                             Layout.preferredWidth: 20
-                            color: volMA.containsMouse ? theme.colormap.playerhover : theme.colormap.playersubtext
+                            color: musicModel.system_muted ? '#ff4444' : (volMA.containsMouse || musicModel.muted ? theme.colormap.playerhover : theme.colormap.playersubtext)
 
                             MouseArea {
                                 id: volMA
@@ -1225,6 +1226,16 @@ Window {
                                     radius: 2
                                 }
                             }
+                        }
+                        
+                        // OUTPUT icon - Shows Bluetooth/Wired only (NOT mute)
+                        Text {
+                            id: bluetoothIcon
+                            Layout.alignment: Qt.AlignVCenter
+                            text: musicModel.bluetooth_detected ? '󰂯' : '󰂲'
+                            font.family: symbols.name
+                            font.pixelSize: 18
+                            color: musicModel.bluetooth_detected ? theme.colormap.playerhover : theme.colormap.playersubtext
                         }
                     }
                 }
