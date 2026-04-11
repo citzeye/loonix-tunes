@@ -1,9 +1,8 @@
 /* --- LOONIX-TUNES src/audio/dsp/fx/fxpitchshifter.rs --- */
 use crate::audio::dsp::fx::fxrubberbandffi::{
-    rubberband_available, rubberband_delete, rubberband_get_latency, rubberband_new,
-    rubberband_process, rubberband_reset, rubberband_retrieve, rubberband_set_pitch_scale,
-    RubberBandState, RB_OPTION_FORMANT_PRESERVED, RB_OPTION_PITCH_HIGH_QUALITY,
-    RB_OPTION_PROCESS_REALTIME,
+    rubberband_available, rubberband_delete, rubberband_new, rubberband_process, rubberband_reset,
+    rubberband_retrieve, rubberband_set_pitch_scale, RubberBandState, RB_OPTION_FORMANT_PRESERVED,
+    RB_OPTION_PITCH_HIGH_QUALITY, RB_OPTION_PROCESS_REALTIME,
 };
 use crate::audio::dsp::DspProcessor;
 use std::sync::atomic::{AtomicBool, AtomicU32, Ordering};

@@ -13,10 +13,6 @@ pub mod resample;
 // DSP
 pub mod dsp;
 
-// PulseAudio Bluetooth Detection
-#[cfg(target_os = "linux")]
-pub mod pulsebt;
-
 // Pre-scan loudness
 pub mod scanner;
 
@@ -31,6 +27,14 @@ pub mod popup;
 // System Media Controls (MPRIS on Linux)
 #[cfg(target_os = "linux")]
 pub mod sysmedia;
+
+// PulseAudio/Bluetooth Status
+#[cfg(target_os = "linux")]
+pub mod pulsebt;
+
+// System Check (pactl polling)
+#[cfg(target_os = "linux")]
+pub mod systemcheck;
 
 // Re-export key types
 pub use self::audiooutput::AudioOutput;

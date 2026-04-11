@@ -1,9 +1,12 @@
 /* --- LOONIX-TUNES src/audio/audiooutput.rs --- */
+
+#![allow(non_snake_case)]
+#![allow(unused_imports)]
+
 use crate::audio::dsp::magic::get_crystal_amount_arc;
 use crate::audio::dsp::pro::prohighres::HighResProcessor;
 use crate::audio::dsp::{DspChain, DspProcessor};
 use crate::audio::engine::OutputMode;
-use crate::audio::pulsebt;
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
 use ringbuf::traits::{Consumer, Observer};
 use ringbuf::HeapCons;
@@ -17,8 +20,8 @@ pub fn getAvailableDevices() -> Vec<String> {
 
     if let Ok(enumerated) = host.output_devices() {
         for device in enumerated {
-            if let Ok(name) = device.name() {
-                devices.push(name);
+            if let Ok(desc) = device.description() {
+                devices.push(desc.name().to_string());
             }
         }
     }
@@ -90,6 +93,7 @@ pub struct AudioOutput {
     // Selected audio device (None = use default)
     selected_device_index: Arc<Mutex<Option<usize>>>,
     // Bluetooth detection (PulseAudio-based)
+    #[allow(dead_code)]
     is_bluetooth_detected: Arc<AtomicBool>,
 }
 

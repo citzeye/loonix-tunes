@@ -1,4 +1,9 @@
 /* --- LOONIX-TUNES src/main.rs --- */
+
+#![allow(non_snake_case)]
+#![allow(unused_imports)]
+#![allow(dead_code)]
+
 #![cfg_attr(all(target_os = "windows", not(debug_assertions)), windows_subsystem = "windows")]
 use cstr::cstr;
 use qmetaobject::*;
@@ -65,10 +70,10 @@ fn main() {
     // (Wajib di atas Engine biar gak Access Violation pas close app)
     // ==========================================
     let boxed_model = QObjectBox::new(MusicModel::new());
-    
-    // Start PulseAudio monitor once at startup
-    crate::audio::pulsebt::startSystemMonitor();
-    
+
+    #[cfg(target_os = "linux")]
+    crate::audio::systemcheck::startSystemCheck();
+
     let boxed_theme = QObjectBox::new(ThemeManager::new());
     
     // Inject shared config from MusicModel to ThemeManager

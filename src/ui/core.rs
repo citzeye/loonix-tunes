@@ -1,4 +1,7 @@
 /* --- LOONIX-TUNES src/ui/core.rs | The Bridge (QML)--- */
+
+#![allow(non_snake_case)]
+
 use crate::audio::audiooutput::AudioOutput;
 use crate::audio::engine::{is_audio_file, AudioState, FfmpegEngine, MusicItem};
 
@@ -362,7 +365,8 @@ pub struct MusicModel {
     pub selected_device: qt_property!(QString; NOTIFY device_list_changed),
     pub device_list_changed: qt_signal!(),
     pub bluetooth_detected: qt_property!(bool; NOTIFY device_status_changed),
-    pub system_muted: qt_property!(bool; NOTIFY device_status_changed),
+    pub systemMuted: qt_property!(bool; NOTIFY systemMutedChanged),
+    pub systemMutedChanged: qt_signal!(),
     pub device_status_changed: qt_signal!(),
     pub refreshDeviceList: qt_method!(fn(&mut self)),
     pub selectDevice: qt_method!(fn(&mut self, deviceName: String)),
@@ -2075,26 +2079,12 @@ impl MusicModel {
 
     pub fn refreshDeviceStatus(&mut self) {
         // Non-blocking: get latest status from background monitor
-        let status = crate::audio::pulsebt::getSystemAudioStatus();
+        let muted = crate::audio::systemcheck::isSystemMuted();
 
-        let mut changed = false;
-
-        if self.system_muted != status.isMuted {
-            self.system_muted = status.isMuted;
-            changed = true;
-        }
-
-        if self.bluetooth_detected != status.isBluetooth {
-            self.bluetooth_detected = status.isBluetooth;
-            changed = true;
-        }
-
-        if changed {
-            self.device_status_changed();
-            eprintln!(
-                "[StatusUpdate] Mute: {}, BT: {}",
-                self.system_muted, self.bluetooth_detected
-            );
+        if self.systemMuted != muted {
+            self.systemMuted = muted;
+            self.systemMutedChanged();
+            eprintln!("[AudioBridge] Mute Status Updated: {}", muted);
         }
     }
 

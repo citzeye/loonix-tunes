@@ -777,16 +777,33 @@ Window {
                     anchors.top: parent.top
                     anchors.bottom: parent.bottom
                     color: theme.colormap.bgoverlay
-                }
+}
 
-                // Border kanan
-                Rectangle {
-                    width: 8
-                    anchors.right: parent.right
-                    anchors.top: parent.top
-                    anchors.bottom: parent.bottom
-                    color: theme.colormap.bgoverlay
-                }
+    // // --- MUTE OVERLAY | 🔇 ---
+    // Rectangle {
+    //     id: muteOverlay
+    //     anchors.fill: parent
+    //     color: "transparent"
+    //     visible: musicModel.systemMuted
+    //     z: 99999
+
+    //     Text {
+    //         text: "🔇"
+    //         font.family: emoji.name
+    //         font.pixelSize: 80
+    //         anchors.centerIn: parent
+    //     }
+    // }
+
+    // --- MOUSE AREA CORNERS ---
+    MouseArea {
+        width: 10
+        height: 10
+        anchors.left: parent.left
+        anchors.top: parent.top
+        cursorShape: Qt.SizeFDiagCursor
+        onPressed: root.startSystemResize(Qt.LeftEdge | Qt.TopEdge)
+    }
 
                 // GANTI RowLayout utama jadi Item biasa biar bisa di-Anchor absolut
                 Item {
@@ -1134,13 +1151,13 @@ Window {
                         // VOLUME icon - Shows mute status + system muted
                         Text {
                             id: volIcon
-                            text: musicModel.system_muted || musicModel.muted ? '󰝟' : '󰕾'
+                            text: musicModel.systemMuted || musicModel.muted ? '󰝟' : '󰕾'
                             font.family: symbols.name
                             font.pixelSize: 18
                             Layout.alignment: Qt.AlignVCenter
                             horizontalAlignment: Text.AlignHCenter
                             Layout.preferredWidth: 20
-                            color: musicModel.system_muted ? '#ff4444' : (volMA.containsMouse || musicModel.muted ? theme.colormap.playerhover : theme.colormap.playersubtext)
+                            color: musicModel.systemMuted ? '#ff4444' : (volMA.containsMouse || musicModel.muted ? theme.colormap.playerhover : theme.colormap.playersubtext)
 
                             MouseArea {
                                 id: volMA

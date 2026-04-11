@@ -59,13 +59,6 @@ Flickable {
         }
     }
 
-    Connections {
-        target: musicModel
-        function onBass_pref_overridden() { magicOverrideToast.showToast("BassBooster: Magic ON (Pref Disabled)") }
-        function onSurround_pref_overridden() { magicOverrideToast.showToast("Surround: Magic ON (Pref Disabled)") }
-        function onCrystal_pref_overridden() { magicOverrideToast.showToast("Crystalizer: Magic ON (Pref Disabled)") }
-    }
-
     ColumnLayout {
         id: audioColumn
         width: audioFlick.width - 10

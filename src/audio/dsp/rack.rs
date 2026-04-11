@@ -11,9 +11,6 @@ use crate::audio::dsp::magic::magicsurround::{
     get_surround_enabled_arc, get_surround_width_arc, SurroundProcessor,
 };
 
-use crate::audio::dsp::fx::fxcompressor::{
-    get_compressor_enabled_arc, get_compressor_threshold_arc, Compressor,
-};
 use crate::audio::dsp::fx::fxcrossfeed::{
     get_crossfeed_amount_arc, get_crossfeed_enabled_arc, Crossfeed,
 };
