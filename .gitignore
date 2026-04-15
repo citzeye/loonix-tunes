@@ -1,0 +1,25 @@
+# Loonix-tunes ignore
+*.log
+bin/
+obj/
+.DS_Store
+**/*.rs.bk
+Cargo.lock
+node_modules
+/target
+.skill
+.backup
+.opencode
+
+# Windows installer output
+*.msi
+*.exe
+
+# Editor & OS
+*.swp
+*.swo
+
+# Build output
+Output/
+release_windows/
+.aider*
