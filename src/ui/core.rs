@@ -146,6 +146,7 @@ pub struct MusicModel {
     pub reverb_room_size: qt_property!(f64; NOTIFY reverb_params_changed),
     pub reverb_damp: qt_property!(f64; NOTIFY reverb_params_changed),
     pub reverb_params_changed: qt_signal!(),
+    pub set_reverb_mode: qt_method!(fn(&mut self, mode: i32)),
     pub setStdReverbRoomSize: qt_method!(fn(&mut self, val: f64)),
     pub setStdReverbDamp: qt_method!(fn(&mut self, val: f64)),
 
@@ -1635,8 +1636,8 @@ impl MusicModel {
         self.reverb_changed();
 
         let preset_id = match p_str.as_str() {
-            "stage" => 1,
-            "hall" => 2,
+            "studio" => 1,
+            "stage" => 2,
             "stadium" => 3,
             _ => 0,
         };
@@ -1670,12 +1671,32 @@ impl MusicModel {
 
         self.reverb_preset = preset_id;
         self.current_reverb = QString::from(match preset_id {
-            1 => "stage",
-            2 => "hall",
+            1 => "studio",
+            2 => "stage",
             3 => "stadium",
             _ => "off",
         });
 
+        self.reverb_changed();
+        self.save_dsp_config();
+    }
+
+    pub fn set_reverb_mode(&mut self, mode: i32) {
+        let mode = mode.clamp(0, 3) as u32;
+        self.reverb_preset = mode;
+        self.reverb_active = mode > 0;
+
+        crate::audio::dsp::reverb::get_reverb_preset_arc()
+            .store(mode, std::sync::atomic::Ordering::Relaxed);
+
+        self.current_reverb = QString::from(match mode {
+            1 => "studio",
+            2 => "stage",
+            3 => "stadium",
+            _ => "off",
+        });
+
+        self.reverb_active_changed();
         self.reverb_changed();
         self.save_dsp_config();
     }

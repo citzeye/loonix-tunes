@@ -997,6 +997,66 @@ Popup {
         }
     }
 
+    // Reverb mode button - just label
+    component FxReverbModeButton: Rectangle {
+        id: rootItem
+        property string modeLabel: ""
+        property bool isActive: false
+        signal clicked
+
+        Layout.fillWidth: true
+        Layout.preferredHeight: 20
+        color: theme.colormap.dspfxbg
+        radius: 4
+        antialiasing: false
+
+        Text {
+            anchors.centerIn: parent
+            text: modeLabel
+            font.family: kodeMono.name
+            font.pixelSize: 11
+            font.bold: isActive
+            color: isActive ? theme.colormap.dspfxtext : theme.colormap.dspfxsubtext
+        }
+
+        MouseArea {
+            anchors.fill: parent
+            onClicked: rootItem.clicked()
+        }
+    }
+
+    // Reverb mode selector with state
+    component ReverbModeSelector: Item {
+        id: reverbModeRoot
+        property int selectedMode: musicModel.reverb_preset
+        property bool boxEnabled: true
+
+        Layout.fillWidth: true
+        Layout.preferredHeight: 20
+
+        RowLayout {
+            anchors.fill: parent
+            spacing: 3
+            enabled: reverbModeRoot.boxEnabled
+
+            FxReverbModeButton {
+                modeLabel: "Studio"
+                isActive: reverbModeRoot.selectedMode === 1
+                onClicked: musicModel.set_reverb_mode(1)
+            }
+            FxReverbModeButton {
+                modeLabel: "Stage"
+                isActive: reverbModeRoot.selectedMode === 2
+                onClicked: musicModel.set_reverb_mode(2)
+            }
+            FxReverbModeButton {
+                modeLabel: "Stadium"
+                isActive: reverbModeRoot.selectedMode === 3
+                onClicked: musicModel.set_reverb_mode(3)
+            }
+        }
+    }
+
     // Editable amount box for bass
     component FxBassAmountBox: Rectangle {
         id: rootItem
