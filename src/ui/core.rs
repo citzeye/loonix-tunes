@@ -593,6 +593,28 @@ impl MusicModel {
         let preset_idx = saved_config.active_preset_index.clamp(0, 5);
         model.load_preset(preset_idx);
 
+        // Re-emit DSP property signals AFTER load_preset to ensure QML receives them
+        // This fixes the issue where preset button shows active but DSP state doesn't match
+        model.bass_magic_changed();
+        model.bass_params_changed();
+        model.bass_mode_changed();
+        model.surround_magic_changed();
+        model.surround_width_changed();
+        model.crystal_magic_changed();
+        model.compressor_changed();
+        model.mono_changed();
+        model.mono_width_changed();
+        model.pitch_changed();
+        model.middle_changed();
+        model.middle_amount_changed();
+        model.stereo_changed();
+        model.stereo_amount_changed();
+        model.crossfeed_changed();
+        model.crossfeed_amount_changed();
+        model.active_preset_index_changed();
+        model.eqBandsChanged();
+        model.faderOffsetChanged();
+
         if let Ok(mut ff) = model.ffmpeg.lock() {
             ff.set_dsp_enabled(saved_config.dsp_enabled);
         }
@@ -1793,6 +1815,7 @@ impl MusicModel {
             std::sync::atomic::Ordering::Relaxed,
         );
 
+        self.surround_width_changed();
         self.save_dsp_config();
     }
 
@@ -2506,8 +2529,8 @@ impl MusicModel {
 
         let preset = &self.fx_presets[index as usize];
 
-        // Bass Booster
-        self.bass_magic_active = preset.bass_enabled;
+        // Bass Booster - enable if bass_gain > 0
+        self.bass_magic_active = preset.bass_enabled || preset.bass_gain > 0.0;
         self.bass_gain = preset.bass_gain as f64;
         self.bass_cutoff = preset.bass_cutoff as f64;
         self.bass_mode = preset.bass_mode as i32;
@@ -2525,8 +2548,8 @@ impl MusicModel {
         self.bass_params_changed();
         self.bass_mode_changed();
 
-        // Crystalizer
-        self.crystal_magic_active = preset.crystal_enabled;
+        // Crystalizer - enable if crystal_amount > 0
+        self.crystal_magic_active = preset.crystal_enabled || preset.crystal_amount > 0.0;
         self.crystal_amount = preset.crystal_amount as f64;
         self.crystal_freq = preset.crystal_freq as f64;
         crate::audio::dsp::crystalizer::get_crystal_enabled_arc()
@@ -2537,21 +2560,22 @@ impl MusicModel {
         );
         self.crystal_magic_changed();
 
-        // Surround
-        self.surround_magic_active = preset.surround_enabled;
-        self.surround_width = preset.surround_width as f64;
+        // Surround - enable if surround_width > 0
+        self.surround_magic_active = preset.surround_enabled || preset.surround_width > 0.0;
+        self.surround_width = preset.surround_width.clamp(0.0, 2.0) as f64;
         crate::audio::dsp::surround::get_surround_enabled_arc().store(
             preset.surround_enabled,
             std::sync::atomic::Ordering::Relaxed,
         );
         crate::audio::dsp::surround::get_surround_width_arc().store(
-            preset.surround_width.to_bits(),
+            preset.surround_width.clamp(0.0, 2.0).to_bits(),
             std::sync::atomic::Ordering::Relaxed,
         );
         self.surround_magic_changed();
+        self.surround_width_changed();
 
-        // Mono
-        self.mono_active = preset.mono_enabled;
+        // Mono - enable if mono_width != 1.0 (non-default)
+        self.mono_active = preset.mono_enabled || preset.mono_width != 1.0;
         self.mono_width = preset.mono_width as f64;
         crate::audio::dsp::stereowidth::get_mono_enabled_arc()
             .store(preset.mono_enabled, std::sync::atomic::Ordering::Relaxed);
@@ -2585,11 +2609,11 @@ impl MusicModel {
         self.middle_changed();
         self.middle_amount_changed();
 
-        // Stereo Enhancer
-        self.stereo_active = preset.stereo_enabled;
+        // Stereo Enhancer - enable if stereo_amount > 0
+        self.stereo_active = preset.stereo_enabled || preset.stereo_amount > 0.0;
         self.stereo_amount = preset.stereo_amount as f64;
         crate::audio::dsp::stereoenhance::get_stereo_enabled_arc()
-            .store(preset.stereo_enabled, std::sync::atomic::Ordering::Relaxed);
+            .store(self.stereo_active, std::sync::atomic::Ordering::Relaxed);
         crate::audio::dsp::stereoenhance::get_stereo_amount_arc().store(
             preset.stereo_amount.to_bits(),
             std::sync::atomic::Ordering::Relaxed,
@@ -2612,15 +2636,14 @@ impl MusicModel {
         self.crossfeed_amount_changed();
 
         // Compressor - convert dB to normalized 0-1 for property
-        self.compressor_active = preset.compressor_enabled;
+        // Enable if threshold > -60 (not fully off)
+        self.compressor_active = preset.compressor_enabled || preset.compressor_threshold > -60.0;
         // Normalized = (db + 60) / 60, clamped to 0-1
         let db = preset.compressor_threshold.clamp(-60.0, 0.0);
         let normalized = ((db + 60.0) / 60.0) as f64;
         self.compressor_threshold = normalized;
-        crate::audio::dsp::compressor::get_compressor_enabled_arc().store(
-            preset.compressor_enabled,
-            std::sync::atomic::Ordering::Relaxed,
-        );
+        crate::audio::dsp::compressor::get_compressor_enabled_arc()
+            .store(self.compressor_active, std::sync::atomic::Ordering::Relaxed);
         crate::audio::dsp::compressor::get_compressor_threshold_arc()
             .store(db.to_bits(), std::sync::atomic::Ordering::Relaxed);
         self.compressor_changed();

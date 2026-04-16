@@ -221,12 +221,14 @@ Popup {
                 FxSliderBox {
                     id: surrSlider
                     enabled: surrToggle.isOn && musicModel.dsp_enabled
-                    controlValue: musicModel.surround_width
-                    onSliderChanged: val => musicModel.setStdSurroundWidth(val * 2.0)
+                    controlValue: musicModel.surround_width / 2.0
+                    onSliderChanged: (val) => {
+                        musicModel.setStdSurroundWidth(val * 2.0)
+                    }
                 }
                 FxValueBox {
                     enabled: surrToggle.isOn && musicModel.dsp_enabled
-                    sliderValue: surrSlider.currentValue / 2.0
+                    sliderValue: surrSlider.currentValue
                 }
                 FxResetButton {
                     enabled: surrToggle.isOn && musicModel.dsp_enabled
@@ -396,9 +398,6 @@ Popup {
                     id: bassModeSelector
                     boxEnabled: bassToggle.isOn && musicModel.dsp_enabled
                     Layout.fillWidth: true
-                    onModeChanged: mode => {
-                        musicModel.set_bass_mode(mode);
-                    }
                 }
 
                 FxBassAmountBox {
@@ -423,7 +422,8 @@ Popup {
                     id: pitchToggle
                     title: "PITCH SHIFTER"
                     isOn: musicModel.pitch_active
-                    onToggled: !musicModel.dsp_enabled ? {} : musicModel.toggleStdPitch()
+                    boxEnabled: musicModel.dsp_enabled
+                    onToggled: musicModel.toggleStdPitch()
                 }
 
                 FxPitchSliderBox {
@@ -703,12 +703,13 @@ Popup {
         id: rootItem
         property string title: ""
         property bool isOn: false
+        property bool boxEnabled: true
         signal toggled
 
         Layout.fillWidth: false
         Layout.preferredWidth: 150
         Layout.preferredHeight: 20
-        color: theme.colormap.dspfxbg
+        color: boxEnabled ? theme.colormap.dspfxbg : theme.colormap.dspfxsubtext + "33"
         radius: 4
         antialiasing: false
 
@@ -722,10 +723,11 @@ Popup {
                 text: isOn ? '󰔡' : '󰨙'
                 font.family: symbols.name
                 font.pixelSize: 16
-                color: isOn ? theme.colormap.dspfxhover : theme.colormap.dspfxsubtext
+                color: boxEnabled ? (isOn ? theme.colormap.dspfxhover : theme.colormap.dspfxsubtext) : theme.colormap.dspfxsubtext + "66"
                 Layout.preferredWidth: 30
                 MouseArea {
                     id: toggleIconArea
+                    enabled: rootItem.boxEnabled
                     anchors.fill: parent
                     onClicked: rootItem.toggled()
                 }
@@ -735,10 +737,11 @@ Popup {
                 text: title
                 font.family: kodeMono.name
                 font.pixelSize: 11
-                color: isOn ? theme.colormap.dspfxtext : theme.colormap.dspfxsubtext
+                color: boxEnabled ? (isOn ? theme.colormap.dspfxtext : theme.colormap.dspfxsubtext) : theme.colormap.dspfxsubtext + "66"
                 Layout.preferredWidth: 160
                 elide: Text.ElideRight
                 MouseArea {
+                    enabled: rootItem.boxEnabled
                     anchors.fill: parent
                     onClicked: rootItem.toggled()
                 }
@@ -755,7 +758,7 @@ Popup {
         signal sliderChanged(real val)
 
         onControlValueChanged: {
-            if (sld) {
+            if (sld && !sld.pressed) {
                 sld.value = controlValue;
                 rootItem.currentValue = controlValue;
             }
@@ -962,7 +965,6 @@ Popup {
         id: bassModeRoot
         property int selectedMode: musicModel.bass_mode
         property bool boxEnabled: true
-        signal modeChanged(int mode)
 
         Layout.fillWidth: true
         Layout.preferredHeight: 20
@@ -975,34 +977,22 @@ Popup {
             FxBassModeButton {
                 modeLabel: "Deep"
                 isActive: bassModeRoot.selectedMode === 0
-                onClicked: {
-                    bassModeRoot.selectedMode = 0;
-                    bassModeRoot.modeChanged(0);
-                }
+                onClicked: musicModel.set_bass_mode(0)
             }
             FxBassModeButton {
                 modeLabel: "Soft"
                 isActive: bassModeRoot.selectedMode === 1
-                onClicked: {
-                    bassModeRoot.selectedMode = 1;
-                    bassModeRoot.modeChanged(1);
-                }
+                onClicked: musicModel.set_bass_mode(1)
             }
             FxBassModeButton {
                 modeLabel: "Punch"
                 isActive: bassModeRoot.selectedMode === 2
-                onClicked: {
-                    bassModeRoot.selectedMode = 2;
-                    bassModeRoot.modeChanged(2);
-                }
+                onClicked: musicModel.set_bass_mode(2)
             }
             FxBassModeButton {
                 modeLabel: "Warm"
                 isActive: bassModeRoot.selectedMode === 3
-                onClicked: {
-                    bassModeRoot.selectedMode = 3;
-                    bassModeRoot.modeChanged(3);
-                }
+                onClicked: musicModel.set_bass_mode(3)
             }
         }
     }
@@ -1311,7 +1301,7 @@ Popup {
         signal sliderChanged(real val)
 
         onControlValueChanged: {
-            if (eqSld) {
+            if (eqSld && !eqSld.pressed) {
                 eqSld.value = controlValue;
                 rootItem.currentValue = controlValue;
             }
@@ -1332,7 +1322,9 @@ Popup {
             to: 20
             stepSize: 1
             value: rootItem.controlValue
-            onValueChanged: rootItem.currentValue = eqSld.value
+            onValueChanged: {
+                if (!pressed) rootItem.currentValue = eqSld.value
+            }
             onMoved: rootItem.sliderChanged(eqSld.value)
 
             background: Rectangle {
@@ -1352,7 +1344,7 @@ Popup {
             }
             handle: Rectangle {
                 anchors.horizontalCenter: parent.horizontalCenter
-                y: eqSld.topPadding + eqSld.visualPosition * (eqSld.availableHeight - height)
+                y: eqSld.visualPosition * (eqSld.availableHeight - height)
                 width: 10
                 height: 10
                 radius: 5
