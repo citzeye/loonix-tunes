@@ -163,7 +163,8 @@ pub struct MusicModel {
     pub toggleStdBassBooster: qt_method!(fn(&mut self)),
 
     // SURROUND
-    pub surround_width: qt_property!(f64; NOTIFY surround_magic_changed),
+    pub surround_width: qt_property!(f64; NOTIFY surround_width_changed),
+    pub surround_width_changed: qt_signal!(),
     pub surround_magic_active: qt_property!(bool; NOTIFY surround_magic_changed),
     pub surround_magic_changed: qt_signal!(),
     pub toggleStdSurround: qt_method!(fn(&mut self)),
@@ -217,8 +218,13 @@ pub struct MusicModel {
     pub eqBands: qt_property!(QVariantList; NOTIFY eqBandsChanged),
     pub eqBandsChanged: qt_signal!(),
 
+    // Fader offset property (global EQ offset)
+    pub fader_offset: qt_property!(f64; NOTIFY faderOffsetChanged),
+    pub faderOffsetChanged: qt_signal!(),
+
     // EQ methods
     pub set_eq_band: qt_method!(fn(&mut self, index: i32, gain: f64)),
+    pub set_fader: qt_method!(fn(&mut self, offset: f64)),
     pub load_preset: qt_method!(fn(&mut self, index: i32)),
     pub load_eq_preset: qt_method!(fn(&mut self, index: i32)),
     pub load_fx_preset: qt_method!(fn(&mut self, index: i32)),
@@ -313,6 +319,7 @@ pub struct MusicModel {
     pub set_preamp_gain: qt_method!(fn(&mut self, gain: f64)),
     pub user_presets_changed: qt_signal!(),
     pub save_user_eq: qt_method!(fn(&mut self, preset: i32, name: String, macro_val: f64)),
+    pub save_user_preset: qt_method!(fn(&mut self, name: String) -> i32),
     pub get_user_eq_gains: qt_method!(fn(&self, preset: i32) -> QVariantList),
     pub get_user_eq_macro: qt_method!(fn(&self, preset: i32) -> f64),
     pub get_user_preset_name: qt_method!(fn(&self, preset: i32) -> QString),
@@ -493,6 +500,7 @@ impl MusicModel {
             fx_presets: crate::audio::config::AppConfig::get_fx_presets(),
             compressor_active: saved_config.compressor_enabled,
             eq_bands: saved_config.eq_bands,
+            fader_offset: 0.0,
             ..Default::default()
         };
 
@@ -574,7 +582,14 @@ impl MusicModel {
             );
         }
 
-        // Load preset to sync all properties with QML
+        // Initialize dsp_config FIRST (so save works)
+        model.saved_config = Some(std::sync::Arc::new(std::sync::Mutex::new(
+            saved_config.clone(),
+        )));
+        model.dsp_config = DspConfigManager::new(model.saved_config.clone());
+
+        // Load preset to properly initialize all DSP state
+        // This handles both fresh install (uses default index 0 = LOONIX) and existing config
         let preset_idx = saved_config.active_preset_index.clamp(0, 5);
         model.load_preset(preset_idx);
 
@@ -591,14 +606,6 @@ impl MusicModel {
         if let Ok(mut ff) = model.ffmpeg.lock() {
             ff.set_volume(model.volume as f32);
         }
-
-        // Store config for saving later (wrap in Arc<Mutex> for sharing with ThemeManager)
-        model.saved_config = Some(std::sync::Arc::new(std::sync::Mutex::new(
-            saved_config.clone(),
-        )));
-
-        // Initialize DSP config manager
-        model.dsp_config = DspConfigManager::new(model.saved_config.clone());
 
         // Initialize playback controller
         model.playback = PlaybackController::new(model.ffmpeg.clone(), model.audio.clone());
@@ -2249,11 +2256,31 @@ impl MusicModel {
         }
     }
 
+    // Fader offset - global EQ adjustment
+    pub fn set_fader(&mut self, offset: f64) {
+        let offset = offset.clamp(-20.0, 20.0);
+        self.fader_offset = offset;
+        self.faderOffsetChanged();
+
+        // Update all DSP atomics with offset applied
+        let arc = crate::audio::dsp::eq::get_eq_bands_arc();
+        for i in 0..10 {
+            let effective = (self.eq_bands[i] as f64 + offset).clamp(-20.0, 20.0) as f32;
+            arc[i].store(effective.to_bits(), std::sync::atomic::Ordering::Relaxed);
+        }
+
+        // Update backing field and emit signal
+        self.sync_eq_bands();
+        self.save_dsp_config();
+    }
+
     fn sync_eq_bands(&mut self) {
         // Update backing field for Q_PROPERTY
+        // Apply fader offset to all bands
         let mut list = QVariantList::default();
         for &gain in &self.eq_bands {
-            list.push(QVariant::from(gain as f64));
+            let effective = (gain as f64 + self.fader_offset).clamp(-20.0, 20.0);
+            list.push(QVariant::from(effective));
         }
         self.eqBands = list;
 
@@ -2329,6 +2356,28 @@ impl MusicModel {
             self.user_presets_changed();
             self.save_dsp_config();
         }
+    }
+
+    pub fn save_user_preset(&mut self, name: String) -> i32 {
+        let mut trimmed_name = name.trim().to_string();
+        trimmed_name.truncate(10);
+        if trimmed_name.is_empty() {
+            return -1;
+        }
+
+        for idx in 0..6 {
+            if self.user_eq_names[idx].trim().is_empty() {
+                self.user_eq_names[idx] = trimmed_name.to_uppercase();
+                self.user_eq_gains[idx] = self.eq_bands;
+                self.user_eq_macro[idx] = self.fader_offset as f32;
+
+                self.user_presets_changed();
+                self.save_dsp_config();
+                return idx as i32;
+            }
+        }
+
+        -1
     }
 
     pub fn get_user_eq_gains(&self, preset: i32) -> QVariantList {
@@ -2415,14 +2464,18 @@ impl MusicModel {
         self.save_dsp_config();
     }
 
-    // Load combined EQ + FX preset - single source of truth
+    // Load combined EQ + FX preset - applies preset values to DSP
+    // Called when user explicitly selects a preset
     pub fn load_preset(&mut self, index: i32) {
-        // Validate index against both preset arrays
         if index < 0 || (index as usize) >= self.eq_presets.len() {
             return;
         }
 
-        // Apply EQ preset
+        // Reset fader offset when loading new preset
+        self.fader_offset = 0.0;
+        self.faderOffsetChanged();
+
+        // Apply EQ preset values to DSP engine
         let eq_preset = &self.eq_presets[index as usize];
         for (i, &gain) in eq_preset.gains.iter().enumerate() {
             self.eq_bands[i] = gain;
@@ -2430,14 +2483,15 @@ impl MusicModel {
             arc[i].store(gain.to_bits(), std::sync::atomic::Ordering::Relaxed);
         }
 
-        // Sync and emit signal for reactive binding
+        // Emit signal for reactive binding
         self.sync_eq_bands();
 
-        // Apply FX preset (if index is valid for FX presets too)
+        // Apply FX preset
         if (index as usize) < self.fx_presets.len() {
             self.load_fx_preset(index);
         }
 
+        // Update active preset index and save
         self.active_preset_index = index;
         self.active_preset_index_changed();
         self.save_dsp_config();
@@ -2456,6 +2510,7 @@ impl MusicModel {
         self.bass_magic_active = preset.bass_enabled;
         self.bass_gain = preset.bass_gain as f64;
         self.bass_cutoff = preset.bass_cutoff as f64;
+        self.bass_mode = preset.bass_mode as i32;
         crate::audio::dsp::bassbooster::get_bass_enabled_arc()
             .store(preset.bass_enabled, std::sync::atomic::Ordering::Relaxed);
         crate::audio::dsp::bassbooster::get_bass_gain_arc().store(
@@ -2468,6 +2523,7 @@ impl MusicModel {
         );
         self.bass_magic_changed();
         self.bass_params_changed();
+        self.bass_mode_changed();
 
         // Crystalizer
         self.crystal_magic_active = preset.crystal_enabled;
@@ -2657,7 +2713,7 @@ impl MusicModel {
     pub fn set_crystalizer_amount(&mut self, amount: f64) {
         let amount = amount.max(0.0).min(1.0);
         self.crystal_amount = amount;
-        self.crystal_magic_active = amount > 0.0;
+        // Toggle state is independent - do NOT auto-disable when amount is 0
         self.crystal_magic_changed();
 
         // Update atomic directly

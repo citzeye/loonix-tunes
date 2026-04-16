@@ -54,19 +54,10 @@ Popup {
             refreshUserPresetNames();
         }
 
-        property int activePresetIndex: -1
-        
-        onActivePresetIndexChanged: {
-            musicModel.set_active_preset_index(activePresetIndex);
-        }
-
         function loadPresetByIndex(index) {
-            activePresetIndex = index;
-            
             if (index < 0 || index >= 12) {
                 return;
             }
-            
             musicModel.load_preset(index);
         }
 
@@ -102,7 +93,7 @@ Popup {
                 EqSliderBox {
                     id: eqPreamp
                     controlValue: musicModel.get_preamp_gain()
-                    onSliderChanged: musicModel.set_preamp_gain(val)
+                    onSliderChanged: (val) => musicModel.set_preamp_gain(val)
                 }
                 EqSliderBox {
                     id: eq31
@@ -156,10 +147,8 @@ Popup {
                 }
                 EqSliderBox {
                     id: eqFader
-                    controlValue: 0
-                    onSliderChanged: {
-                        // Fader macro - adjust all bands
-                    }
+                    controlValue: musicModel.fader_offset
+                    onSliderChanged: (val) => musicModel.set_fader(val)
                 }
 
                 // Row 3: Names (bawah)
@@ -468,23 +457,27 @@ Popup {
             model: dspContent.defaultPresets
             delegate: Button {
                 id: defBtn
-                property bool isActive: dspContent.activePresetIndex === index
+                property bool isActive: musicModel.active_preset_index === index
                 Layout.fillWidth: true
                 Layout.preferredHeight: 20
                 contentItem: Text {
                     text: modelData
                     font.family: kodeMono.name
                     font.pixelSize: 10
-                    color: defBtn.isActive ? "black" : (defBtn.hovered ? "black" : theme.colormap.dspfxsubtext)
+                    color: defBtn.hovered
+                        ? theme.colormap.dspeqpresetactive
+                        : theme.colormap.dspeqpresettext
                     horizontalAlignment: Text.AlignHCenter
                     verticalAlignment: Text.AlignVCenter
                 }
                 background: Rectangle {
-                    color: defBtn.isActive ? theme.colormap.dspeqpresetactive : (defBtn.hovered ? theme.colormap.dspeqpresetactive : theme.colormap.dspeqbg)
-                    border.color: defBtn.isActive ? theme.colormap.dspfxtext : theme.colormap.dspborder
                     radius: 2
+                    color: theme.colormap.dspeqbg
+                    border.width: 1
+                    border.color: defBtn.isActive
+                        ? theme.colormap.dspeqpresetactive
+                        : theme.colormap.dspborder
                 }
-
                 onClicked: {
                     dspContent.loadPresetByIndex(index);
                 }
@@ -502,23 +495,27 @@ Popup {
             model: dspContent.userPresets
             delegate: Button {
                 id: pBtn
-                property bool isActive: dspContent.activePresetIndex === index + 6
+                property bool isActive: musicModel.active_preset_index === index + 6
                 Layout.fillWidth: true
                 Layout.preferredHeight: 20
                 contentItem: Text {
                     text: modelData
                     font.family: kodeMono.name
                     font.pixelSize: 10
-                    color: pBtn.isActive ? "black" : (pBtn.hovered ? "black" : theme.colormap.dspfxsubtext)
+                    color: pBtn.hovered
+                        ? theme.colormap.dspeqpresetactive
+                        : theme.colormap.dspeqpresettext
                     horizontalAlignment: Text.AlignHCenter
                     verticalAlignment: Text.AlignVCenter
                 }
                 background: Rectangle {
-                    color: pBtn.isActive ? theme.colormap.dspeqpresetactive : (pBtn.hovered ? theme.colormap.dspeqpresetactive : theme.colormap.dspeqbg)
-                    border.color: pBtn.isActive ? theme.colormap.dspfxtext : theme.colormap.dspborder
                     radius: 2
+                    color: theme.colormap.dspeqbg
+                    border.width: 1
+                    border.color: pBtn.isActive
+                        ? theme.colormap.dspeqpresetactive
+                        : theme.colormap.dspborder
                 }
-
                 onClicked: {
                     dspContent.loadPresetByIndex(index + 6);
                 }
@@ -566,8 +563,8 @@ Popup {
             Layout.preferredHeight: 20
 
             onClicked: {
-                nameInput.text = "";
-                saveEqDialog.open();
+                saveDialog.presetName = "";
+                saveDialog.open();
             }
 
             background: Rectangle {
@@ -584,6 +581,119 @@ Popup {
                 color: saveBtn.hovered ? "black" : theme.colormap.dspfxsubtext
                 horizontalAlignment: Text.AlignHCenter
                 verticalAlignment: Text.AlignVCenter
+            }
+        }
+    }
+
+    // Save Preset Dialog
+    component SavePresetDialog: Popup {
+        id: saveDialog
+        width: 250
+        height: 100
+        modal: true
+        closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutside
+        anchors.centerIn: parent
+
+        property alias presetName: nameInput.text
+
+        background: Rectangle {
+            color: theme.colormap.dspeqbg
+            border.color: theme.colormap.dspborder
+            border.width: 1
+            radius: 4
+        }
+
+        ColumnLayout {
+            anchors.margins: 10
+            spacing: 8
+            anchors.fill: parent
+
+            Text {
+                text: "SAVE PRESET"
+                font.family: kodeMono.name
+                font.pixelSize: 12
+                font.bold: true
+                color: theme.colormap.dspfxtext
+            }
+
+            TextInput {
+                id: nameInput
+                Layout.fillWidth: true
+                Layout.preferredHeight: 24
+                maximumLength: 10
+                font.family: kodeMono.name
+                font.pixelSize: 12
+                color: theme.colormap.dspfxtext
+                verticalAlignment: Text.AlignVCenter
+                validator: RegularExpressionValidator { regularExpression: /[a-zA-Z0-9 ]*/ }
+
+                Rectangle {
+                    anchors.fill: parent
+                    color: theme.colormap.dspeqbg
+                    border.color: theme.colormap.dspborder
+                    border.width: 1
+                    radius: 2
+                    z: -1
+                }
+            }
+
+            RowLayout {
+                Layout.fillWidth: true
+                spacing: 8
+
+                Button {
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: 24
+                    text: "SAVE"
+                    font.family: kodeMono.name
+                    font.pixelSize: 10
+                    onClicked: {
+                        var result = musicModel.save_user_preset(presetName);
+                        if (result >= 0) {
+                            dspContent.refreshUserPresetNames();
+                            saveDialog.close();
+                        }
+                    }
+
+                    background: Rectangle {
+                        color: parent.hovered ? theme.colormap.dspeqpresetactive : theme.colormap.dspeqbg
+                        border.color: theme.colormap.dspborder
+                        radius: 2
+                    }
+
+                    contentItem: Text {
+                        text: parent.text
+                        font: parent.font
+                        color: parent.hovered ? "black" : theme.colormap.dspfxtext
+                        horizontalAlignment: Text.AlignHCenter
+                        verticalAlignment: Text.AlignVCenter
+                    }
+                }
+
+                Button {
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: 24
+                    text: "CANCEL"
+                    font.family: kodeMono.name
+                    font.pixelSize: 10
+                    onClicked: {
+                        saveDialog.close();
+                    }
+
+                    background: Rectangle {
+                        color: parent.hovered ? theme.colormap.dspeqpresetactive : theme.colormap.dspeqbg
+                        border.color: theme.colormap.dspborder
+                        radius: 2
+                    }
+
+                    contentItem: Text {
+                        text: parent.text
+                        font: parent.font
+                        color: parent.hovered ? "black" : theme.colormap.dspfxtext
+                        horizontalAlignment: Text.AlignHCenter
+                        verticalAlignment: Text.AlignVCenter
+                    }
+                }
             }
         }
     }
@@ -1281,5 +1391,9 @@ Popup {
             font.pixelSize: 11
             color: theme.colormap.dspeqsubtext
         }
+    }
+
+    SavePresetDialog {
+        id: saveDialog
     }
 }

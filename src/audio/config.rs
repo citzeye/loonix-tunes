@@ -56,6 +56,8 @@ pub struct AppConfig {
     pub bass_gain: f32,
     #[serde(default = "default_bass_cutoff")]
     pub bass_cutoff: f32,
+    #[serde(default)]
+    pub bass_mode: i32,
     pub bass_q: f32,
     pub crystal_enabled: bool,
     pub crystal_amount: f32,
@@ -137,6 +139,7 @@ impl Default for AppConfig {
             bass_enabled: false,
             bass_gain: 6.0,
             bass_cutoff: 180.0,
+            bass_mode: 2,
             bass_q: 0.7,
             crystal_enabled: false,
             crystal_amount: 0.2,
