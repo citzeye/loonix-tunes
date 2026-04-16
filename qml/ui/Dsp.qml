@@ -6,7 +6,7 @@ import QtQuick.Layouts
 Popup {
     id: dspRoot
     width: 500
-    height: 520
+    height: 400
     modal: true
     closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutside
 
@@ -29,171 +29,74 @@ Popup {
         property var userPresets: ["USER 1", "USER 2", "USER 3", "USER 4", "USER 5", "USER 6"]
 
         function loadDefaultPresets() {
-            var count = musicModel.get_eq_preset_count()
-            var names = []
-            var values = []
+            var count = musicModel.get_eq_preset_count();
+            var names = [];
+            var values = [];
             for (var i = 0; i < count; i++) {
-                names.push(musicModel.get_eq_preset_name(i))
-                values.push(musicModel.get_eq_preset_gains(i))
+                names.push(musicModel.get_eq_preset_name(i));
+                values.push(musicModel.get_eq_preset_gains(i));
             }
-            defaultPresets = names
-            defaultPresetValues = values
+            defaultPresets = names;
+            defaultPresetValues = values;
         }
 
         function refreshUserPresetNames() {
-            var newNames = []
+            var newNames = [];
             for (var i = 0; i < 6; i++) {
                 let name = musicModel.get_user_preset_name(i);
-                newNames.push(name !== "" ? name : "User " + (i+1))
+                newNames.push(name !== "" ? name : "User " + (i + 1));
             }
             dspContent.userPresets = newNames;
         }
 
         Component.onCompleted: {
-            loadDefaultPresets()
-            refreshUserPresetNames()
+            loadDefaultPresets();
+            refreshUserPresetNames();
         }
 
         property int activePresetIndex: -1
 
         onActivePresetIndexChanged: {
-            musicModel.set_active_preset_index(activePresetIndex)
+            musicModel.set_active_preset_index(activePresetIndex);
         }
 
         function loadPresetByIndex(index) {
-            activePresetIndex = index
-            var gains
-            var macroVal = 0
+            activePresetIndex = index;
+            var gains;
+            var macroVal = 0;
             if (index >= 0 && index < 6) {
-                gains = dspContent.defaultPresetValues[index]
+                gains = dspContent.defaultPresetValues[index];
             } else if (index >= 6 && index < 12) {
-                var preset = index - 6
-                gains = musicModel.get_user_eq_gains(preset)
-                macroVal = musicModel.get_user_eq_macro(preset)
+                var preset = index - 6;
+                gains = musicModel.get_user_eq_gains(preset);
+                macroVal = musicModel.get_user_eq_macro(preset);
             } else {
-                return
+                return;
             }
-            musicModel.set_eq_instant_apply()
+            musicModel.set_eq_instant_apply();
             for (var i = 0; i < 10; ++i) {
-                var slider = eqRepeater.itemAt(i).children[0].children[1]
-                slider.value = gains[i]
-                musicModel.set_eq_band(i, gains[i])
+                var slider = eqRepeater.itemAt(i).children[0].children[1];
+                slider.value = gains[i];
+                musicModel.set_eq_band(i, gains[i]);
             }
-            gainSlider.value = macroVal
+            gainSlider.value = macroVal;
         }
 
         function resetEQ() {
-            activePresetIndex = -1
-            musicModel.set_eq_instant_apply()
+            activePresetIndex = -1;
+            musicModel.set_eq_instant_apply();
             for (var i = 0; i < 10; ++i) {
-                var slider = eqRepeater.itemAt(i).children[0].children[1]
-                slider.value = 0
-                musicModel.set_eq_band(i, 0)
+                var slider = eqRepeater.itemAt(i).children[0].children[1];
+                slider.value = 0;
+                musicModel.set_eq_band(i, 0);
             }
-            gainSlider.value = 0
+            gainSlider.value = 0;
         }
-
-
-        GridLayout {
-            Layout.fillWidth: true
-            Layout.preferredHeight: 20
-            Layout.maximumHeight: 20
-            columns: 3
-            columnSpacing: 3
-            rowSpacing: 3
-
-            // TOGGLE BYPASS DSP
-            Button {
-                id: ampBtn
-                Layout.preferredWidth: 157
-                Layout.preferredHeight: 20
-
-                onClicked: {
-                    musicModel.set_preamp_gain(musicModel.get_preamp_gain() === 0 ? 3 : 0)
-                }
-
-                property bool isOn: musicModel.get_preamp_gain() !== 0
-
-                background: Rectangle {
-                    color: ampBtn.isOn ? theme.colormap.dspeqpresetactive : (ampBtn.hovered ? theme.colormap.dspeqpresetactive : theme.colormap.dspeqbg)
-                    border.color: ampBtn.isOn ? theme.colormap.dspfxtext : theme.colormap.dspborder
-                    radius: 2
-                }
-
-                contentItem: Text {
-                    text: "BYPASS"
-                    font.family: kodeMono.name
-                    font.pixelSize: 10
-                    font.bold: true
-                    color: ampBtn.isOn ? "black" : (ampBtn.hovered ? "black" : theme.colormap.dspfxsubtext)
-                    horizontalAlignment: Text.AlignHCenter
-                    verticalAlignment: Text.AlignVCenter
-                }
-            }
-
-            // NORMALIZER - always ON
-            Button {
-                id: normBtn
-                Layout.preferredWidth: 157
-                Layout.preferredHeight: 20
-                property bool isOn: true
-
-                onClicked: {
-                    // TODO: show normalizer dialog
-                }
-
-                background: Rectangle {
-                    color: normBtn.isOn ? theme.colormap.dspeqpresetactive : (normBtn.hovered ? theme.colormap.dspeqpresetactive : theme.colormap.dspeqbg)
-                    border.color: normBtn.isOn ? theme.colormap.dspfxtext : theme.colormap.dspborder
-                    radius: 2
-                }
-
-                contentItem: Text {
-                    text: "NORMALIZER"
-                    font.family: kodeMono.name
-                    font.pixelSize: 10
-                    font.bold: true
-                    color: normBtn.isOn ? "black" : (normBtn.hovered ? "black" : theme.colormap.dspfxsubtext)
-                    horizontalAlignment: Text.AlignHCenter
-                    verticalAlignment: Text.AlignVCenter
-                }
-            }
-
-            // EQ ON OFF
-            Button {
-                id: eqOnOffBtn
-                Layout.preferredWidth: 157
-                Layout.preferredHeight: 20
-                property bool isOn: musicModel.eq_enabled
-
-                onClicked: {
-                    musicModel.set_eq_enabled(!musicModel.eq_enabled)
-                }
-
-                background: Rectangle {
-                    color: eqOnOffBtn.isOn ? theme.colormap.dspeqpresetactive : (eqOnOffBtn.hovered ? theme.colormap.dspeqpresetactive : theme.colormap.dspeqbg)
-                    border.color: eqOnOffBtn.isOn ? theme.colormap.dspfxtext : theme.colormap.dspborder
-                    radius: 2
-                }
-
-                contentItem: Text {
-                    text: "EQ"
-                    font.family: kodeMono.name
-                    font.pixelSize: 10
-                    font.bold: true
-                    color: musicModel.eq_enabled ? "black" : (eqOnOffBtn.hovered ? "black" : theme.colormap.dspfxsubtext)
-                    horizontalAlignment: Text.AlignHCenter
-                    verticalAlignment: Text.AlignVCenter
-                }
-            }
-        }
-
-        
 
         // EQ Sliders (Rectangle)
         Rectangle {
             Layout.fillWidth: true
-            Layout.preferredHeight: 110
+            Layout.preferredHeight: 100
             color: theme.colormap.dspeqbg
             radius: 4
             border.color: theme.colormap.dspborder
@@ -227,30 +130,42 @@ Popup {
                         Layout.fillHeight: true
                         Layout.preferredWidth: 28
                         orientation: Qt.Vertical
-                        from: -20; to: 20
+                        from: -20
+                        to: 20
                         value: musicModel.get_preamp_gain()
                         stepSize: 1
                         padding: 0
 
                         onValueChanged: {
                             if (pressed || hovered) {
-                                musicModel.set_preamp_gain(ampSlider.value)
+                                musicModel.set_preamp_gain(ampSlider.value);
                             }
                         }
 
                         background: Rectangle {
                             anchors.horizontalCenter: parent.horizontalCenter
-                            width: 3; height: parent.height; radius: 1.5; color: theme.colormap.dspeqfaderbg
+                            width: 3
+                            height: parent.height
+                            radius: 1.5
+                            color: theme.colormap.dspeqfaderbg
                             Rectangle {
-                                width: parent.width; y: ampSlider.visualPosition * parent.height
-                                height: parent.height - y; color: theme.colormap.dspeqfaderslider; radius: 1.5; opacity: 0.6
+                                width: parent.width
+                                y: ampSlider.visualPosition * parent.height
+                                height: parent.height - y
+                                color: theme.colormap.dspeqfaderslider
+                                radius: 1.5
+                                opacity: 0.6
                             }
                         }
                         handle: Rectangle {
                             anchors.horizontalCenter: parent.horizontalCenter
                             y: ampSlider.topPadding + ampSlider.visualPosition * (ampSlider.availableHeight - height)
-                            width: 10; height: 10; radius: 5; color: ampSlider.pressed ? theme.colormap.dspeqfaderslider : theme.colormap.dspeqfaderhandle
-                            border.color: theme.colormap.dspfxborder; border.width: 1
+                            width: 10
+                            height: 10
+                            radius: 5
+                            color: ampSlider.pressed ? theme.colormap.dspeqfaderslider : theme.colormap.dspeqfaderhandle
+                            border.color: theme.colormap.dspfxborder
+                            border.width: 1
                         }
                     }
 
@@ -266,11 +181,11 @@ Popup {
                         Layout.fillWidth: true
                         Layout.fillHeight: true
                         acceptedButtons: Qt.NoButton
-                        onWheel: function(wheel) {
-                            let delta = wheel.angleDelta.y > 0 ? 1 : -1
-                            let newVal = Math.max(-20, Math.min(20, ampSlider.value + delta))
-                            ampSlider.value = newVal
-                            musicModel.set_preamp_gain(newVal)
+                        onWheel: function (wheel) {
+                            let delta = wheel.angleDelta.y > 0 ? 1 : -1;
+                            let newVal = Math.max(-20, Math.min(20, ampSlider.value + delta));
+                            ampSlider.value = newVal;
+                            musicModel.set_preamp_gain(newVal);
                         }
                     }
                 }
@@ -305,14 +220,15 @@ Popup {
                                     Layout.fillHeight: true
                                     Layout.preferredWidth: 20
                                     orientation: Qt.Vertical
-                                    from: -20; to: 20
+                                    from: -20
+                                    to: 20
                                     value: musicModel.get_eq_band_value(index)
                                     stepSize: 1
                                     padding: 0
 
                                     onValueChanged: {
                                         if (innerSlider.pressed || innerSlider.hovered) {
-                                            musicModel.set_eq_band(index, innerSlider.value)
+                                            musicModel.set_eq_band(index, innerSlider.value);
                                         }
                                     }
 
@@ -336,7 +252,9 @@ Popup {
                                     handle: Rectangle {
                                         anchors.horizontalCenter: parent.horizontalCenter
                                         y: innerSlider.topPadding + innerSlider.visualPosition * (innerSlider.availableHeight - height)
-                                        width: 10; height: 10; radius: 5
+                                        width: 10
+                                        height: 10
+                                        radius: 5
                                         color: innerSlider.pressed ? theme.colormap.dspeq10slider : theme.colormap.dspeq10handle
                                         border.color: theme.colormap.dspfxborder
                                         border.width: 1
@@ -356,11 +274,11 @@ Popup {
                                 anchors.fill: parent
                                 hoverEnabled: true
                                 acceptedButtons: Qt.NoButton
-                                onWheel: function(wheel) {
-                                    let delta = wheel.angleDelta.y > 0 ? 1 : -1
-                                    let newVal = Math.max(-20, Math.min(20, innerSlider.value + delta))
-                                    innerSlider.value = newVal
-                                    musicModel.set_eq_band(index, newVal)
+                                onWheel: function (wheel) {
+                                    let delta = wheel.angleDelta.y > 0 ? 1 : -1;
+                                    let newVal = Math.max(-20, Math.min(20, innerSlider.value + delta));
+                                    innerSlider.value = newVal;
+                                    musicModel.set_eq_band(index, newVal);
                                 }
                             }
                         }
@@ -388,7 +306,8 @@ Popup {
                         Layout.fillHeight: true
                         Layout.preferredWidth: 20
                         orientation: Qt.Vertical
-                        from: -20; to: 20
+                        from: -20
+                        to: 20
                         value: 0
                         stepSize: 1
                         padding: 0
@@ -397,43 +316,54 @@ Popup {
 
                         onPressedChanged: {
                             if (pressed) {
-                                previousValue = value
+                                previousValue = value;
                             }
                             if (!pressed && value !== 0) {
-                                Timer.singleShot(100, function() {
-                                    gainSlider.value = 0
-                                })
+                                Timer.singleShot(100, function () {
+                                    gainSlider.value = 0;
+                                });
                             }
                         }
 
                         onValueChanged: {
                             if (pressed) {
-                                let delta = value - previousValue
+                                let delta = value - previousValue;
                                 if (delta !== 0) {
                                     for (let i = 0; i < 10; ++i) {
-                                        let slider = eqRepeater.itemAt(i).children[0].children[1]
-                                        let newVal = Math.max(-20, Math.min(20, slider.value + delta))
-                                        slider.value = newVal
-                                        musicModel.set_eq_band(i, newVal)
+                                        let slider = eqRepeater.itemAt(i).children[0].children[1];
+                                        let newVal = Math.max(-20, Math.min(20, slider.value + delta));
+                                        slider.value = newVal;
+                                        musicModel.set_eq_band(i, newVal);
                                     }
-                                    previousValue = value
+                                    previousValue = value;
                                 }
                             }
                         }
 
                         background: Rectangle {
                             anchors.horizontalCenter: parent.horizontalCenter
-                            width: 3; height: parent.height; radius: 1.5; color: theme.colormap.dspeqfaderbg
+                            width: 3
+                            height: parent.height
+                            radius: 1.5
+                            color: theme.colormap.dspeqfaderbg
                             Rectangle {
-                                width: parent.width; y: gainSlider.visualPosition * parent.height
-                                height: parent.height - y; color: theme.colormap.dspeqfaderslider; radius: 1.5; opacity: 0.6
+                                width: parent.width
+                                y: gainSlider.visualPosition * parent.height
+                                height: parent.height - y
+                                color: theme.colormap.dspeqfaderslider
+                                radius: 1.5
+                                opacity: 0.6
                             }
                         }
                         handle: Rectangle {
                             anchors.horizontalCenter: parent.horizontalCenter
                             y: gainSlider.topPadding + gainSlider.visualPosition * (gainSlider.availableHeight - height)
-                            width: 10; height: 10; radius: 5; color: gainSlider.pressed ? theme.colormap.dspeqfaderslider : theme.colormap.dspeqfaderhandle
-                            border.color: theme.colormap.dspfxborder; border.width: 1
+                            width: 10
+                            height: 10
+                            radius: 5
+                            color: gainSlider.pressed ? theme.colormap.dspeqfaderslider : theme.colormap.dspeqfaderhandle
+                            border.color: theme.colormap.dspfxborder
+                            border.width: 1
                         }
                     }
 
@@ -449,146 +379,16 @@ Popup {
                         Layout.fillWidth: true
                         Layout.preferredHeight: 1
                         acceptedButtons: Qt.NoButton
-                        onWheel: function(wheel) {
-                            let delta = wheel.angleDelta.y > 0 ? 1 : -1
-                            let newVal = Math.max(-20, Math.min(20, gainSlider.value + delta))
-                            gainSlider.value = newVal
+                        onWheel: function (wheel) {
+                            let delta = wheel.angleDelta.y > 0 ? 1 : -1;
+                            let newVal = Math.max(-20, Math.min(20, gainSlider.value + delta));
+                            gainSlider.value = newVal;
                             for (let i = 0; i < 10; ++i) {
-                                let slider = eqRepeater.itemAt(i).children[0].children[1]
-                                slider.value = Math.max(-20, Math.min(20, slider.value + delta))
-                                musicModel.set_eq_band(i, slider.value)
+                                let slider = eqRepeater.itemAt(i).children[0].children[1];
+                                slider.value = Math.max(-20, Math.min(20, slider.value + delta));
+                                musicModel.set_eq_band(i, slider.value);
                             }
                         }
-                    }
-}
-        }
-        }
-
-        // EQ Controls (RESET - SAVE AS)
-        RowLayout {
-            Layout.fillWidth: true
-            Layout.preferredHeight: 20
-            spacing: 3
-
-            Button {
-                id: resetBtn
-                Layout.fillWidth: true
-                Layout.preferredWidth: 1
-                Layout.preferredHeight: 20
-
-                onClicked: {
-                    dspContent.resetEQ()
-                }
-
-                background: Rectangle {
-                    color: resetBtn.hovered ? theme.colormap.dspeqpresetactive : theme.colormap.dspeqbg
-                    border.color: theme.colormap.dspborder
-                    radius: 2
-                }
-
-                contentItem: Text {
-                    text: "RESET"
-                    font.family: kodeMono.name
-                    font.pixelSize: 10
-                    font.bold: true
-                    color: resetBtn.hovered ? "black" : theme.colormap.dspfxsubtext
-                    horizontalAlignment: Text.AlignHCenter
-                    verticalAlignment: Text.AlignVCenter
-                }
-            }
-
-            Button {
-                id: saveBtn
-                Layout.fillWidth: true
-                Layout.preferredWidth: 1
-                Layout.preferredHeight: 20
-
-                onClicked: {
-                    nameInput.text = ""
-                    saveEqDialog.open()
-                }
-
-                background: Rectangle {
-                    color: saveBtn.hovered ? theme.colormap.dspeqpresetactive : theme.colormap.dspeqbg
-                    border.color: theme.colormap.dspborder
-                    radius: 2
-                }
-
-                contentItem: Text {
-                    text: "SAVE AS"
-                    font.family: kodeMono.name
-                    font.pixelSize: 10
-                    font.bold: true
-                    color: saveBtn.hovered ? "black" : theme.colormap.dspfxsubtext
-                    horizontalAlignment: Text.AlignHCenter
-                    verticalAlignment: Text.AlignVCenter
-                }
-            }
-        }
-
-        // Default Presets Grid
-        RowLayout {
-            Layout.fillWidth: true
-            Layout.preferredHeight: 20
-            spacing: 3
-
-            Repeater {
-                model: dspContent.defaultPresets
-                delegate: Button {
-                    id: defBtn
-                    property bool isActive: dspContent.activePresetIndex === index
-                    Layout.fillWidth: true
-                    Layout.preferredHeight: 20
-                    contentItem: Text {
-                        text: modelData
-                        font.family: kodeMono.name
-                        font.pixelSize: 10
-                        color: defBtn.isActive ? "black" : (defBtn.hovered ? "black" : theme.colormap.dspfxsubtext)
-                        horizontalAlignment: Text.AlignHCenter
-                        verticalAlignment: Text.AlignVCenter
-                    }
-                    background: Rectangle {
-                        color: defBtn.isActive ? theme.colormap.dspeqpresetactive : (defBtn.hovered ? theme.colormap.dspeqpresetactive : theme.colormap.dspeqbg)
-                        border.color: defBtn.isActive ? theme.colormap.dspfxtext : theme.colormap.dspborder
-                        radius: 2
-                    }
-
-                    onClicked: {
-                        dspContent.loadPresetByIndex(index)
-                    }
-                }
-            }
-        }
-
-        // EQ User Presets Grid
-        RowLayout {
-            Layout.fillWidth: true
-            Layout.preferredHeight: 20
-            spacing: 3
-
-            Repeater {
-                model: dspContent.userPresets
-                delegate: Button {
-                    id: pBtn
-                    property bool isActive: dspContent.activePresetIndex === index + 6
-                    Layout.fillWidth: true
-                    Layout.preferredHeight: 20
-                    contentItem: Text {
-                        text: modelData
-                        font.family: kodeMono.name
-                        font.pixelSize: 10
-                        color: pBtn.isActive ? "black" : (pBtn.hovered ? "black" : theme.colormap.dspfxsubtext)
-                        horizontalAlignment: Text.AlignHCenter
-                        verticalAlignment: Text.AlignVCenter
-                    }
-                    background: Rectangle {
-                        color: pBtn.isActive ? theme.colormap.dspeqpresetactive : (pBtn.hovered ? theme.colormap.dspeqpresetactive : theme.colormap.dspeqbg)
-                        border.color: pBtn.isActive ? theme.colormap.dspfxtext : theme.colormap.dspborder
-                        radius: 2
-                    }
-
-                    onClicked: {
-                        dspContent.loadPresetByIndex(index + 6)
                     }
                 }
             }
@@ -605,7 +405,6 @@ Popup {
             RowLayout {
                 Layout.fillWidth: true
                 spacing: 3
-                
 
                 FxToggleBox {
                     id: compToggle
@@ -869,6 +668,136 @@ Popup {
                     sliderValue: pitchSlider.controlValue
                     onReset: val => musicModel.setStdPitchSemitones(val)
                 }
+            }
+        }
+    }
+
+    // Default Presets Grid
+    RowLayout {
+        Layout.fillWidth: true
+        Layout.preferredHeight: 20
+        spacing: 3
+
+        Repeater {
+            model: dspContent.defaultPresets
+            delegate: Button {
+                id: defBtn
+                property bool isActive: dspContent.activePresetIndex === index
+                Layout.fillWidth: true
+                Layout.preferredHeight: 20
+                contentItem: Text {
+                    text: modelData
+                    font.family: kodeMono.name
+                    font.pixelSize: 10
+                    color: defBtn.isActive ? "black" : (defBtn.hovered ? "black" : theme.colormap.dspfxsubtext)
+                    horizontalAlignment: Text.AlignHCenter
+                    verticalAlignment: Text.AlignVCenter
+                }
+                background: Rectangle {
+                    color: defBtn.isActive ? theme.colormap.dspeqpresetactive : (defBtn.hovered ? theme.colormap.dspeqpresetactive : theme.colormap.dspeqbg)
+                    border.color: defBtn.isActive ? theme.colormap.dspfxtext : theme.colormap.dspborder
+                    radius: 2
+                }
+
+                onClicked: {
+                    dspContent.loadPresetByIndex(index);
+                }
+            }
+        }
+    }
+
+    // EQ User Presets Grid
+    RowLayout {
+        Layout.fillWidth: true
+        Layout.preferredHeight: 20
+        spacing: 3
+
+        Repeater {
+            model: dspContent.userPresets
+            delegate: Button {
+                id: pBtn
+                property bool isActive: dspContent.activePresetIndex === index + 6
+                Layout.fillWidth: true
+                Layout.preferredHeight: 20
+                contentItem: Text {
+                    text: modelData
+                    font.family: kodeMono.name
+                    font.pixelSize: 10
+                    color: pBtn.isActive ? "black" : (pBtn.hovered ? "black" : theme.colormap.dspfxsubtext)
+                    horizontalAlignment: Text.AlignHCenter
+                    verticalAlignment: Text.AlignVCenter
+                }
+                background: Rectangle {
+                    color: pBtn.isActive ? theme.colormap.dspeqpresetactive : (pBtn.hovered ? theme.colormap.dspeqpresetactive : theme.colormap.dspeqbg)
+                    border.color: pBtn.isActive ? theme.colormap.dspfxtext : theme.colormap.dspborder
+                    radius: 2
+                }
+
+                onClicked: {
+                    dspContent.loadPresetByIndex(index + 6);
+                }
+            }
+        }
+    }
+
+    // EQ Controls (RESET - SAVE AS)
+    RowLayout {
+        Layout.fillWidth: true
+        Layout.preferredHeight: 20
+        spacing: 3
+
+        Button {
+            id: resetBtn
+            Layout.fillWidth: true
+            Layout.preferredWidth: 1
+            Layout.preferredHeight: 20
+
+            onClicked: {
+                dspContent.resetEQ();
+            }
+
+            background: Rectangle {
+                color: resetBtn.hovered ? theme.colormap.dspeqpresetactive : theme.colormap.dspeqbg
+                border.color: theme.colormap.dspborder
+                radius: 2
+            }
+
+            contentItem: Text {
+                text: "RESET ALL"
+                font.family: kodeMono.name
+                font.pixelSize: 10
+                font.bold: true
+                color: resetBtn.hovered ? "black" : theme.colormap.dspfxsubtext
+                horizontalAlignment: Text.AlignHCenter
+                verticalAlignment: Text.AlignVCenter
+            }
+        }
+
+        Button {
+            id: saveBtn
+            Layout.fillWidth: true
+            Layout.preferredWidth: 1
+            Layout.preferredHeight: 20
+
+            onClicked: {
+                nameInput.text = "";
+                saveEqDialog.open();
+            }
+
+            background: Rectangle {
+                color: saveBtn.hovered ? theme.colormap.dspeqpresetactive : theme.colormap.dspeqbg
+                border.color: theme.colormap.dspborder
+                radius: 2
+            }
+
+            contentItem: Text {
+                text: "SAVE AS"
+                font.family: kodeMono.name
+                font.pixelSize: 10
+                font.bold: true
+                color: saveBtn.hovered ? "black" : theme.colormap.dspfxsubtext
+                horizontalAlignment: Text.AlignHCenter
+                verticalAlignment: Text.AlignVCenter
             }
         }
     }
