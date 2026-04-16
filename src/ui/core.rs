@@ -208,46 +208,18 @@ pub struct MusicModel {
     pub crossfeed_amount: qt_property!(f64; NOTIFY crossfeed_amount_changed),
     pub crossfeed_amount_changed: qt_signal!(),
 
-    // EQ.qml
+    // EQ.qml - single authoritative source of truth
     eq_bands: [f32; 10],
     pub eq_enabled: qt_property!(bool; NOTIFY eq_enabled_changed),
     pub eq_enabled_changed: qt_signal!(),
 
-    // Individual EQ band reactive properties with NOTIFY signals
-    pub eq_band_0: qt_property!(f64; NOTIFY eq_band_0_changed),
-    pub eq_band_0_changed: qt_signal!(),
-    pub eq_band_1: qt_property!(f64; NOTIFY eq_band_1_changed),
-    pub eq_band_1_changed: qt_signal!(),
-    pub eq_band_2: qt_property!(f64; NOTIFY eq_band_2_changed),
-    pub eq_band_2_changed: qt_signal!(),
-    pub eq_band_3: qt_property!(f64; NOTIFY eq_band_3_changed),
-    pub eq_band_3_changed: qt_signal!(),
-    pub eq_band_4: qt_property!(f64; NOTIFY eq_band_4_changed),
-    pub eq_band_4_changed: qt_signal!(),
-    pub eq_band_5: qt_property!(f64; NOTIFY eq_band_5_changed),
-    pub eq_band_5_changed: qt_signal!(),
-    pub eq_band_6: qt_property!(f64; NOTIFY eq_band_6_changed),
-    pub eq_band_6_changed: qt_signal!(),
-    pub eq_band_7: qt_property!(f64; NOTIFY eq_band_7_changed),
-    pub eq_band_7_changed: qt_signal!(),
-    pub eq_band_8: qt_property!(f64; NOTIFY eq_band_8_changed),
-    pub eq_band_8_changed: qt_signal!(),
-    pub eq_band_9: qt_property!(f64; NOTIFY eq_band_9_changed),
-    pub eq_band_9_changed: qt_signal!(),
+    // Single reactive property for all EQ bands
+    pub eqBands: qt_property!(QVariantList; NOTIFY eqBandsChanged),
+    pub eqBandsChanged: qt_signal!(),
 
-    // Reactive property setters for individual bands
-    pub set_eq_band_0: qt_method!(fn(&mut self, val: f64)),
-    pub set_eq_band_1: qt_method!(fn(&mut self, val: f64)),
-    pub set_eq_band_2: qt_method!(fn(&mut self, val: f64)),
-    pub set_eq_band_3: qt_method!(fn(&mut self, val: f64)),
-    pub set_eq_band_4: qt_method!(fn(&mut self, val: f64)),
-    pub set_eq_band_5: qt_method!(fn(&mut self, val: f64)),
-    pub set_eq_band_6: qt_method!(fn(&mut self, val: f64)),
-    pub set_eq_band_7: qt_method!(fn(&mut self, val: f64)),
-    pub set_eq_band_8: qt_method!(fn(&mut self, val: f64)),
-    pub set_eq_band_9: qt_method!(fn(&mut self, val: f64)),
-
-    // Combined preset loading methods
+    // EQ methods
+    pub set_eq_band: qt_method!(fn(&mut self, index: i32, gain: f64)),
+    pub load_preset: qt_method!(fn(&mut self, index: i32)),
     pub load_eq_preset: qt_method!(fn(&mut self, index: i32)),
     pub load_fx_preset: qt_method!(fn(&mut self, index: i32)),
 
@@ -335,10 +307,8 @@ pub struct MusicModel {
     pub get_normalizer_smoothing_label: qt_method!(fn(&self) -> QString),
     pub get_output_devices: qt_method!(fn(&self) -> QVariantList),
     pub set_output_device: qt_method!(fn(&mut self, index: i32)),
-    pub set_eq_band: qt_method!(fn(&mut self, index: i32, gain: f64)),
     pub set_eq_enabled: qt_method!(fn(&mut self, enabled: bool)),
     pub set_eq_instant_apply: qt_method!(fn(&mut self)),
-    pub get_eq_band_value: qt_method!(fn(&self, index: i32) -> f64),
     pub get_preamp_gain: qt_method!(fn(&self) -> f64),
     pub set_preamp_gain: qt_method!(fn(&mut self, gain: f64)),
     pub user_presets_changed: qt_signal!(),
@@ -527,14 +497,16 @@ impl MusicModel {
         };
 
         // Initialize compressor atomics from saved config
+        // Convert dB to normalized for property, keep dB for atomic
+        let comp_db = saved_config.compressor_threshold.clamp(-60.0, 0.0);
+        let comp_normalized = ((comp_db + 60.0) / 60.0) as f64;
+        model.compressor_threshold = comp_normalized;
         crate::audio::dsp::compressor::get_compressor_enabled_arc().store(
             saved_config.compressor_enabled,
             std::sync::atomic::Ordering::Relaxed,
         );
-        crate::audio::dsp::compressor::get_compressor_threshold_arc().store(
-            saved_config.compressor_threshold.to_bits(),
-            std::sync::atomic::Ordering::Relaxed,
-        );
+        crate::audio::dsp::compressor::get_compressor_threshold_arc()
+            .store(comp_db.to_bits(), std::sync::atomic::Ordering::Relaxed);
 
         // Initialize pitch ratio atomic from saved config
         let pitch_ratio = 2.0_f32.powf(saved_config.pitch_semitones / 12.0);
@@ -601,6 +573,10 @@ impl MusicModel {
                 std::sync::atomic::Ordering::Relaxed,
             );
         }
+
+        // Load preset to sync all properties with QML
+        let preset_idx = saved_config.active_preset_index.clamp(0, 5);
+        model.load_preset(preset_idx);
 
         if let Ok(mut ff) = model.ffmpeg.lock() {
             ff.set_dsp_enabled(saved_config.dsp_enabled);
@@ -2265,56 +2241,24 @@ impl MusicModel {
                 std::sync::atomic::Ordering::Relaxed,
             );
 
-            // Emit band-specific NOTIFY signal for reactive QML binding
-            match band {
-                0 => self.eq_band_0_changed(),
-                1 => self.eq_band_1_changed(),
-                2 => self.eq_band_2_changed(),
-                3 => self.eq_band_3_changed(),
-                4 => self.eq_band_4_changed(),
-                5 => self.eq_band_5_changed(),
-                6 => self.eq_band_6_changed(),
-                7 => self.eq_band_7_changed(),
-                8 => self.eq_band_8_changed(),
-                9 => self.eq_band_9_changed(),
-                _ => {}
-            }
+            // Update backing field and emit signal for reactive binding
+            self.sync_eq_bands();
 
             // Save state for persistence
             self.save_dsp_config();
         }
     }
 
-    // Individual band setters for reactive property binding
-    pub fn set_eq_band_0(&mut self, val: f64) {
-        self.set_eq_band(0, val);
-    }
-    pub fn set_eq_band_1(&mut self, val: f64) {
-        self.set_eq_band(1, val);
-    }
-    pub fn set_eq_band_2(&mut self, val: f64) {
-        self.set_eq_band(2, val);
-    }
-    pub fn set_eq_band_3(&mut self, val: f64) {
-        self.set_eq_band(3, val);
-    }
-    pub fn set_eq_band_4(&mut self, val: f64) {
-        self.set_eq_band(4, val);
-    }
-    pub fn set_eq_band_5(&mut self, val: f64) {
-        self.set_eq_band(5, val);
-    }
-    pub fn set_eq_band_6(&mut self, val: f64) {
-        self.set_eq_band(6, val);
-    }
-    pub fn set_eq_band_7(&mut self, val: f64) {
-        self.set_eq_band(7, val);
-    }
-    pub fn set_eq_band_8(&mut self, val: f64) {
-        self.set_eq_band(8, val);
-    }
-    pub fn set_eq_band_9(&mut self, val: f64) {
-        self.set_eq_band(9, val);
+    fn sync_eq_bands(&mut self) {
+        // Update backing field for Q_PROPERTY
+        let mut list = QVariantList::default();
+        for &gain in &self.eq_bands {
+            list.push(QVariant::from(gain as f64));
+        }
+        self.eqBands = list;
+
+        // Emit signal for QML reactive binding
+        self.eqBandsChanged();
     }
 
     pub fn set_eq_enabled(&mut self, enabled: bool) {
@@ -2447,8 +2391,7 @@ impl MusicModel {
         }
     }
 
-    // Load EQ preset with reactive property updates
-    // This method updates internal state AND emits NOTIFY signals for all bands
+    // Load EQ preset - updates eq_bands array and emits single signal
     pub fn load_eq_preset(&mut self, index: i32) {
         if index < 0 || (index as usize) >= self.eq_presets.len() {
             return;
@@ -2456,28 +2399,43 @@ impl MusicModel {
 
         let preset = &self.eq_presets[index as usize];
 
-        // Apply each band - set_eq_band updates self.eq_bands and emits NOTIFY
         for (i, &gain) in preset.gains.iter().enumerate() {
             self.eq_bands[i] = gain;
 
-            // Update atomic for DSP engine
+            // Update atomic for DSP engine (lock-free)
             let arc = crate::audio::dsp::eq::get_eq_bands_arc();
             arc[i].store(gain.to_bits(), std::sync::atomic::Ordering::Relaxed);
+        }
 
-            // Emit band-specific NOTIFY signal for reactive QML binding
-            match i {
-                0 => self.eq_band_0_changed(),
-                1 => self.eq_band_1_changed(),
-                2 => self.eq_band_2_changed(),
-                3 => self.eq_band_3_changed(),
-                4 => self.eq_band_4_changed(),
-                5 => self.eq_band_5_changed(),
-                6 => self.eq_band_6_changed(),
-                7 => self.eq_band_7_changed(),
-                8 => self.eq_band_8_changed(),
-                9 => self.eq_band_9_changed(),
-                _ => {}
-            }
+        // Sync and emit signal for reactive binding
+        self.sync_eq_bands();
+
+        self.active_preset_index = index;
+        self.active_preset_index_changed();
+        self.save_dsp_config();
+    }
+
+    // Load combined EQ + FX preset - single source of truth
+    pub fn load_preset(&mut self, index: i32) {
+        // Validate index against both preset arrays
+        if index < 0 || (index as usize) >= self.eq_presets.len() {
+            return;
+        }
+
+        // Apply EQ preset
+        let eq_preset = &self.eq_presets[index as usize];
+        for (i, &gain) in eq_preset.gains.iter().enumerate() {
+            self.eq_bands[i] = gain;
+            let arc = crate::audio::dsp::eq::get_eq_bands_arc();
+            arc[i].store(gain.to_bits(), std::sync::atomic::Ordering::Relaxed);
+        }
+
+        // Sync and emit signal for reactive binding
+        self.sync_eq_bands();
+
+        // Apply FX preset (if index is valid for FX presets too)
+        if (index as usize) < self.fx_presets.len() {
+            self.load_fx_preset(index);
         }
 
         self.active_preset_index = index;
@@ -2597,17 +2555,18 @@ impl MusicModel {
         self.crossfeed_changed();
         self.crossfeed_amount_changed();
 
-        // Compressor
+        // Compressor - convert dB to normalized 0-1 for property
         self.compressor_active = preset.compressor_enabled;
-        self.compressor_threshold = preset.compressor_threshold as f64;
+        // Normalized = (db + 60) / 60, clamped to 0-1
+        let db = preset.compressor_threshold.clamp(-60.0, 0.0);
+        let normalized = ((db + 60.0) / 60.0) as f64;
+        self.compressor_threshold = normalized;
         crate::audio::dsp::compressor::get_compressor_enabled_arc().store(
             preset.compressor_enabled,
             std::sync::atomic::Ordering::Relaxed,
         );
-        crate::audio::dsp::compressor::get_compressor_threshold_arc().store(
-            preset.compressor_threshold.to_bits(),
-            std::sync::atomic::Ordering::Relaxed,
-        );
+        crate::audio::dsp::compressor::get_compressor_threshold_arc()
+            .store(db.to_bits(), std::sync::atomic::Ordering::Relaxed);
         self.compressor_changed();
 
         self.save_dsp_config();

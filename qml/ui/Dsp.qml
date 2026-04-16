@@ -55,7 +55,7 @@ Popup {
         }
 
         property int activePresetIndex: -1
-
+        
         onActivePresetIndexChanged: {
             musicModel.set_active_preset_index(activePresetIndex);
         }
@@ -67,12 +67,7 @@ Popup {
                 return;
             }
             
-            // Use reactive preset loading methods
-            // EQ and FX presets are paired (index 0 = LOONIX for both)
-            musicModel.load_eq_preset(index);
-            musicModel.load_fx_preset(index);
-            
-            musicModel.set_active_preset_index(index);
+            musicModel.load_preset(index);
         }
 
         // EQ Section
@@ -103,7 +98,7 @@ Popup {
                 EqNumberBox { id: num16k; displayText: Math.round(eq16k.currentValue) }
                 EqNumberBox { id: numFader; displayText: Math.round((eqFader.currentValue + 20) * 2.5) + "%" }
 
-                // Row 2: Sliders (tengah) - connected to backend
+                // Row 2: Sliders (tengah) - bound to musicModel.eqBands via reactive property
                 EqSliderBox {
                     id: eqPreamp
                     controlValue: musicModel.get_preamp_gain()
@@ -111,53 +106,53 @@ Popup {
                 }
                 EqSliderBox {
                     id: eq31
-                    controlValue: musicModel.eq_band_0
-                    onSliderChanged: musicModel.eq_band_0 = val
+                    controlValue: musicModel.eqBands[0]
+                    onSliderChanged: (val) => musicModel.set_eq_band(0, val)
                 }
                 EqSliderBox {
                     id: eq62
-                    controlValue: musicModel.eq_band_1
-                    onSliderChanged: musicModel.eq_band_1 = val
+                    controlValue: musicModel.eqBands[1]
+                    onSliderChanged: (val) => musicModel.set_eq_band(1, val)
                 }
                 EqSliderBox {
                     id: eq125
-                    controlValue: musicModel.eq_band_2
-                    onSliderChanged: musicModel.eq_band_2 = val
+                    controlValue: musicModel.eqBands[2]
+                    onSliderChanged: (val) => musicModel.set_eq_band(2, val)
                 }
                 EqSliderBox {
                     id: eq250
-                    controlValue: musicModel.eq_band_3
-                    onSliderChanged: musicModel.eq_band_3 = val
+                    controlValue: musicModel.eqBands[3]
+                    onSliderChanged: (val) => musicModel.set_eq_band(3, val)
                 }
                 EqSliderBox {
                     id: eq500
-                    controlValue: musicModel.eq_band_4
-                    onSliderChanged: musicModel.eq_band_4 = val
+                    controlValue: musicModel.eqBands[4]
+                    onSliderChanged: (val) => musicModel.set_eq_band(4, val)
                 }
                 EqSliderBox {
                     id: eq1k
-                    controlValue: musicModel.eq_band_5
-                    onSliderChanged: musicModel.eq_band_5 = val
+                    controlValue: musicModel.eqBands[5]
+                    onSliderChanged: (val) => musicModel.set_eq_band(5, val)
                 }
                 EqSliderBox {
                     id: eq2k
-                    controlValue: musicModel.eq_band_6
-                    onSliderChanged: musicModel.eq_band_6 = val
+                    controlValue: musicModel.eqBands[6]
+                    onSliderChanged: (val) => musicModel.set_eq_band(6, val)
                 }
                 EqSliderBox {
                     id: eq4k
-                    controlValue: musicModel.eq_band_7
-                    onSliderChanged: musicModel.eq_band_7 = val
+                    controlValue: musicModel.eqBands[7]
+                    onSliderChanged: (val) => musicModel.set_eq_band(7, val)
                 }
                 EqSliderBox {
                     id: eq8k
-                    controlValue: musicModel.eq_band_8
-                    onSliderChanged: musicModel.eq_band_8 = val
+                    controlValue: musicModel.eqBands[8]
+                    onSliderChanged: (val) => musicModel.set_eq_band(8, val)
                 }
                 EqSliderBox {
                     id: eq16k
-                    controlValue: musicModel.eq_band_9
-                    onSliderChanged: musicModel.eq_band_9 = val
+                    controlValue: musicModel.eqBands[9]
+                    onSliderChanged: (val) => musicModel.set_eq_band(9, val)
                 }
                 EqSliderBox {
                     id: eqFader
