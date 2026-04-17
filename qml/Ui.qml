@@ -1041,7 +1041,7 @@ Window {
                             }
                         }
 
-                        // THEME icon 󰰤 toggle T
+                        // THEME icon 󰬛 toggle T
                         Item {
                             id: themeContainer
                             width: themeIcon.width
@@ -1063,7 +1063,7 @@ Window {
                             Text {
                                 id: themeIcon
                                 anchors.verticalCenter: parent.verticalCenter
-                                text: '󰰤'
+                                text: '󰬛'
                                 font.family: symbols.name
                                 font.pixelSize: 18
                                 color: themeMA.containsMouse ? theme.colormap.playerhover : theme.colormap.playersubtext

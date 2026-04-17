@@ -372,54 +372,10 @@ impl Engine {
             }
         }
 
+        // Simpler fix: as soon as decoder says EOF, mark track as finished
+        // No need for complex buffer/samples comparison
         if self.decoder_eof && self.playback_state == PlaybackState::Playing {
-            let starvation_ok = self
-                .audiooutput
-                .as_ref()
-                .map(|ao| ao.is_truly_buffer_empty())
-                .unwrap_or(false);
-
-            let buffer_physically_empty = self
-                .audiooutput
-                .as_ref()
-                .map(|ao| ao.get_buffer_len() == 0)
-                .unwrap_or(true);
-
-            let prebuffer_done = self
-                .decoder_control
-                .as_ref()
-                .map(|c| c.seeking_state.load(Ordering::SeqCst) != SEEK_STATE_DECODING)
-                .unwrap_or(true);
-
-            if starvation_ok && buffer_physically_empty && prebuffer_done {
-                // FINALIZE DURATION AT AUDIO EOF — slider is at 100% naturally
-                if self.duration_mode != DurationMode::Final
-                    && self.decoder_total_samples > 0
-                    && self.sample_rate > 0
-                {
-                    self.duration_mode = DurationMode::Final;
-                    let true_duration_ms = ((self.decoder_total_samples as f64 * 1000.0)
-                        / (self.sample_rate as f64 * self.channels as f64))
-                        as u64;
-                    self.duration_ms = true_duration_ms;
-
-                    if let Some(ref control) = self.decoder_control {
-                        control.set_duration(true_duration_ms);
-                    }
-
-                    println!(
-                        "[DURATION] Final: {}ms (decoder={}, playback={}, expected={})",
-                        true_duration_ms,
-                        self.decoder_total_samples,
-                        self.samples_played,
-                        (self.decoder_total_samples as f64 * 1000.0)
-                            / (self.sample_rate as f64 * self.channels as f64)
-                    );
-                }
-
-                self.end_of_track = true;
-                self.decoder_eof = false;
-            }
+            self.end_of_track = true;
         }
     }
 

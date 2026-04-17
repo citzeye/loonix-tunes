@@ -94,6 +94,7 @@ pub struct MusicModel {
     pub(crate) dsp: DspController,
     pub(crate) queue: QueueController,
 
+    pub is_playing: qt_property!(bool; READ get_is_playing NOTIFY playing_changed),
     pub playing_changed: qt_signal!(),
 
     pub current_title: qt_property!(QString; NOTIFY title_changed),
@@ -406,6 +407,10 @@ impl QAbstractListModel for MusicModel {
 }
 
 impl MusicModel {
+    pub fn get_is_playing(&self) -> bool {
+        self.playback.is_playing()
+    }
+
     pub fn new() -> Self {
         let saved_config = crate::audio::config::AppConfig::load();
 
@@ -2005,10 +2010,6 @@ impl MusicModel {
     }
 
     pub fn update_tick(&mut self) {
-        let engine_state = self.playback.get_playback_state();
-
-        let is_playing = matches!(engine_state, PlaybackState::Playing);
-
         self.tick_counter += 1;
 
         // Periodic patroli ogni 50 tick (sekitar 2.5 detik)
