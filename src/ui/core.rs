@@ -8,7 +8,7 @@ use crate::audio::engine::{is_audio_file, AudioState, FfmpegEngine, MusicItem, P
 use crate::audio::dsp::abrepeat::ABRepeat;
 use crate::core::library::LibraryManager;
 use crate::core::playback::PlaybackController;
-use crate::ui::DspController;
+use crate::ui::{DspController, QueueController};
 use dirs;
 use qmetaobject::prelude::*;
 use qmetaobject::QAbstractListModel;
@@ -84,8 +84,6 @@ pub struct MusicModel {
 
     pub(crate) shuffle_active: bool,
     pub(crate) shuffle_queue: Vec<i32>,
-    #[allow(dead_code)]
-    pub(crate) queue_index: usize,
     pub(crate) loop_active: bool,
     pub(crate) abrepeat: ABRepeat,
     pub(crate) tick_counter: u32,
@@ -94,6 +92,7 @@ pub struct MusicModel {
     pub(crate) playback: PlaybackController,
     pub(crate) library: LibraryManager,
     pub(crate) dsp: DspController,
+    pub(crate) queue: QueueController,
 
     pub is_playing: qt_property!(bool; NOTIFY playing_changed),
     pub playing_changed: qt_signal!(),
@@ -314,7 +313,6 @@ pub struct MusicModel {
     pub switch_to_queue: qt_method!(fn(&mut self)),
     pub queue_count: qt_property!(i32; NOTIFY queue_changed),
     pub queue_changed: qt_signal!(),
-    pub user_queue: Vec<MusicItem>,
     pub switch_to_folder: qt_method!(fn(&mut self, folder_path: String)),
     pub save_custom_folders: qt_method!(fn(&mut self)),
     pub change_folder: qt_method!(fn(&mut self, index: i32, new_path: String)),
@@ -437,7 +435,7 @@ impl MusicModel {
             favorites_count: saved_config.favorites.len() as i32,
             external_files: Vec::new(),
             external_files_count: 0,
-            user_queue: Vec::new(),
+            queue: QueueController::new(),
             queue_count: 0,
             dsp,
             ..Default::default()
@@ -749,43 +747,32 @@ impl MusicModel {
     }
 
     pub fn add_to_queue(&mut self, path: String, name: String) {
-        self.library.add_to_queue(path, name);
-        self.user_queue = self.library.user_queue.clone();
-        self.queue_count = self.library.queue_count;
+        self.queue.add(path, name);
+        self.queue_count = self.queue.len() as i32;
         self.queue_changed();
     }
 
     pub fn remove_from_queue(&mut self, index: i32) {
-        self.library.remove_from_queue(index);
-        self.user_queue = self.library.user_queue.clone();
-        self.queue_count = self.library.queue_count;
+        self.queue.remove(index as usize);
+        self.queue_count = self.queue.len() as i32;
         self.queue_changed();
     }
 
     pub fn clear_queue(&mut self) {
-        self.user_queue.clear();
+        self.queue.clear();
         self.queue_count = 0;
         self.queue_changed();
     }
 
     pub fn get_queue_item(&self, index: i32) -> QVariantMap {
-        let idx = index as usize;
-        if idx >= self.user_queue.len() {
-            return QVariantMap::default();
-        }
-        let item = &self.user_queue[idx];
-        let mut map = QVariantMap::default();
-        map.insert("name".into(), QString::from(item.name.as_str()).into());
-        map.insert("path".into(), QString::from(item.path.as_str()).into());
-        map
+        self.queue.get_item_map(index)
     }
 
     pub fn switch_to_queue(&mut self) {
         self.current_folder = "Queue".to_string();
         self.current_folder_path = String::new();
         self.current_folder_qml = QString::from("QUEUE");
-        // Set display_list to queue items
-        self.all_items = self.user_queue.clone();
+        self.all_items = self.queue.get_all();
         self.display_list = self.all_items.clone();
         self.begin_reset_model();
         self.end_reset_model();
@@ -1209,20 +1196,17 @@ impl MusicModel {
     }
 
     fn play_next_from_queue(&mut self) -> bool {
-        if self.user_queue.is_empty() {
-            return false;
+        if let Some(item) = self.queue.pop_front() {
+            self.queue_count = self.queue.len() as i32;
+            self.queue_changed();
+            if let Some(index) = self.display_list.iter().position(|i| i.path == item.path) {
+                self.play_at(index as i32);
+                return true;
+            }
+            self.play_next_from_queue()
+        } else {
+            false
         }
-        // Take first item
-        let item = self.user_queue.remove(0);
-        self.queue_count = self.user_queue.len() as i32;
-        self.queue_changed();
-        // Find index in display_list
-        if let Some(index) = self.display_list.iter().position(|i| i.path == item.path) {
-            self.play_at(index as i32);
-            return true;
-        }
-        // Not found, maybe item is not in current folder; skip and try next queue item
-        self.play_next_from_queue()
     }
 
     pub fn play_next(&mut self) {
