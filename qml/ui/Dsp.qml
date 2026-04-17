@@ -1125,7 +1125,7 @@ Popup {
         musicModel && musicModel.reverb_mode !== undefined
         ? musicModel.reverb_mode
         : 0
-        property bool boxEnabled: true
+        property bool boxEnabled: musicModel.reverb_active
 
         Layout.fillWidth: true
         Layout.preferredHeight: 20

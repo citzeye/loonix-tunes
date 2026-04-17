@@ -1,4 +1,5 @@
 /* --- LOONIX-TUNES src/audio/config.rs --- */
+use crate::audio::presets::{EQ_PRESETS, FX_PRESETS};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fs;
@@ -337,6 +338,9 @@ pub struct FxPreset {
     pub crossfeed_amount: f32,
     pub compressor_enabled: bool,
     pub compressor_threshold: f32,
+    pub reverb_enabled: bool,
+    pub reverb_mode: i32,
+    pub reverb_amount: i32,
 }
 
 impl Default for FxPreset {
@@ -364,239 +368,16 @@ impl Default for FxPreset {
             crossfeed_amount: 0.0,
             compressor_enabled: true,
             compressor_threshold: -6.0,
+            reverb_enabled: false,
+            reverb_mode: 0,
+            reverb_amount: 0,
         }
     }
 }
 
-// ============================================================
-// EQ PRESETS (const - not user data)
-// ============================================================
-#[derive(Clone)]
-struct EqPresetData {
-    name: &'static str,
-    gains: [f32; 10],
-    preamp: f32,
-    macro_val: f32,
-}
-
-pub const EQ_PRESET_DATA: [EqPresetData; 6] = [
-    EqPresetData {
-        name: "LOONIX",
-        gains: [3.0, 8.0, -5.0, 0.0, -3.0, -1.0, -3.0, -1.0, 1.0, -5.0],
-        preamp: 0.0,
-        macro_val: 0.0,
-    },
-    EqPresetData {
-        name: "BASS",
-        gains: [6.0, 9.0, 0.0, -5.0, -5.0, -5.0, -5.0, -5.0, 2.0, -5.0],
-        preamp: 0.0,
-        macro_val: 0.0,
-    },
-    EqPresetData {
-        name: "ROCK",
-        gains: [6.0, 9.0, 1.0, -2.0, -4.0, -2.0, 1.0, 3.0, 6.0, 6.0],
-        preamp: 0.0,
-        macro_val: 0.0,
-    },
-    EqPresetData {
-        name: "POP",
-        gains: [-2.0, -1.0, 0.0, 2.0, 4.0, 0.0, 2.0, 0.0, -1.0, -2.0],
-        preamp: 0.0,
-        macro_val: 0.0,
-    },
-    EqPresetData {
-        name: "METAL",
-        gains: [6.0, 10.0, 0.0, -4.0, -6.0, -4.0, 0.0, 3.0, 5.0, 6.0],
-        preamp: 0.0,
-        macro_val: 0.0,
-    },
-    EqPresetData {
-        name: "JAZZ",
-        gains: [3.0, 2.0, 1.0, -2.0, -2.0, -2.0, -2.0, 1.0, 2.0, 3.0],
-        preamp: 0.0,
-        macro_val: 0.0,
-    },
-];
-
-// ============================================================
-// FX PRESETS (const - not user data)
-// ============================================================
-#[derive(Clone)]
-struct FxPresetData {
-    name: &'static str,
-    bass_enabled: bool,
-    bass_gain: f32,
-    bass_cutoff: f32,
-    bass_mode: i32,
-    crystal_enabled: bool,
-    crystal_amount: f32,
-    crystal_freq: f32,
-    surround_enabled: bool,
-    surround_width: f32,
-    mono_enabled: bool,
-    mono_width: f32,
-    pitch_enabled: bool,
-    pitch_semitones: f32,
-    middle_enabled: bool,
-    middle_amount: f32,
-    stereo_enabled: bool,
-    stereo_amount: f32,
-    crossfeed_enabled: bool,
-    crossfeed_amount: f32,
-    compressor_enabled: bool,
-    compressor_threshold: f32,
-}
-
-const FX_PRESET_DATA: [FxPresetData; 6] = [
-    FxPresetData {
-        name: "LOONIX",
-        bass_enabled: true,
-        bass_gain: 6.0,
-        bass_cutoff: 180.0,
-        bass_mode: 2,
-        crystal_enabled: true,
-        crystal_amount: 0.5,
-        crystal_freq: 8000.0,
-        surround_enabled: true,
-        surround_width: 1.5,
-        mono_enabled: false,
-        mono_width: 1.0,
-        pitch_enabled: false,
-        pitch_semitones: 0.0,
-        middle_enabled: false,
-        middle_amount: 0.0,
-        stereo_enabled: true,
-        stereo_amount: 0.4,
-        crossfeed_enabled: false,
-        crossfeed_amount: 0.0,
-        compressor_enabled: true,
-        compressor_threshold: -10.0,
-    },
-    FxPresetData {
-        name: "BASS BOOST",
-        bass_enabled: true,
-        bass_gain: 12.0,
-        bass_cutoff: 180.0,
-        bass_mode: 2,
-        crystal_enabled: false,
-        crystal_amount: 0.2,
-        crystal_freq: 8000.0,
-        surround_enabled: false,
-        surround_width: 1.8,
-        mono_enabled: false,
-        mono_width: 1.0,
-        pitch_enabled: false,
-        pitch_semitones: 0.0,
-        middle_enabled: false,
-        middle_amount: 0.0,
-        stereo_enabled: false,
-        stereo_amount: 0.0,
-        crossfeed_enabled: false,
-        crossfeed_amount: 0.0,
-        compressor_enabled: false,
-        compressor_threshold: -18.0,
-    },
-    FxPresetData {
-        name: "CLARITY",
-        bass_enabled: false,
-        bass_gain: 6.0,
-        bass_cutoff: 180.0,
-        bass_mode: 0,
-        crystal_enabled: false,
-        crystal_amount: 0.2,
-        crystal_freq: 8000.0,
-        surround_enabled: false,
-        surround_width: 1.8,
-        mono_enabled: false,
-        mono_width: 1.0,
-        pitch_enabled: false,
-        pitch_semitones: 0.0,
-        middle_enabled: false,
-        middle_amount: 0.0,
-        stereo_enabled: false,
-        stereo_amount: 0.0,
-        crossfeed_enabled: false,
-        crossfeed_amount: 0.0,
-        compressor_enabled: false,
-        compressor_threshold: -18.0,
-    },
-    FxPresetData {
-        name: "WIDE",
-        bass_enabled: false,
-        bass_gain: 6.0,
-        bass_cutoff: 180.0,
-        bass_mode: 0,
-        crystal_enabled: false,
-        crystal_amount: 0.2,
-        crystal_freq: 8000.0,
-        surround_enabled: true,
-        surround_width: 2.0,
-        mono_enabled: false,
-        mono_width: 1.0,
-        pitch_enabled: false,
-        pitch_semitones: 0.0,
-        middle_enabled: false,
-        middle_amount: 0.0,
-        stereo_enabled: true,
-        stereo_amount: 0.5,
-        crossfeed_enabled: false,
-        crossfeed_amount: 0.0,
-        compressor_enabled: false,
-        compressor_threshold: -18.0,
-    },
-    FxPresetData {
-        name: "HEADPHONE",
-        bass_enabled: false,
-        bass_gain: 6.0,
-        bass_cutoff: 180.0,
-        bass_mode: 0,
-        crystal_enabled: false,
-        crystal_amount: 0.2,
-        crystal_freq: 8000.0,
-        surround_enabled: true,
-        surround_width: 1.5,
-        mono_enabled: false,
-        mono_width: 1.0,
-        pitch_enabled: false,
-        pitch_semitones: 0.0,
-        middle_enabled: false,
-        middle_amount: 0.0,
-        stereo_enabled: false,
-        stereo_amount: 0.0,
-        crossfeed_enabled: true,
-        crossfeed_amount: 0.3,
-        compressor_enabled: false,
-        compressor_threshold: -18.0,
-    },
-    FxPresetData {
-        name: "FULL",
-        bass_enabled: true,
-        bass_gain: 10.0,
-        bass_cutoff: 180.0,
-        bass_mode: 2,
-        crystal_enabled: true,
-        crystal_amount: 0.30,
-        crystal_freq: 8000.0,
-        surround_enabled: false,
-        surround_width: 1.8,
-        mono_enabled: false,
-        mono_width: 1.0,
-        pitch_enabled: false,
-        pitch_semitones: 0.0,
-        middle_enabled: false,
-        middle_amount: 0.0,
-        stereo_enabled: true,
-        stereo_amount: 0.2,
-        crossfeed_enabled: false,
-        crossfeed_amount: 0.0,
-        compressor_enabled: true,
-        compressor_threshold: -18.0,
-    },
-];
-
 impl AppConfig {
     pub fn get_eq_presets() -> Vec<EqPreset> {
-        EQ_PRESET_DATA
+        EQ_PRESETS
             .iter()
             .map(|p| EqPreset {
                 name: p.name.to_string(),
@@ -608,7 +389,7 @@ impl AppConfig {
     }
 
     pub fn get_fx_presets() -> Vec<FxPreset> {
-        FX_PRESET_DATA
+        FX_PRESETS
             .iter()
             .map(|p| FxPreset {
                 name: p.name.to_string(),
@@ -633,6 +414,9 @@ impl AppConfig {
                 crossfeed_amount: p.crossfeed_amount,
                 compressor_enabled: p.compressor_enabled,
                 compressor_threshold: p.compressor_threshold,
+                reverb_enabled: p.reverb_enabled,
+                reverb_mode: p.reverb_mode,
+                reverb_amount: p.reverb_amount,
             })
             .collect()
     }

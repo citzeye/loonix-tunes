@@ -175,7 +175,7 @@ impl Default for DspStateView {
             middle_active: false,
             middle_amount: 0.0,
             reverb_mode: 0,
-            reverb_amount: 50,
+            reverb_amount: 30, // 30% ceiling
             compressor_active: false,
             stereo_active: false,
             stereo_amount: 0.0,

@@ -302,24 +302,30 @@ impl DspController {
         let mode = mode.clamp(0, 3) as u32;
         self.reverb_preset = mode;
         self.reverb_mode = mode as i32;
-        self.reverb_active = mode > 0;
+        self.reverb_active = true;
 
+        // Send ALL reverb values to Rust atomics
+        crate::audio::dsp::reverb::get_reverb_enabled_arc()
+            .store(true, std::sync::atomic::Ordering::Relaxed);
         crate::audio::dsp::reverb::get_reverb_mode_arc()
             .store(mode, std::sync::atomic::Ordering::Relaxed);
+        let current_amount = self.reverb_amount as u32;
+        crate::audio::dsp::reverb::get_reverb_amount_arc()
+            .store(current_amount, std::sync::atomic::Ordering::Relaxed);
 
         self.reverb_changed();
         self.reverb_active_changed();
         self.reverb_mode_changed();
+        self.reverb_amount_changed();
         self.save_config();
     }
 
     pub fn set_reverb_amount(&mut self, amount: i32) {
         let amount = amount.clamp(0, 100) as u32;
         self.reverb_amount = amount as i32;
-        crate::audio::dsp::reverb::get_reverb_amount_arc().store(
-            (amount as f32).to_bits(),
-            std::sync::atomic::Ordering::Relaxed,
-        );
+        // Sync amount to Rust - use raw u32 (not float bits)
+        crate::audio::dsp::reverb::get_reverb_amount_arc()
+            .store(amount, std::sync::atomic::Ordering::Relaxed);
         self.reverb_amount_changed();
         self.save_config();
     }
@@ -346,34 +352,16 @@ impl DspController {
         self.reverb_active = !self.reverb_active;
         self.reverb_active_changed();
 
-        // Toggle only enables/disables - do NOT reset mode
+        // Toggle only enables/disables - do NOT change mode
         crate::audio::dsp::reverb::get_reverb_enabled_arc()
             .store(self.reverb_active, std::sync::atomic::Ordering::Relaxed);
 
-        // Only set mode if turning ON and no mode was selected
-        let preset_id = if self.reverb_active {
-            if self.reverb_preset > 0 {
-                self.reverb_preset
-            } else {
-                1
-            }
-        } else {
-            0
-        };
+        // Sync amount to prevent "Ghost Slider"
+        let current_amount = self.reverb_amount as u32;
+        crate::audio::dsp::reverb::get_reverb_amount_arc()
+            .store(current_amount, std::sync::atomic::Ordering::Relaxed);
 
-        // Update mode (this controls reverb character - Studio/Stage/Stadium)
-        if self.reverb_active && self.reverb_preset == 0 {
-            self.reverb_preset = 1;
-        }
-
-        // Store mode (only matters when enabled)
-        crate::audio::dsp::reverb::get_reverb_mode_arc()
-            .store(preset_id, std::sync::atomic::Ordering::Relaxed);
-
-        self.reverb_preset = preset_id;
-        self.reverb_mode = preset_id as i32;
         self.reverb_changed();
-        self.reverb_mode_changed();
         self.save_config();
     }
 
@@ -388,6 +376,11 @@ impl DspController {
 
         crate::audio::dsp::reverb::get_reverb_mode_arc()
             .store(preset_id, std::sync::atomic::Ordering::Relaxed);
+
+        // Sync amount to prevent "Ghost Slider" - always send current amount
+        let current_amount = self.reverb_amount as u32;
+        crate::audio::dsp::reverb::get_reverb_amount_arc()
+            .store(current_amount, std::sync::atomic::Ordering::Relaxed);
 
         self.reverb_preset = preset_id;
         self.reverb_mode = preset_id as i32;
@@ -1122,6 +1115,24 @@ impl DspController {
             std::sync::atomic::Ordering::Relaxed,
         );
         self.compressor_changed();
+
+        // REVERB: Sync from preset (raw u32, no to_bits())
+        self.reverb_active = preset.reverb_enabled;
+        self.reverb_mode = preset.reverb_mode as i32;
+        self.reverb_amount = preset.reverb_amount as i32;
+        crate::audio::dsp::reverb::get_reverb_enabled_arc()
+            .store(preset.reverb_enabled, std::sync::atomic::Ordering::Relaxed);
+        crate::audio::dsp::reverb::get_reverb_mode_arc().store(
+            preset.reverb_mode as u32,
+            std::sync::atomic::Ordering::Relaxed,
+        );
+        crate::audio::dsp::reverb::get_reverb_amount_arc().store(
+            preset.reverb_amount as u32,
+            std::sync::atomic::Ordering::Relaxed,
+        );
+        self.reverb_changed();
+        self.reverb_mode_changed();
+        self.reverb_amount_changed();
 
         self.save_config();
     }
