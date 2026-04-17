@@ -13,7 +13,6 @@ pub struct PlaybackController {
     pub(crate) ffmpeg: Arc<Mutex<FfmpegEngine>>,
     pub(crate) audio: Arc<Mutex<AudioState>>,
 
-    pub is_playing: bool,
     pub current_title: QString,
     pub current_index: i32,
     pub position: i32,
@@ -35,7 +34,6 @@ impl Default for PlaybackController {
         Self {
             ffmpeg: Arc::new(Mutex::new(FfmpegEngine::new())),
             audio: Arc::new(Mutex::new(AudioState::default())),
-            is_playing: false,
             current_title: QString::default(),
             current_index: -1,
             position: 0,
@@ -57,7 +55,6 @@ impl PlaybackController {
         Self {
             ffmpeg,
             audio,
-            is_playing: false,
             current_title: QString::default(),
             current_index: -1,
             position: 0,
@@ -77,7 +74,6 @@ impl PlaybackController {
 impl PlaybackController {
     pub fn play_at(&mut self, item: &MusicItem) {
         self.current_title = QString::from(item.name.clone());
-        self.is_playing = true;
         self.position = 0;
         self.duration = 0;
 
@@ -92,7 +88,6 @@ impl PlaybackController {
     }
 
     pub fn stop(&mut self) {
-        self.is_playing = false;
         if let Ok(mut ff) = self.ffmpeg.lock() {
             ff.stop();
         }

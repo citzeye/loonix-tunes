@@ -94,7 +94,6 @@ pub struct MusicModel {
     pub(crate) dsp: DspController,
     pub(crate) queue: QueueController,
 
-    pub is_playing: qt_property!(bool; NOTIFY playing_changed),
     pub playing_changed: qt_signal!(),
 
     pub current_title: qt_property!(QString; NOTIFY title_changed),
@@ -1171,7 +1170,6 @@ impl MusicModel {
 
         self.current_index = index;
         self.playback.play_at(item);
-        self.is_playing = self.playback.is_playing;
         self.position = self.playback.position;
         self.duration = self.playback.duration;
         self.current_title = self.playback.current_title.clone();
@@ -1187,7 +1185,6 @@ impl MusicModel {
 
     pub fn stop_playback(&mut self) {
         self.playback.stop();
-        self.is_playing = self.playback.is_playing;
         self.playing_changed();
     }
 
@@ -1939,6 +1936,14 @@ impl MusicModel {
         );
     }
 
+    pub fn is_playing(&self) -> bool {
+        if let Ok(ff) = self.ffmpeg.lock() {
+            matches!(ff.get_playback_state(), PlaybackState::Playing)
+        } else {
+            false
+        }
+    }
+
     pub fn toggle_play(&mut self) {
         if let Ok(mut ff) = self.ffmpeg.lock() {
             let state = ff.get_playback_state();
@@ -2020,9 +2025,15 @@ impl MusicModel {
     }
 
     pub fn update_tick(&mut self) {
-        if !self.is_playing {
-            return;
-        }
+        let engine_state = {
+            if let Ok(ff) = self.ffmpeg.lock() {
+                ff.get_playback_state()
+            } else {
+                PlaybackState::Stopped
+            }
+        };
+
+        let is_playing = matches!(engine_state, PlaybackState::Playing);
 
         self.tick_counter += 1;
 
@@ -2095,12 +2106,9 @@ impl MusicModel {
                 if item.path == track_path {
                     self.current_index = i as i32;
                     self.current_title = QString::from(item.name.clone());
-                    // NOTE: Jangan auto-play saat startup, hanya ingat posisi terakhir
                     self.position = last_pos as i32;
-                    self.is_playing = false; // Pastikan state playing = false saat startup
                     self.current_index_changed();
                     self.title_changed();
-                    // Jangan panggil playing_changed() - biarkan user play manual
                     self.position_changed();
 
                     if let Ok(mut ff) = self.ffmpeg.lock() {
