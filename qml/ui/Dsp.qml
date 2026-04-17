@@ -6,7 +6,7 @@ import QtQuick.Layouts
 Popup {
     id: dspRoot
     width: 500
-    height: 500
+    height: 420
     modal: true
     closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutside
 
@@ -191,7 +191,7 @@ Popup {
 
                 // Row 3: Names (bawah)
                 EqNameBox {
-                    nameLabel: "A"
+                    nameLabel: "󰯬"
                 }
                 EqNameBox {
                     nameLabel: "31"
@@ -224,7 +224,7 @@ Popup {
                     nameLabel: "16k"
                 }
                 EqNameBox {
-                    nameLabel: "F"
+                    nameLabel: "󰯻"
                 }
             }
 
@@ -527,18 +527,11 @@ Popup {
                     Layout.fillWidth: true
                 }
 
-                FxSliderBox {
-                    id: reverbAmountSlider
-                    enabled: reverbToggle.isOn && musicModel.dsp_enabled
-                    controlValue: musicModel.reverb_amount / 100.0
-                    onSliderChanged: val => {
-                        musicModel.set_reverb_amount(Math.round(val * 100));
-                    }
-                }
-
-                FxValueBox {
-                    enabled: reverbToggle.isOn && musicModel.dsp_enabled
-                    sliderValue: reverbAmountSlider.currentValue
+                ReverbAmountBox {
+                    id: reverbAmountEditor
+                    boxEnabled: reverbToggle.isOn && musicModel.dsp_enabled
+                    currentValue: musicModel.reverb_amount
+                    onValueChanged: val => musicModel.set_reverb_amount(Math.round(val))
                 }
 
                 FxResetButton {
@@ -1232,6 +1225,85 @@ Popup {
             }
             onWheel: event => {
                 var delta = event.angleDelta.y > 0 ? 0.5 : -0.5;
+                var newVal = Math.max(rootItem.minValue, Math.min(rootItem.maxValue, rootItem.currentValue + delta));
+                rootItem.currentValue = newVal;
+                rootItem.valueChanged(newVal);
+            }
+        }
+    }
+
+    // Editable amount box for reverb
+    component ReverbAmountBox: Rectangle {
+        id: rootItem
+        property real currentValue: 0.0
+        property real minValue: 0.0
+        property real maxValue: 100.0
+        property bool boxEnabled: true
+        signal valueChanged(real val)
+
+        Layout.preferredWidth: 60
+        Layout.preferredHeight: 20
+        color: theme.colormap.dspfxbg
+        radius: 4
+        antialiasing: false
+        opacity: boxEnabled ? 1.0 : 0.5
+
+        state: "display"
+
+        Text {
+            id: displayText
+            anchors.centerIn: parent
+            text: Math.round(rootItem.currentValue) + "%"
+            font.family: sansSerif.name
+            font.pixelSize: 11
+            color: theme.colormap.dspfxsubtext
+            visible: rootItem.state === "display"
+        }
+
+        TextInput {
+            id: inputField
+            anchors.centerIn: parent
+            width: 35
+            horizontalAlignment: TextInput.AlignHCenter
+            font.family: sansSerif.name
+            font.pixelSize: 11
+            color: theme.colormap.dspfxtext
+            visible: rootItem.state === "edit"
+            validator: IntValidator {
+                bottom: 0
+                top: 100
+            }
+            onAccepted: {
+                var val = parseInt(text);
+                if (!isNaN(val)) {
+                    val = Math.max(0, Math.min(100, val));
+                    rootItem.currentValue = val;
+                    rootItem.valueChanged(rootItem.currentValue);
+                }
+                rootItem.state = "display";
+            }
+            onActiveFocusChanged: {
+                if (!activeFocus) {
+                    rootItem.state = "display";
+                }
+            }
+        }
+
+        MouseArea {
+            id: hoverArea
+            anchors.fill: parent
+            hoverEnabled: true
+            onEntered: displayText.color = theme.colormap.dspfxtext
+            onExited: displayText.color = theme.colormap.dspfxsubtext
+            onClicked: rootItem.state = "display"
+            onDoubleClicked: {
+                inputField.text = Math.round(rootItem.currentValue);
+                rootItem.state = "edit";
+                inputField.forceActiveFocus();
+                inputField.selectAll();
+            }
+            onWheel: event => {
+                var delta = event.angleDelta.y > 0 ? 2.0 : -2.0;
                 var newVal = Math.max(rootItem.minValue, Math.min(rootItem.maxValue, rootItem.currentValue + delta));
                 rootItem.currentValue = newVal;
                 rootItem.valueChanged(newVal);

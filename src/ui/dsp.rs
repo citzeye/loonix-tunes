@@ -346,6 +346,11 @@ impl DspController {
         self.reverb_active = !self.reverb_active;
         self.reverb_active_changed();
 
+        // Toggle only enables/disables - do NOT reset mode
+        crate::audio::dsp::reverb::get_reverb_enabled_arc()
+            .store(self.reverb_active, std::sync::atomic::Ordering::Relaxed);
+
+        // Only set mode if turning ON and no mode was selected
         let preset_id = if self.reverb_active {
             if self.reverb_preset > 0 {
                 self.reverb_preset
@@ -356,6 +361,12 @@ impl DspController {
             0
         };
 
+        // Update mode (this controls reverb character - Studio/Stage/Stadium)
+        if self.reverb_active && self.reverb_preset == 0 {
+            self.reverb_preset = 1;
+        }
+
+        // Store mode (only matters when enabled)
         crate::audio::dsp::reverb::get_reverb_mode_arc()
             .store(preset_id, std::sync::atomic::Ordering::Relaxed);
 
@@ -452,18 +463,7 @@ impl DspController {
         self.surround_magic_active = !self.surround_magic_active;
         self.surround_magic_changed();
 
-        if self.surround_magic_active {
-            self.surround_width = 1.3;
-            crate::audio::dsp::surround::get_surround_width_arc()
-                .store(1.3_f32.to_bits(), std::sync::atomic::Ordering::Relaxed);
-            crate::audio::dsp::surround::get_surround_bass_safe_arc()
-                .store(1u32, std::sync::atomic::Ordering::Relaxed);
-        } else {
-            self.surround_width = 1.0;
-            crate::audio::dsp::surround::get_surround_width_arc()
-                .store(1.0_f32.to_bits(), std::sync::atomic::Ordering::Relaxed);
-        }
-
+        // Toggle only bypasses - do NOT reset width values
         crate::audio::dsp::surround::get_surround_enabled_arc().store(
             self.surround_magic_active,
             std::sync::atomic::Ordering::Relaxed,
