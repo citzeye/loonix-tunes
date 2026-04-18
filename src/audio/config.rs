@@ -238,33 +238,38 @@ impl AppConfig {
 
             // EQ Panel
             map.insert("dspeqbg".to_string(), "#151515".to_string()); // eq wrapper
-            map.insert("dspeqslider".to_string(), "#ff1ae0".to_string());
-            map.insert("dspeqsliderbg".to_string(), "#15151B".to_string());
-            map.insert("dspeqhandle".to_string(), "#ff1ae0".to_string());
             map.insert("dspeqtext".to_string(), "#6d6d6d".to_string());
             map.insert("dspeqicon".to_string(), "#ff881a".to_string());
             map.insert("dspeqhover".to_string(), "#ff1ae0".to_string());
             map.insert("dspeqpresetactive".to_string(), "#00ffa2".to_string());
+            
+            map.insert("dspeqslider".to_string(), "#ff1ae0".to_string());
+            map.insert("dspeqsliderbg".to_string(), "#15151B".to_string());
+            map.insert("dspeqhandle".to_string(), "#ff1ae0".to_string());
 
-            map.insert("dspeampslider".to_string(), "#ff1ae0".to_string());
-            map.insert("dspeamphandle".to_string(), "#9442ff".to_string());
             map.insert("dspeampbg".to_string(), "#111111".to_string());
+            map.insert("dspampslider".to_string(), "#ff1ae0".to_string());
+            map.insert("dspampsliderbg".to_string(), "#000000".to_string());
+            map.insert("dspeamphandle".to_string(), "#9442ff".to_string());
+            
+
             map.insert("dspeq10slider".to_string(), "#ff1ae0".to_string());
+            map.insert("dspeq10sliderbg".to_string(), "#000000".to_string());
             map.insert("dspeq10handle".to_string(), "#9442ff".to_string());
-            map.insert("dspeq10bg".to_string(), "#000000".to_string());
+
+            map.insert("dspeqfaderbg".to_string(), "#111111".to_string());
             map.insert("dspeqfaderslider".to_string(), "#ff1ae0".to_string());
             map.insert("dspeqfaderhandle".to_string(), "#9442ff".to_string());
-            map.insert("dspeqfaderbg".to_string(), "#111111".to_string());
+            
 
             // FX Panel
             map.insert("dspfxbg".to_string(), "#151515".to_string()); // fx wrapper
-            map.insert("dspfxborder".to_string(), "#00ffa2".to_string());
             map.insert("dspfxtext".to_string(), "#6d6d6d".to_string());
             map.insert("dspfxicon".to_string(), "#ff881a".to_string());
             map.insert("dspfxhover".to_string(), "#ff1ae0".to_string());
             map.insert("dspfxactive".to_string(), "#9442ff".to_string());
             map.insert("dspfxslider".to_string(), "#ff1ae0".to_string());
-            map.insert("dspfxsliderbg".to_string(), "#15151B".to_string());
+            map.insert("dspfxsliderbg".to_string(), "#111111".to_string());
             map.insert("dspfxhandle".to_string(), "#9442ff".to_string());
 
         map
