@@ -256,9 +256,9 @@ impl AppConfig {
         map.insert("dspfxicon".to_string(), "#ff881a".to_string());
         map.insert("dspfxhover".to_string(), "#ff1ae0".to_string());
         map.insert("dspfxactive".to_string(), "#9442ff".to_string());
-        map.insert("dspfxslider".to_string(), "#9442ff".to_string());
+        map.insert("dspfxslider".to_string(), "#ff1ae0".to_string());
         map.insert("dspfxsliderbg".to_string(), "#15141b".to_string());
-        map.insert("dspfxhandle".to_string(), "#ff1ae0".to_string());
+        map.insert("dspfxhandle".to_string(), "#9442ff".to_string());
         map.insert("dspslider".to_string(), "#9442ff".to_string());
         map.insert("dspsliderbg".to_string(), "#15141b".to_string());
         map.insert("dsphandle".to_string(), "#ff1ae0".to_string());

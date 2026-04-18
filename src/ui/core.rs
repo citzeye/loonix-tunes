@@ -63,9 +63,10 @@ pub struct MusicModel {
     pub(crate) folders: HashMap<String, Vec<MusicItem>>,
     pub(crate) all_items: Vec<MusicItem>,
     pub(crate) display_list: Vec<MusicItem>,
+    // Playback context - SEPARATED from UI display_list
+    pub(crate) playback_playlist: Vec<MusicItem>,
+    pub(crate) playback_index: i32,
     pub(crate) expanded_folders: HashSet<String>,
-    #[allow(dead_code)]
-    pub(crate) custom_folders: Vec<(String, String)>,
     #[allow(dead_code)]
     pub(crate) favorites: Vec<(String, String)>,
     pub(crate) external_files: Vec<MusicItem>,
@@ -433,7 +434,6 @@ impl MusicModel {
             volume: saved_config.volume as f64,
             current_index: -1,
             balance: saved_config.balance as f64,
-            custom_folders: saved_config.custom_folders.clone(),
             custom_folder_count: saved_config.custom_folders.len() as i32,
             favorites: saved_config.favorites.clone(),
             favorites_count: saved_config.favorites.len() as i32,
@@ -615,7 +615,7 @@ impl MusicModel {
                 .any(|(n, p)| n == &name_str && p == &clean)
             {
                 self.library.add_folder(clean.clone());
-                self.custom_folders = self.library.custom_folders.clone();
+                self.library.custom_folders = self.library.custom_folders.clone();
                 self.custom_folder_count = self.library.custom_folder_count;
                 self.custom_folders_changed();
                 self.save_custom_folders();
@@ -861,9 +861,10 @@ impl MusicModel {
     }
 
     pub fn save_custom_folders(&mut self) {
+        // Save from library (single source of truth), NOT from self.library.custom_folders
         if let Some(ref config) = &self.saved_config {
             if let Ok(mut cfg) = config.lock() {
-                cfg.custom_folders = self.custom_folders.clone();
+                cfg.custom_folders = self.library.custom_folders.clone();
                 cfg.volume = self.volume as f64;
                 cfg.balance = self.balance as f64;
                 let _ = cfg.save();
@@ -971,13 +972,13 @@ impl MusicModel {
     }
 
     pub fn change_folder(&mut self, index: i32, new_path: String) {
-        if index >= 0 && (index as usize) < self.custom_folders.len() {
+        if index >= 0 && (index as usize) < self.library.custom_folders.len() {
             let folder_path = Path::new(&new_path);
             if let Some(name) = folder_path.file_name() {
                 let mut name_str = name.to_string_lossy().to_string();
                 name_str.truncate(15);
                 name_str = name_str.trim().to_string();
-                self.custom_folders[index as usize] = (name_str, new_path.clone());
+                self.library.custom_folders[index as usize] = (name_str, new_path.clone());
                 self.custom_folders_changed();
                 self.save_custom_folders();
                 self.switch_to_folder(new_path);
@@ -990,8 +991,9 @@ impl MusicModel {
 
         self.current_folder_path = folder_path.clone();
 
-        // Try to find display name from custom_folders first
+        // Try to find display name from library.custom_folders first
         let display_name = self
+            .library
             .custom_folders
             .iter()
             .find(|(_, p)| p == &folder_path)
@@ -1057,8 +1059,8 @@ impl MusicModel {
     }
 
     pub fn get_custom_folder_name(&self, index: i32) -> QString {
-        if index >= 0 && (index as usize) < self.custom_folders.len() {
-            let name = self.custom_folders[index as usize].0.clone();
+        if index >= 0 && (index as usize) < self.library.custom_folders.len() {
+            let name = self.library.custom_folders[index as usize].0.clone();
             // Convert to uppercase
             QString::from(name.to_uppercase())
         } else {
@@ -1067,23 +1069,23 @@ impl MusicModel {
     }
 
     pub fn get_custom_folder_path(&self, index: i32) -> QString {
-        if index >= 0 && (index as usize) < self.custom_folders.len() {
-            QString::from(self.custom_folders[index as usize].1.clone())
+        if index >= 0 && (index as usize) < self.library.custom_folders.len() {
+            QString::from(self.library.custom_folders[index as usize].1.clone())
         } else {
             QString::default()
         }
     }
 
     pub fn get_current_rename_name(&self, index: i32) -> QString {
-        if index >= 0 && (index as usize) < self.custom_folders.len() {
-            QString::from(self.custom_folders[index as usize].0.clone())
+        if index >= 0 && (index as usize) < self.library.custom_folders.len() {
+            QString::from(self.library.custom_folders[index as usize].0.clone())
         } else {
             QString::default()
         }
     }
 
     pub fn rename_folder(&mut self, index: i32, new_name: String) {
-        if index < 0 || (index as usize) >= self.custom_folders.len() {
+        if index < 0 || (index as usize) >= self.library.custom_folders.len() {
             return;
         }
 
@@ -1094,34 +1096,37 @@ impl MusicModel {
             return;
         }
 
-        self.custom_folders[index as usize].0 = trimmed;
+        self.library.custom_folders[index as usize].0 = trimmed;
         self.custom_folders_changed();
         self.save_custom_folders();
     }
 
     pub fn get_custom_folder_count(&self) -> i32 {
-        self.custom_folders.len() as i32
+        self.library.custom_folders.len() as i32
     }
 
     pub fn remove_custom_folder(&mut self, index: i32) {
-        if index >= 0 && (index as usize) < self.custom_folders.len() {
-            if self.is_folder_locked(index) {
-                return;
-            }
-            let removed_path = self.custom_folders[index as usize].1.clone();
-            self.custom_folders.remove(index as usize);
-            self.custom_folder_count = self.custom_folders.len() as i32;
-            self.custom_folders_changed();
-            self.save_custom_folders();
+        if index < 0 || (index as usize) >= self.library.custom_folders.len() {
+            return;
+        }
+        if self.is_folder_locked(index) {
+            return;
+        }
+        let removed_path = self.library.custom_folders[index as usize].1.clone();
 
-            if self.current_folder_path == removed_path {
-                self.scan_music();
-            }
+        self.library.custom_folders.remove(index as usize);
+
+        self.custom_folder_count = self.library.custom_folders.len() as i32;
+        self.custom_folders_changed();
+        self.save_custom_folders();
+
+        if self.current_folder_path == removed_path {
+            self.scan_music();
         }
     }
 
     pub fn toggle_folder_lock(&mut self, index: i32) {
-        if index >= 0 && (index as usize) < self.custom_folders.len() {
+        if index >= 0 && (index as usize) < self.library.custom_folders.len() {
             if let Some(ref config) = &self.saved_config {
                 if let Ok(mut cfg) = config.lock() {
                     if cfg.locked_folders.contains(&index) {
@@ -1129,7 +1134,7 @@ impl MusicModel {
                     } else {
                         cfg.locked_folders.push(index);
                     }
-                    cfg.custom_folders = self.custom_folders.clone();
+                    cfg.custom_folders = self.library.custom_folders.clone();
                     cfg.volume = self.volume as f64;
                     cfg.balance = self.balance as f64;
                     let _ = cfg.save();
@@ -1170,6 +1175,10 @@ impl MusicModel {
             return;
         }
 
+        // Set playback context - THIS IS THE SOURCE OF TRUTH for auto-next
+        self.playback_playlist = self.display_list.clone();
+        self.playback_index = index;
+
         self.current_index = index;
         self.playback.play_at(item);
         self.position = self.playback.position;
@@ -1209,99 +1218,43 @@ impl MusicModel {
     }
 
     pub fn play_next(&mut self) {
-        if self.display_list.is_empty() {
-            return;
-        }
         // Check user queue first
         if self.play_next_from_queue() {
             return;
         }
 
-        // Bounds check to prevent panic
-        if self.current_index < 0 || (self.current_index as usize) >= self.display_list.len() {
-            self.current_index = 0;
-            return;
-        }
-
-        let current_item = &self.display_list[self.current_index as usize];
-        let current_parent = current_item.parent_folder.clone();
-
-        // Get indices of tracks in same folder (for shuffle)
-        let folder_indices: Vec<i32> = self
-            .display_list
-            .iter()
-            .enumerate()
-            .filter(|(_, item)| !item.is_folder && item.parent_folder == current_parent)
-            .map(|(i, _)| i as i32)
-            .collect();
-
-        if folder_indices.is_empty() {
-            return;
-        }
-
-        // Shuffle mode: pick random from folder
-        if self.shuffle_active {
-            use rand::seq::SliceRandom;
-            let mut rng = rand::rng();
-
-            // If shuffle queue is empty or not in folder, rebuild it
-            if self.shuffle_queue.is_empty() || !folder_indices.contains(&self.shuffle_queue[0]) {
-                self.shuffle_queue = folder_indices.clone();
-                self.shuffle_queue.shuffle(&mut rng);
-            }
-
-            // Find current position in queue
-            if let Some(pos) = self
-                .shuffle_queue
-                .iter()
-                .position(|&x| x == self.current_index)
-            {
-                let next_pos = pos + 1;
-                if (next_pos as usize) < self.shuffle_queue.len() {
-                    self.play_at(self.shuffle_queue[next_pos as usize]);
-                    return;
-                } else if self.loop_active {
-                    // Loop: reshuffle and start from beginning
-                    self.shuffle_queue.shuffle(&mut rng);
-                    self.play_at(self.shuffle_queue[0]);
-                    return;
-                }
-            } else {
-                // Current not in queue, start fresh
-                self.play_at(folder_indices[0]);
-            }
-            // No next track in shuffle and no loop - stop playback
+        // Use playback_playlist as source of truth (NOT display_list)
+        if self.playback_playlist.is_empty() {
             self.stop_playback();
             return;
         }
 
-        // No shuffle: sequential within folder
-        let mut next = self.current_index + 1;
+        // Advance playback_index
+        self.playback_index += 1;
 
-        while (next as usize) < self.display_list.len() {
-            let next_item = &self.display_list[next as usize];
-            if !next_item.is_folder && next_item.parent_folder == current_parent {
-                self.play_at(next);
+        // Check bounds
+        if (self.playback_index as usize) >= self.playback_playlist.len() {
+            if self.loop_active {
+                self.playback_index = 0;
+            } else {
+                self.stop_playback();
                 return;
             }
-            next += 1;
         }
 
-        // Loop back to first track in folder
-        if self.loop_active {
-            let mut first_in_folder = 0;
-            while first_in_folder < self.current_index {
-                let item = &self.display_list[first_in_folder as usize];
-                if !item.is_folder && item.parent_folder == current_parent {
-                    self.play_at(first_in_folder);
-                    return;
-                }
-                first_in_folder += 1;
-            }
-        }
+        // Play the next track from playback_playlist
+        let next_item = &self.playback_playlist[self.playback_index as usize];
+        self.current_index = self.playback_index;
+        self.playback.play_at(next_item);
+        self.position = self.playback.position;
+        self.duration = self.playback.duration;
+        self.current_title = self.playback.current_title.clone();
 
-        // No next track and no loop - stop playback
-        self.stop_playback();
+        self.current_index_changed();
+        self.title_changed();
+        self.playing_changed();
+        self.position_changed();
+        self.duration_changed();
     }
 
     pub fn play_previous(&mut self) {
