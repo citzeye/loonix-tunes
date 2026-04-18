@@ -11,6 +11,13 @@ use qmetaobject::prelude::*;
 use qmetaobject::{QString, QVariant, QVariantList};
 use std::sync::{Arc, Mutex};
 
+#[derive(Clone, Copy)]
+enum PresetSource {
+    Factory(usize), // Load from internal presets.rs
+    User(usize),    // Load from JSON (user preset data)
+    Preserve,       // Keep current FX settings (for user presets)
+}
+
 pub struct DspController {
     pub ffmpeg: Arc<Mutex<crate::audio::engine::FfmpegEngine>>,
     pub config_manager: DspConfigManager,
@@ -952,42 +959,61 @@ impl DspController {
             return;
         }
 
-        if index < 6 {
-            // --- LOAD DEFAULT PRESET (0-5) ---
-            self.fader_offset = 0.0;
+        let (eq_source, fx_source, use_factory_fx) = if index < 6 {
+            // FACTORY PRESET (0-5): Load ALL from internal code (presets.rs)
+            // JSON is completely IGNORED for these indices
+            (
+                PresetSource::Factory(index as usize),
+                PresetSource::Factory(index as usize),
+                true,
+            )
+        } else {
+            // USER PRESET (6-11): Load EQ from JSON, preserve FX
+            let user_idx = (index - 6) as usize;
+            if self.user_eq_names[user_idx].trim().is_empty() {
+                // INVALID/EMPTY: FALLBACK to LOONIX (factory preset 0)
+                (PresetSource::Factory(0), PresetSource::Factory(0), true)
+            } else {
+                // VALID: EQ from JSON, FX preserved (current active settings)
+                (PresetSource::User(user_idx), PresetSource::Preserve, false)
+            }
+        };
 
-            if (index as usize) < self.eq_presets.len() {
-                let eq_preset = &self.eq_presets[index as usize];
-                for (i, &gain) in eq_preset.gains.iter().enumerate() {
-                    self.eq_bands[i] = gain;
-                    let arc = crate::audio::dsp::eq::get_eq_bands_arc();
-                    arc[i].store(gain.to_bits(), std::sync::atomic::Ordering::Relaxed);
-                }
-
-                if (index as usize) < self.fx_presets.len() {
-                    self.load_fx_preset(index);
+        // Load EQ bands from source
+        match eq_source {
+            PresetSource::Factory(idx) => {
+                self.fader_offset = 0.0;
+                if idx < self.eq_presets.len() {
+                    let eq_preset = &self.eq_presets[idx];
+                    for (i, &gain) in eq_preset.gains.iter().enumerate() {
+                        self.eq_bands[i] = gain;
+                        let arc = crate::audio::dsp::eq::get_eq_bands_arc();
+                        arc[i].store(gain.to_bits(), std::sync::atomic::Ordering::Relaxed);
+                    }
                 }
             }
-        } else {
-            // --- LOAD USER PRESET (6-11) ---
-            let user_idx = (index - 6) as usize;
-
-            // Cek apakah slot user preset ini benar-benar ada isinya
-            if !self.user_eq_names[user_idx].trim().is_empty() {
-                self.fader_offset = self.user_eq_macro[user_idx] as f64;
-
+            PresetSource::User(idx) => {
+                self.fader_offset = self.user_eq_macro[idx] as f64;
                 for i in 0..10 {
-                    let gain = self.user_eq_gains[user_idx][i];
+                    let gain = self.user_eq_gains[idx][i];
                     self.eq_bands[i] = gain;
-
                     let effective = (gain as f64 + self.fader_offset).clamp(-20.0, 20.0) as f32;
                     let arc = crate::audio::dsp::eq::get_eq_bands_arc();
                     arc[i].store(effective.to_bits(), std::sync::atomic::Ordering::Relaxed);
                 }
-                // Catatan: User preset saat ini belum mem-backup state FX bawaan (surround, bass, dll)
-                // Jadi kita tidak memanggil load_fx_preset() di sini untuk menghindari override FX yang aktif.
-            } else {
-                return; // Batalkan jika user mengeklik slot kosong
+            }
+            PresetSource::Preserve => {}
+        }
+
+        // Load FX from source (only for factory presets)
+        if use_factory_fx {
+            match fx_source {
+                PresetSource::Factory(idx) => {
+                    if idx < self.fx_presets.len() {
+                        self.load_fx_preset(idx as i32);
+                    }
+                }
+                _ => {}
             }
         }
 

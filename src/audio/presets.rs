@@ -82,7 +82,7 @@ pub const FX_PRESETS: [FxPreset; 6] = [
     FxPreset {
         name: "LOONIX",
         bass_enabled: true,
-        bass_gain: 6.0,
+        bass_gain: 7.0,
         bass_cutoff: 180.0,
         bass_mode: 2,
         crystal_enabled: true,

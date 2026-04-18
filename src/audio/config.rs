@@ -157,7 +157,7 @@ impl Default for AppConfig {
             pitch_semitones: 0.0,
             middle_enabled: false,
             middle_amount: 0.0,
-            reverb_enabled: true,
+            reverb_enabled: false,
             reverb_mode: 1,    // Studio mode by default
             reverb_amount: 50, // 50% intensity by default
             compressor_enabled: true,

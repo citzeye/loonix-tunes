@@ -1217,6 +1217,12 @@ impl MusicModel {
             return;
         }
 
+        // Bounds check to prevent panic
+        if self.current_index < 0 || (self.current_index as usize) >= self.display_list.len() {
+            self.current_index = 0;
+            return;
+        }
+
         let current_item = &self.display_list[self.current_index as usize];
         let current_parent = current_item.parent_folder.clone();
 
