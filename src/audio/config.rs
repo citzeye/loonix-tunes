@@ -242,7 +242,7 @@ impl AppConfig {
             // EQ Panel
             map.insert("dspeqbg".to_string(), "#151515".to_string()); // eq wrapper
             map.insert("dspeqicon".to_string(), "#9442ff".to_string());
-            map.insert("dspeqpresetactive".to_string(), "#00ffa2".to_string());
+            map.insert("dspactive".to_string(), "#00ffa2".to_string());
             
             map.insert("dspeqslider".to_string(), "#ff1ae0".to_string());
             map.insert("dspeqsliderbg".to_string(), "#15151B".to_string());

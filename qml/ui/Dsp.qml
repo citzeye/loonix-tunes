@@ -582,7 +582,7 @@ Popup {
                     radius: 2
                     color: theme.colormap.dspgridbg
                     border.width: 1
-                    border.color: defBtn.isActive ? theme.colormap.dspeqpresetactive : theme.colormap.dspborder
+                    border.color: defBtn.isActive ? theme.colormap.dspactive : theme.colormap.dspborder
                 }
                 onClicked: {
                     dspContent.loadPresetByIndex(index);
@@ -616,7 +616,7 @@ Popup {
                     radius: 2
                     color: theme.colormap.dspgridbg
                     border.width: 1
-                    border.color: pBtn.isActive ? theme.colormap.dspeqpresetactive : theme.colormap.dspborder
+                    border.color: pBtn.isActive ? theme.colormap.dspactive : theme.colormap.dspborder
                 }
                 onClicked: {
                     dspContent.loadPresetByIndex(index + 6);
@@ -641,13 +641,13 @@ Popup {
                 dspContent.resetEQ();
             }
 
-            background: Rectangle {
-                color: resetBtn.hovered ? theme.colormap.dspbg : theme.colormap.dspgridbg
-                border.color: theme.colormap.dspborder
-                radius: 2
-            }
+background: Rectangle {
+                        color: theme.colormap.dspgridbg
+                        border.color: theme.colormap.dspborder
+                        radius: 2
+                    }
 
-            contentItem: Text {
+                    contentItem: Text {
                 text: "RESET ALL"
                 font.family: kodeMono.name
                 font.pixelSize: 10
@@ -760,7 +760,7 @@ Popup {
                     }
 
                     background: Rectangle {
-                        color: parent.hovered ? theme.colormap.dspeqpresetactive : theme.colormap.dspgridbg
+                        color: theme.colormap.dspgridbg
                         border.color: theme.colormap.dspborder
                         radius: 2
                     }
@@ -768,7 +768,7 @@ Popup {
                     contentItem: Text {
                         text: parent.text
                         font: parent.font
-                        color: parent.hovered ? theme.colormap.dspgridbg : theme.colormap.dsptext
+                        color: parent.hovered ? theme.colormap.dsptexthover : theme.colormap.dsptext
                         horizontalAlignment: Text.AlignHCenter
                         verticalAlignment: Text.AlignVCenter
                     }
@@ -785,7 +785,7 @@ Popup {
                     }
 
                     background: Rectangle {
-                        color: parent.hovered ? theme.colormap.dspeqpresetactive : theme.colormap.dspgridbg
+                        color: theme.colormap.dspgridbg
                         border.color: theme.colormap.dspborder
                         radius: 2
                     }
@@ -833,6 +833,9 @@ Popup {
                     id: toggleIconArea
                     enabled: rootItem.boxEnabled
                     anchors.fill: parent
+                    hoverEnabled: true
+                    onEntered: parent.color = theme.colormap.dsptexthover
+                    onExited: parent.color = boxEnabled ? (isOn ? theme.colormap.dspfxicon : theme.colormap.dsptext) : theme.colormap.dsptext + "66"
                     onClicked: rootItem.toggled()
                 }
             }
@@ -847,6 +850,9 @@ Popup {
                 MouseArea {
                     enabled: rootItem.boxEnabled
                     anchors.fill: parent
+                    hoverEnabled: true
+                    onEntered: parent.color = theme.colormap.dsptexthover
+                    onExited: parent.color = boxEnabled ? (isOn ? theme.colormap.dsptext : theme.colormap.dsptext) : theme.colormap.dsptext + "66"
                     onClicked: rootItem.toggled()
                 }
             }
@@ -1050,6 +1056,7 @@ Popup {
         antialiasing: false
 
         Text {
+            id: modeText
             anchors.centerIn: parent
             text: modeLabel
             font.family: kodeMono.name
@@ -1060,6 +1067,9 @@ Popup {
 
         MouseArea {
             anchors.fill: parent
+            hoverEnabled: true
+            onEntered: modeText.color = theme.colormap.dsptexthover
+            onExited: modeText.color = isActive ? theme.colormap.dsptext : theme.colormap.dsptext
             onClicked: rootItem.clicked()
         }
     }
@@ -1115,6 +1125,7 @@ Popup {
         antialiasing: false
 
         Text {
+            id: modeText
             anchors.centerIn: parent
             text: modeLabel
             font.family: kodeMono.name
@@ -1125,6 +1136,9 @@ Popup {
 
         MouseArea {
             anchors.fill: parent
+            hoverEnabled: true
+            onEntered: modeText.color = theme.colormap.dsptexthover
+            onExited: modeText.color = isActive ? theme.colormap.dsptext : theme.colormap.dsptext
             onClicked: rootItem.clicked()
         }
     }
@@ -1221,7 +1235,7 @@ Popup {
             id: hoverArea
             anchors.fill: parent
             hoverEnabled: true
-            onEntered: displayText.color = theme.colormap.dsptext
+            onEntered: displayText.color = theme.colormap.dsptexthover
             onExited: displayText.color = theme.colormap.dsptext
             onClicked: rootItem.state = "display"
             onDoubleClicked: {
@@ -1299,7 +1313,7 @@ Popup {
             id: hoverArea
             anchors.fill: parent
             hoverEnabled: true
-            onEntered: displayText.color = theme.colormap.dsptext
+            onEntered: displayText.color = theme.colormap.dsptexthover
             onExited: displayText.color = theme.colormap.dsptext
             onClicked: rootItem.state = "display"
             onDoubleClicked: {
@@ -1408,6 +1422,7 @@ Popup {
         antialiasing: false
 
         Text {
+            id: resetIcon
             anchors.centerIn: parent
             text: '󰑓'
             font.family: symbols.name
@@ -1417,6 +1432,9 @@ Popup {
 
         MouseArea {
             anchors.fill: parent
+            hoverEnabled: true
+            onEntered: resetIcon.color = theme.colormap.dsptexthover
+            onExited: resetIcon.color = theme.colormap.dsptext
             onClicked: {
                 if (rootItem.useNoArgReset) {
                     rootItem.resetNoArg();
