@@ -160,20 +160,20 @@ pub struct MusicModel {
     pub reverb_mode_changed: qt_signal!(),
     pub reverb_amount: qt_property!(i32; NOTIFY reverb_amount_changed),
     pub reverb_amount_changed: qt_signal!(),
-    pub bass_magic_active: qt_property!(bool; NOTIFY bass_magic_changed),
-    pub bass_magic_changed: qt_signal!(),
+    pub bass_active: qt_property!(bool; NOTIFY bass_active_changed),
+    pub bass_active_changed: qt_signal!(),
     pub bass_gain: qt_property!(f64; NOTIFY bass_params_changed),
     pub bass_cutoff: qt_property!(f64; NOTIFY bass_params_changed),
     pub bass_mode: qt_property!(i32; NOTIFY bass_mode_changed),
     pub bass_params_changed: qt_signal!(),
     pub bass_mode_changed: qt_signal!(),
-    pub surround_magic_active: qt_property!(bool; NOTIFY surround_magic_changed),
+    pub surround_active: qt_property!(bool; NOTIFY surround_magic_changed),
     pub surround_magic_changed: qt_signal!(),
     pub surround_width: qt_property!(f64; NOTIFY surround_width_changed),
     pub surround_width_changed: qt_signal!(),
-    pub crystal_magic_active: qt_property!(bool; NOTIFY crystal_magic_changed),
-    pub crystal_magic_changed: qt_signal!(),
-    pub crystal_amount: qt_property!(f64; NOTIFY crystal_magic_changed),
+    pub crystal_active: qt_property!(bool; NOTIFY crystal_active_changed),
+    pub crystal_active_changed: qt_signal!(),
+    pub crystal_amount: qt_property!(f64; NOTIFY crystal_active_changed),
     pub compressor_active: qt_property!(bool; NOTIFY compressor_changed),
     pub compressor_changed: qt_signal!(),
     pub compressor_threshold: qt_property!(f64; NOTIFY compressor_changed),
@@ -220,32 +220,32 @@ pub struct MusicModel {
     pub set_reverb_amount: qt_method!(fn(&mut self, amount: i32)),
     pub setStdReverbRoomSize: qt_method!(fn(&mut self, val: f64)),
     pub setStdReverbDamp: qt_method!(fn(&mut self, val: f64)),
-    pub toggleStdReverb: qt_method!(fn(&mut self)),
+    pub toggleReverb: qt_method!(fn(&mut self)),
     pub set_reverb: qt_method!(fn(&mut self, reverb: QString)),
-    pub toggleStdBassBooster: qt_method!(fn(&mut self)),
+    pub toggleBassBooster: qt_method!(fn(&mut self)),
     pub set_bass_mode: qt_method!(fn(&mut self, mode: i32)),
     pub setStdBassGain: qt_method!(fn(&mut self, val: f64)),
     pub setStdBassCutoff: qt_method!(fn(&mut self, val: f64)),
-    pub toggleStdSurround: qt_method!(fn(&mut self)),
+    pub toggleSurround: qt_method!(fn(&mut self)),
     pub setStdSurroundWidth: qt_method!(fn(&mut self, val: f64)),
-    pub toggleStdCrystalizer: qt_method!(fn(&mut self)),
+    pub toggleCrystalizer: qt_method!(fn(&mut self)),
     pub set_crystalizer_amount: qt_method!(fn(&mut self, amount: f64)),
-    pub toggleStdCompressor: qt_method!(fn(&mut self)),
+    pub toggleCompressor: qt_method!(fn(&mut self)),
     pub setStdCompressorThreshold: qt_method!(fn(&mut self, val: f64)),
     pub getStdCompressorThreshold: qt_method!(fn(&self) -> f64),
-    pub toggleStdPitch: qt_method!(fn(&mut self)),
+    pub togglePitch: qt_method!(fn(&mut self)),
     pub setStdPitchSemitones: qt_method!(fn(&mut self, val: f64)),
-    pub toggleStdMiddleClarity: qt_method!(fn(&mut self)),
+    pub toggleMiddleClarity: qt_method!(fn(&mut self)),
     pub setStdMiddleClarityAmount: qt_method!(fn(&mut self, val: f64)),
-    pub toggleStdStereoWidth: qt_method!(fn(&mut self)),
+    pub toggleStereoWidth: qt_method!(fn(&mut self)),
     pub setStdStereoWidthAmount: qt_method!(fn(&mut self, val: f64)),
-    pub toggleStdStereoEnhance: qt_method!(fn(&mut self)),
+    pub toggleStereoEnhance: qt_method!(fn(&mut self)),
     pub setStdStereoEnhanceAmount: qt_method!(fn(&mut self, val: f64)),
-    pub toggleStdCrossfeed: qt_method!(fn(&mut self)),
+    pub toggleCrossfeed: qt_method!(fn(&mut self)),
     pub setStdCrossfeedAmount: qt_method!(fn(&mut self, val: f64)),
-    pub toggleStdDsp: qt_method!(fn(&mut self)),
-    pub toggleStdPreamp: qt_method!(fn(&mut self)),
-    pub toggleStdLimiter: qt_method!(fn(&mut self)),
+    pub toggleDsp: qt_method!(fn(&mut self)),
+    pub togglePreamp: qt_method!(fn(&mut self)),
+    pub toggleLimiter: qt_method!(fn(&mut self)),
     pub toggle_normalizer: qt_method!(fn(&mut self)),
     pub set_eq_band: qt_method!(fn(&mut self, index: i32, gain: f64)),
     pub set_fader: qt_method!(fn(&mut self, offset: f64)),
@@ -276,6 +276,7 @@ pub struct MusicModel {
     pub reset_std_crossfeed: qt_method!(fn(&mut self)),
     pub reset_std_crystalizer: qt_method!(fn(&mut self)),
     pub reset_std_bass: qt_method!(fn(&mut self)),
+    pub reset_std_reverb: qt_method!(fn(&mut self)),
 
     pub scan_music: qt_method!(fn(&mut self)),
     pub scan_folder: qt_method!(fn(&mut self, path: String)),
@@ -1426,7 +1427,7 @@ impl MusicModel {
         self.reverb_params_changed();
     }
 
-    pub fn toggleStdReverb(&mut self) {
+    pub fn toggleReverb(&mut self) {
         self.dsp.toggle_reverb();
         self.reverb_mode = self.dsp.reverb_mode;
         self.reverb_active = self.dsp.reverb_active;
@@ -1442,7 +1443,7 @@ impl MusicModel {
         self.reverb_mode_changed();
     }
 
-    pub fn toggleStdBassBooster(&mut self) {
+    pub fn toggleBassBooster(&mut self) {
         self.dsp.toggle_bass();
         self.sync_dsp_from_controller();
     }
@@ -1462,7 +1463,7 @@ impl MusicModel {
         self.sync_dsp_from_controller();
     }
 
-    pub fn toggleStdSurround(&mut self) {
+    pub fn toggleSurround(&mut self) {
         self.dsp.toggle_surround();
         self.sync_dsp_from_controller();
     }
@@ -1472,7 +1473,7 @@ impl MusicModel {
         self.sync_dsp_from_controller();
     }
 
-    pub fn toggleStdCrystalizer(&mut self) {
+    pub fn toggleCrystalizer(&mut self) {
         self.dsp.toggle_crystalizer();
         self.sync_dsp_from_controller();
     }
@@ -1480,10 +1481,10 @@ impl MusicModel {
     pub fn set_crystalizer_amount(&mut self, amount: f64) {
         self.dsp.set_crystalizer_amount(amount);
         self.crystal_amount = self.dsp.crystal_amount;
-        self.crystal_magic_changed();
+        self.crystal_active_changed();
     }
 
-    pub fn toggleStdCompressor(&mut self) {
+    pub fn toggleCompressor(&mut self) {
         self.dsp.toggle_compressor();
         self.sync_dsp_from_controller();
     }
@@ -1498,7 +1499,7 @@ impl MusicModel {
         self.dsp.get_compressor_threshold()
     }
 
-    pub fn toggleStdPitch(&mut self) {
+    pub fn togglePitch(&mut self) {
         self.dsp.toggle_pitch();
         self.sync_dsp_from_controller();
     }
@@ -1508,7 +1509,7 @@ impl MusicModel {
         self.sync_dsp_from_controller();
     }
 
-    pub fn toggleStdMiddleClarity(&mut self) {
+    pub fn toggleMiddleClarity(&mut self) {
         self.dsp.toggle_middle_clarity();
         self.sync_dsp_from_controller();
     }
@@ -1518,7 +1519,7 @@ impl MusicModel {
         self.sync_dsp_from_controller();
     }
 
-    pub fn toggleStdStereoWidth(&mut self) {
+    pub fn toggleStereoWidth(&mut self) {
         self.dsp.toggle_stereo_width();
         self.sync_dsp_from_controller();
     }
@@ -1528,7 +1529,7 @@ impl MusicModel {
         self.sync_dsp_from_controller();
     }
 
-    pub fn toggleStdStereoEnhance(&mut self) {
+    pub fn toggleStereoEnhance(&mut self) {
         self.dsp.toggle_stereo_enhance();
         self.sync_dsp_from_controller();
     }
@@ -1538,7 +1539,7 @@ impl MusicModel {
         self.sync_dsp_from_controller();
     }
 
-    pub fn toggleStdCrossfeed(&mut self) {
+    pub fn toggleCrossfeed(&mut self) {
         self.dsp.toggle_crossfeed();
         self.sync_dsp_from_controller();
     }
@@ -1548,17 +1549,17 @@ impl MusicModel {
         self.sync_dsp_from_controller();
     }
 
-    pub fn toggleStdDsp(&mut self) {
+    pub fn toggleDsp(&mut self) {
         self.dsp.toggle_dsp();
         self.sync_dsp_from_controller();
     }
 
-    pub fn toggleStdPreamp(&mut self) {
+    pub fn togglePreamp(&mut self) {
         self.dsp.toggle_preamp();
         self.sync_dsp_from_controller();
     }
 
-    pub fn toggleStdLimiter(&mut self) {
+    pub fn toggleLimiter(&mut self) {
         self.dsp.toggle_limiter();
         self.sync_dsp_from_controller();
     }
@@ -1702,6 +1703,10 @@ impl MusicModel {
         self.dsp.reset_bass();
         self.sync_dsp_from_controller();
     }
+    pub fn reset_std_reverb(&mut self) {
+        self.dsp.reset_reverb();
+        self.sync_dsp_from_controller();
+    }
 
     fn sync_dsp_from_controller(&mut self) {
         self.dsp_enabled = self.dsp.dsp_enabled;
@@ -1715,19 +1720,19 @@ impl MusicModel {
         self.reverb_room_size = self.dsp.reverb_room_size;
         self.reverb_damp = self.dsp.reverb_damp;
         self.reverb_params_changed();
-        self.bass_magic_active = self.dsp.bass_magic_active;
-        self.bass_magic_changed();
+        self.bass_active = self.dsp.bass_active;
+        self.bass_active_changed();
         self.bass_gain = self.dsp.bass_gain;
         self.bass_cutoff = self.dsp.bass_cutoff;
         self.bass_mode = self.dsp.bass_mode;
         self.bass_params_changed();
         self.bass_mode_changed();
-        self.surround_magic_active = self.dsp.surround_magic_active;
+        self.surround_active = self.dsp.surround_active;
         self.surround_magic_changed();
         self.surround_width = self.dsp.surround_width;
         self.surround_width_changed();
-        self.crystal_magic_active = self.dsp.crystal_magic_active;
-        self.crystal_magic_changed();
+        self.crystal_active = self.dsp.crystal_active;
+        self.crystal_active_changed();
         self.crystal_amount = self.dsp.crystal_amount;
         self.compressor_active = self.dsp.compressor_active;
         self.compressor_changed();
@@ -2116,21 +2121,20 @@ impl MusicModel {
     }
 
     pub fn sync_theme_to_config(&mut self, theme_name: QString, custom_themes_json: QString) {
-        if let Some(ref config) = &self.saved_config {
-            if let Ok(mut cfg) = config.lock() {
-                cfg.theme = theme_name.to_string();
+        use crate::ui::theme::{CustomTheme, ThemeConfig, ThemeEntry};
 
-                // Parse custom themes JSON
-                let json_str = custom_themes_json.to_string();
-                if let Ok(custom_themes) =
-                    serde_json::from_str::<Vec<crate::audio::config::CustomTheme>>(&json_str)
-                {
-                    cfg.custom_themes = custom_themes;
-                }
+        let json_str = custom_themes_json.to_string();
+        let custom_themes = serde_json::from_str::<Vec<CustomTheme>>(&json_str)
+            .unwrap_or_default();
 
-                // Save the config
-                let _ = cfg.save();
-            }
-        }
+        let theme_config = ThemeConfig {
+            active_theme: theme_name.to_string(),
+            themes: custom_themes.into_iter().map(|c| ThemeEntry {
+                name: c.name,
+                is_active: false,
+                colors: Some(c.colors),
+            }).collect(),
+        };
+        let _ = theme_config.save();
     }
 }

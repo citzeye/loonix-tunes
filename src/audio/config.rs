@@ -5,6 +5,8 @@ use std::collections::HashMap;
 use std::fs;
 use std::path::PathBuf;
 
+const CONFIG_APP_NAME: &str = "loonix-tunes";
+
 #[derive(Debug)]
 pub enum ConfigError {
     NotFound,
@@ -28,10 +30,104 @@ impl From<serde_json::Error> for ConfigError {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, Default)]
-pub struct CustomTheme {
-    pub name: String,
-    pub colors: HashMap<String, String>,
+pub fn config_dir() -> Option<PathBuf> {
+    dirs::config_dir().map(|p| p.join(CONFIG_APP_NAME))
+}
+
+#[derive(Serialize, Deserialize, Clone)]
+pub struct DspConfig {
+    pub user_preset_names: [String; 6],
+    pub user_preset_gains: [[f32; 10]; 6],
+    pub user_preset_macro: [f32; 6],
+    pub user_fx_enabled: [bool; 6],
+    pub user_fx_bass_enabled: [bool; 6],
+    pub user_fx_bass_gain: [f32; 6],
+    pub user_fx_bass_cutoff: [f32; 6],
+    pub user_fx_bass_mode: [i32; 6],
+    pub user_fx_crystal_enabled: [bool; 6],
+    pub user_fx_crystal_amount: [f32; 6],
+    pub user_fx_surround_enabled: [bool; 6],
+    pub user_fx_surround_width: [f32; 6],
+    pub user_fx_mono_enabled: [bool; 6],
+    pub user_fx_mono_width: [f32; 6],
+    pub user_fx_stereo_enabled: [bool; 6],
+    pub user_fx_stereo_amount: [f32; 6],
+    pub user_fx_crossfeed_enabled: [bool; 6],
+    pub user_fx_crossfeed_amount: [f32; 6],
+    pub user_fx_compressor_enabled: [bool; 6],
+    pub user_fx_compressor_threshold: [f32; 6],
+    pub user_fx_reverb_enabled: [bool; 6],
+    pub user_fx_reverb_mode: [i32; 6],
+    pub user_fx_reverb_amount: [i32; 6],
+}
+
+impl DspConfig {
+    pub fn load() -> Self {
+        match Self::load_dsp_config() {
+            Ok(cfg) => cfg,
+            Err(_) => Self::default(),
+        }
+    }
+
+    fn load_dsp_config() -> Result<Self, ConfigError> {
+        let path = Self::dsp_path().ok_or(ConfigError::NotFound)?;
+        let content = fs::read_to_string(&path)?;
+        let config: DspConfig = serde_json::from_str(&content)?;
+        Ok(config)
+    }
+
+    pub fn save(&self) -> Result<(), ConfigError> {
+        let path = Self::dsp_path().ok_or(ConfigError::IoError("Invalid path".into()))?;
+        if let Some(parent) = path.parent() {
+            fs::create_dir_all(parent)?;
+        }
+        let temp_path = path.with_extension("tmp");
+        let json = serde_json::to_string_pretty(self)?;
+        fs::write(&temp_path, json)?;
+        fs::rename(&temp_path, &path)?;
+        Ok(())
+    }
+
+    fn dsp_path() -> Option<PathBuf> {
+        config_dir().map(|p| p.join("dsp.json"))
+    }
+}
+
+impl Default for DspConfig {
+    fn default() -> Self {
+        Self {
+            user_preset_names: [
+                "User 1".into(),
+                "User 2".into(),
+                "User 3".into(),
+                "User 4".into(),
+                "User 5".into(),
+                "User 6".into(),
+            ],
+            user_preset_gains: [[0.0; 10]; 6],
+            user_preset_macro: [0.0; 6],
+            user_fx_enabled: [false; 6],
+            user_fx_bass_enabled: [false; 6],
+            user_fx_bass_gain: [6.0; 6],
+            user_fx_bass_cutoff: [180.0; 6],
+            user_fx_bass_mode: [0; 6],
+            user_fx_crystal_enabled: [false; 6],
+            user_fx_crystal_amount: [0.20; 6],
+            user_fx_surround_enabled: [false; 6],
+            user_fx_surround_width: [1.8; 6],
+            user_fx_mono_enabled: [false; 6],
+            user_fx_mono_width: [1.0; 6],
+            user_fx_stereo_enabled: [false; 6],
+            user_fx_stereo_amount: [0.0; 6],
+            user_fx_crossfeed_enabled: [false; 6],
+            user_fx_crossfeed_amount: [0.0; 6],
+            user_fx_compressor_enabled: [true; 6],
+            user_fx_compressor_threshold: [-6.0; 6],
+            user_fx_reverb_enabled: [false; 6],
+            user_fx_reverb_mode: [0; 6],
+            user_fx_reverb_amount: [0; 6],
+        }
+    }
 }
 
 #[derive(Serialize, Deserialize, Clone)]
@@ -94,15 +190,6 @@ pub struct AppConfig {
     #[serde(default = "default_norm_smoothing")]
     pub normalizer_smoothing: f32,
     pub active_preset_index: i32,
-    pub user_preset_names: [String; 6],
-    pub user_preset_gains: [[f32; 10]; 6],
-    pub user_preset_macro: [f32; 6],
-    // Theme settings
-    pub theme: String,
-    pub custom_themes: Vec<CustomTheme>,
-    pub use_wallpaper_theme: bool,
-    pub matugen_colors: HashMap<String, String>,
-    pub wallpaper_path: String,
 }
 
 fn default_bass_cutoff() -> f32 {
@@ -123,8 +210,9 @@ fn default_norm_smoothing() -> f32 {
 
 impl Default for AppConfig {
     fn default() -> Self {
+        let p = &FX_PRESETS[0]; // LOONIX - auto from presets.rs
         Self {
-            eq_bands: [3.0, 8.0, -5.0, 0.0, -3.0, -1.0, -3.0, -1.0, 1.0, -5.0],
+            eq_bands: EQ_PRESETS[0].gains,
             volume: 0.2,
             balance: 0.0,
             shuffle: false,
@@ -139,34 +227,34 @@ impl Default for AppConfig {
             window_width: 350,
             window_height: 700,
             dsp_enabled: true,
-            bass_enabled: true,
-            bass_gain: 6.0,
-            bass_cutoff: 180.0,
-            bass_mode: 2,
+            bass_enabled: p.bass_enabled,
+            bass_gain: p.bass_gain,
+            bass_cutoff: p.bass_cutoff,
+            bass_mode: p.bass_mode,
             bass_q: 0.7,
-            crystal_enabled: true,
-            crystal_amount: 0.5,
-            crystal_freq: 8000.0,
-            surround_enabled: true,
-            surround_width: 1.5,
+            crystal_enabled: p.crystal_enabled,
+            crystal_amount: p.crystal_amount,
+            crystal_freq: p.crystal_freq,
+            surround_enabled: p.surround_enabled,
+            surround_width: p.surround_width,
             surround_room_size: 15.0,
             surround_bass_safe: true,
-            mono_enabled: false,
-            mono_width: 1.0,
-            pitch_enabled: false,
-            pitch_semitones: 0.0,
-            middle_enabled: false,
-            middle_amount: 0.0,
-            reverb_enabled: false,
-            reverb_mode: 1,    // Studio mode by default
-            reverb_amount: 50, // 50% intensity by default
-            compressor_enabled: true,
-            compressor_threshold: -10.0,
-            stereo_enabled: true,
-            stereo_amount: 0.4,
+            mono_enabled: p.mono_enabled,
+            mono_width: p.mono_width,
+            pitch_enabled: p.pitch_enabled,
+            pitch_semitones: p.pitch_semitones,
+            middle_enabled: p.middle_enabled,
+            middle_amount: p.middle_amount,
+            reverb_enabled: p.reverb_enabled,
+            reverb_mode: p.reverb_mode,
+            reverb_amount: p.reverb_amount,
+            compressor_enabled: p.compressor_enabled,
+            compressor_threshold: p.compressor_threshold,
+            stereo_enabled: p.stereo_enabled,
+            stereo_amount: p.stereo_amount,
             preamp_db: 0.0,
-            crossfeed_enabled: false,
-            crossfeed_amount: 0.0,
+            crossfeed_enabled: p.crossfeed_enabled,
+            crossfeed_amount: p.crossfeed_amount,
             eq_enabled: true,
             normalizer_enabled: true,
             normalizer_target_lufs: default_norm_target_lufs(),
@@ -174,104 +262,7 @@ impl Default for AppConfig {
             normalizer_max_gain_db: default_norm_max_gain(),
             normalizer_smoothing: default_norm_smoothing(),
             active_preset_index: 0,
-            user_preset_names: [
-                "User 1".to_string(),
-                "User 2".to_string(),
-                "User 3".to_string(),
-                "User 4".to_string(),
-                "User 5".to_string(),
-                "User 6".to_string(),
-            ],
-            user_preset_gains: [[0.0; 10]; 6],
-            user_preset_macro: [0.0; 6],
-            theme: "Default".to_string(),
-            custom_themes: vec![
-                CustomTheme {
-                    name: "Custom 1".to_string(),
-                    colors: Self::default_theme_colors(),
-                },
-                CustomTheme {
-                    name: "Custom 2".to_string(),
-                    colors: Self::default_theme_colors(),
-                },
-                CustomTheme {
-                    name: "Custom 3".to_string(),
-                    colors: Self::default_theme_colors(),
-                },
-            ],
-            use_wallpaper_theme: false,
-            matugen_colors: HashMap::new(),
-            wallpaper_path: String::new(),
         }
-    }
-}
-
-impl AppConfig {
-    pub fn default_theme_colors() -> HashMap<String, String> {
-        let mut map: HashMap<String, String> = HashMap::new();
-        map.insert("bgmain".to_string(), "#15151B".to_string());
-        map.insert("bgoverlay".to_string(), "#201f2b".to_string());
-        map.insert("graysolid".to_string(), "#6d6d6d".to_string());
-        map.insert("contextmenubg".to_string(), "#2d2d2d".to_string());
-        map.insert("overlay".to_string(), "#000000".to_string());
-        map.insert("headerbg".to_string(), "#201f2b".to_string());
-        map.insert("headericon".to_string(), "#6d6d6d".to_string());
-        map.insert("headertext".to_string(), "#6d6d6d".to_string());
-        map.insert("headerhover".to_string(), "#ff1ae0".to_string());
-        map.insert("playertitle".to_string(), "#00ffa2".to_string());
-        map.insert("playersubtext".to_string(), "#57caab".to_string());
-        map.insert("playeraccent".to_string(), "#9442ff".to_string());
-        map.insert("playerhover".to_string(), "#ff1ae0".to_string());
-        map.insert("tabtext".to_string(), "#c6c6c6".to_string());
-        map.insert("tabborder".to_string(), "#00ffa2".to_string());
-        map.insert("tabhover".to_string(), "#ff1ae0".to_string());
-        map.insert("playlisttext".to_string(), "#c6c6c6".to_string());
-        map.insert("playlistfolder".to_string(), "#fa7900".to_string());
-        map.insert("playlistactive".to_string(), "#00ffa2".to_string());
-        map.insert("playlisticon".to_string(), "#fa7900".to_string());
-
-        // DSP Panel
-        map.insert("dspbg".to_string(), "#15151B".to_string()); // outer
-        map.insert("dsptext".to_string(), "#6d6d6d".to_string());
-        map.insert("dsptexthover".to_string(), "#fa7900".to_string());
-        map.insert("dsptextactive".to_string(), "#fa7900".to_string());
-        map.insert("dspborder".to_string(), "#6d6d6d".to_string());
-        map.insert("dspgridbg".to_string(), "#111111".to_string());
-        
-
-
-            // EQ Panel
-            map.insert("dspeqbg".to_string(), "#151515".to_string()); // eq wrapper
-            map.insert("dspeqicon".to_string(), "#9442ff".to_string());
-            
-            
-            map.insert("dspeqslider".to_string(), "#ff1ae0".to_string());
-            map.insert("dspeqsliderbg".to_string(), "#15151B".to_string());
-            map.insert("dspeqhandle".to_string(), "#ff1ae0".to_string());
-
-            map.insert("dspeampbg".to_string(), "#111111".to_string());
-            map.insert("dspampslider".to_string(), "#ff1ae0".to_string());
-            map.insert("dspampsliderbg".to_string(), "#000000".to_string());
-            map.insert("dspeamphandle".to_string(), "#9442ff".to_string());
-            
-
-            map.insert("dspeq10slider".to_string(), "#ff1ae0".to_string());
-            map.insert("dspeq10sliderbg".to_string(), "#000000".to_string());
-            map.insert("dspeq10handle".to_string(), "#9442ff".to_string());
-
-            map.insert("dspeqfaderbg".to_string(), "#111111".to_string());
-            map.insert("dspeqfaderslider".to_string(), "#ff1ae0".to_string());
-            map.insert("dspeqfaderhandle".to_string(), "#9442ff".to_string());
-            
-
-            // FX Panel
-            map.insert("dspfxbg".to_string(), "#151515".to_string()); // fx wrapper
-            map.insert("dspfxicon".to_string(), "#9442ff".to_string());
-            map.insert("dspfxslider".to_string(), "#ff1ae0".to_string());
-            map.insert("dspfxsliderbg".to_string(), "#111111".to_string());
-            map.insert("dspfxhandle".to_string(), "#9442ff".to_string());
-
-        map
     }
 }
 

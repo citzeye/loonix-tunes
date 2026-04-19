@@ -267,7 +267,7 @@ Popup {
                         id: compToggle
                         title: "COMPRESSOR"
                         isOn: musicModel.compressor_active
-                        onToggled: musicModel.toggleStdCompressor()
+                        onToggled: musicModel.toggleCompressor()
                     }
 
                     FxSliderBox {
@@ -297,8 +297,8 @@ Popup {
                     FxToggleBox {
                         id: surrToggle
                         title: "SURROUND"
-                        isOn: musicModel.surround_magic_active
-                        onToggled: musicModel.toggleStdSurround()
+                        isOn: musicModel.surround_active
+                        onToggled: musicModel.toggleSurround()
                     }
 
                     FxSliderBox {
@@ -330,7 +330,7 @@ Popup {
                         id: monoToggle
                         title: "MONO - STEREO"
                         isOn: musicModel.mono_active
-                        onToggled: musicModel.toggleStdStereoWidth()
+                        onToggled: musicModel.toggleStereoWidth()
                     }
 
                     FxSliderBox {
@@ -360,7 +360,7 @@ Popup {
                         id: midToggle
                         title: "MIDDLE CLARITY"
                         isOn: musicModel.middle_active
-                        onToggled: musicModel.toggleStdMiddleClarity()
+                        onToggled: musicModel.toggleMiddleClarity()
                     }
 
                     FxSliderBox {
@@ -390,7 +390,7 @@ Popup {
                         id: stereoEnhToggle
                         title: "STEREO ENHANCER"
                         isOn: musicModel.stereo_active
-                        onToggled: musicModel.toggleStdStereoEnhance()
+                        onToggled: musicModel.toggleStereoEnhance()
                     }
 
                     FxSliderBox {
@@ -420,7 +420,7 @@ Popup {
                         id: crossfeedToggle
                         title: "CROSSFEED"
                         isOn: musicModel.crossfeed_active
-                        onToggled: musicModel.toggleStdCrossfeed()
+                        onToggled: musicModel.toggleCrossfeed()
                     }
 
                     FxSliderBox {
@@ -449,8 +449,8 @@ Popup {
                     FxToggleBox {
                         id: crystalToggle
                         title: "CRYSTALIZER"
-                        isOn: musicModel.crystal_magic_active
-                        onToggled: musicModel.toggleStdCrystalizer()
+                        isOn: musicModel.crystal_active
+                        onToggled: musicModel.toggleCrystalizer()
                     }
 
                     FxSliderBox {
@@ -479,8 +479,8 @@ Popup {
                     FxToggleBox {
                         id: bassToggle
                         title: "BASS BOOSTER"
-                        isOn: musicModel.bass_magic_active
-                        onToggled: musicModel.toggleStdBassBooster()
+                        isOn: musicModel.bass_active
+                        onToggled: musicModel.toggleBassBooster()
                     }
 
                     BassModeSelector {
@@ -512,7 +512,7 @@ Popup {
                         title: "PITCH SHIFTER"
                         isOn: musicModel.pitch_active
                         boxEnabled: musicModel.dsp_enabled
-                        onToggled: musicModel.toggleStdPitch()
+                        onToggled: musicModel.togglePitch()
                     }
 
                     FxPitchSliderBox {
@@ -544,7 +544,7 @@ Popup {
                         id: reverbToggle
                         title: "REVERB"
                         isOn: musicModel.reverb_active
-                        onToggled: musicModel.toggleStdReverb()
+                        onToggled: musicModel.toggleReverb()
                     }
 
                     ReverbModeSelector {
@@ -563,10 +563,7 @@ Popup {
                     FxResetButton {
                         enabled: reverbToggle.isOn && musicModel.dsp_enabled
                         useNoArgReset: true
-                        onResetNoArg: {
-                            musicModel.set_reverb_mode(1);
-                            musicModel.set_reverb_amount(50);
-                        }
+                        onResetNoArg: musicModel.reset_std_reverb()
                     }
                 }
             }

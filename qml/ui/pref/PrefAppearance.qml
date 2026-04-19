@@ -24,7 +24,7 @@ Item {
 
     Connections {
         target: theme
-        function onCustom_themes_changed() {
+        function onColormapChanged() {
             refreshTicker++
         }
         function onWallpaper_sync_status(success, message) {
@@ -82,7 +82,7 @@ Item {
                 spacing: 4
 
                 Repeater {
-                    model: ["Blue", "Green", "Monochrome", "Orange", "Pink", "Red", "Yellow", "Default"]
+                    model: ["Loonix", "Blue", "Green", "Monochrome", "Orange", "Pink", "Red", "Yellow"]
 
                     delegate: Rectangle {
                         Layout.preferredWidth: 200
@@ -125,11 +125,11 @@ Item {
 
                 Repeater {
                     id: customThemeRepeater
-                    model: theme.get_custom_theme_count()
+                    model: theme.get_custom_themes()
 
                     delegate: Rectangle {
                         property int presetIndex: index
-                        property string presetName: (refreshTicker, theme.get_custom_theme_name(index))
+                        property string presetName: modelData.name
 
                         Layout.preferredWidth: 200
                         Layout.preferredHeight: 32

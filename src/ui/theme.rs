@@ -1,11 +1,167 @@
 /* --- LOONIX-TUNES src/ui/theme.rs --- */
 use qmetaobject::*;
+use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::collections::HashMap;
+use std::fs;
+use std::path::PathBuf;
 use std::process::Command;
 use std::sync::{Arc, Mutex};
 
-use crate::audio::config::{AppConfig, CustomTheme};
+use crate::audio::config::{AppConfig, ConfigError};
+
+#[derive(Serialize, Deserialize, Debug, Clone, Default)]
+pub struct CustomTheme {
+    pub name: String,
+    pub colors: HashMap<String, String>,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct ThemeEntry {
+    pub name: String,
+    pub is_active: bool,
+    #[serde(default)]
+    pub colors: Option<HashMap<String, String>>,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct ThemeConfig {
+    pub active_theme: String,
+    pub themes: Vec<ThemeEntry>,
+}
+
+impl ThemeConfig {
+    pub fn load() -> Self {
+        match Self::load_theme_config() {
+            Ok(cfg) => cfg,
+            Err(_) => Self::default(),
+        }
+    }
+
+    fn load_theme_config() -> Result<Self, ConfigError> {
+        let path = Self::theme_path().ok_or(ConfigError::NotFound)?;
+        let content = fs::read_to_string(&path)?;
+        let config: ThemeConfig = serde_json::from_str(&content)?;
+        Ok(config)
+    }
+
+    pub fn save(&self) -> Result<(), ConfigError> {
+        let path = Self::theme_path().ok_or(ConfigError::IoError("Invalid path".into()))?;
+        if let Some(parent) = path.parent() {
+            fs::create_dir_all(parent)?;
+        }
+        let temp_path = path.with_extension("tmp");
+        let json = serde_json::to_string_pretty(self)?;
+        fs::write(&temp_path, json)?;
+        fs::rename(&temp_path, &path)?;
+        Ok(())
+    }
+
+    fn theme_path() -> Option<PathBuf> {
+        crate::audio::config::config_dir().map(|p| p.join("theme.json"))
+    }
+
+    pub fn blue_colors() -> HashMap<String, String> {
+        let mut map = HashMap::new();
+        map.insert("bgmain".to_string(), "#121212".to_string());
+        map.insert("bgoverlay".to_string(), "#1e1e1e".to_string());
+        map.insert("graysolid".to_string(), "#333333".to_string());
+        map.insert("contextmenubg".to_string(), "#181818".to_string());
+        map.insert("overlay".to_string(), "#80000000".to_string());
+        map.insert("headerbg".to_string(), "#1e1e1e".to_string());
+        map.insert("headericon".to_string(), "#6d6d6d".to_string());
+        map.insert("headertext".to_string(), "#6d6d6d".to_string());
+        map.insert("headerhover".to_string(), "#00ddff".to_string());
+        map.insert("playertitle".to_string(), "#00ffdd".to_string());
+        map.insert("playersubtext".to_string(), "#6d6d6d".to_string());
+        map.insert("playeraccent".to_string(), "#00ffdd".to_string());
+        map.insert("playerhover".to_string(), "#843ff3".to_string());
+        map.insert("tabtext".to_string(), "#d1d8e6".to_string());
+        map.insert("tabborder".to_string(), "#8a8a8a".to_string());
+        map.insert("tabhover".to_string(), "#00ffdd".to_string());
+        map.insert("playlisttext".to_string(), "#d1d8e6".to_string());
+        map.insert("playlistfolder".to_string(), "#f5a623".to_string());
+        map.insert("playlistactive".to_string(), "#843ff3".to_string());
+        map.insert("playlisticon".to_string(), "#00ffdd".to_string());
+        map.insert("dspbg".to_string(), "#15151B".to_string());
+        map.insert("dsptext".to_string(), "#6d6d6d".to_string());
+        map.insert("dsptexthover".to_string(), "#fa7900".to_string());
+        map.insert("dsptextactive".to_string(), "#fa7900".to_string());
+        map.insert("dspborder".to_string(), "#6d6d6d".to_string());
+        map.insert("dspgridbg".to_string(), "#111111".to_string());
+        map.insert("dspeqbg".to_string(), "#151515".to_string());
+        map.insert("dspeqtext".to_string(), "#00ffdd".to_string());
+        map.insert("dspeqsubtext".to_string(), "#6d6d6d".to_string());
+        map.insert("dspeqicon".to_string(), "#9442ff".to_string());
+        map.insert("dspeqhover".to_string(), "#843ff3".to_string());
+        map.insert("dspeqpresettext".to_string(), "#6d6d6d".to_string());
+        map.insert("dspeqpresetactive".to_string(), "#00ffdd".to_string());
+        map.insert("dspeqslider".to_string(), "#ff1ae0".to_string());
+        map.insert("dspeqsliderbg".to_string(), "#15151B".to_string());
+        map.insert("dspeqhandle".to_string(), "#ff1ae0".to_string());
+        map.insert("dspeampbg".to_string(), "#111111".to_string());
+        map.insert("dspampslider".to_string(), "#ff1ae0".to_string());
+        map.insert("dspampsliderbg".to_string(), "#000000".to_string());
+        map.insert("dspeamphandle".to_string(), "#9442ff".to_string());
+        map.insert("dspeq10slider".to_string(), "#ff1ae0".to_string());
+        map.insert("dspeq10sliderbg".to_string(), "#000000".to_string());
+        map.insert("dspeq10handle".to_string(), "#9442ff".to_string());
+        map.insert("dspeqfaderbg".to_string(), "#111111".to_string());
+        map.insert("dspeqfaderslider".to_string(), "#ff1ae0".to_string());
+        map.insert("dspeqfaderhandle".to_string(), "#9442ff".to_string());
+        map.insert("dspeqmixslider".to_string(), "#00ffdd".to_string());
+        map.insert("dspeqmixhandle".to_string(), "#843ff3".to_string());
+        map.insert("dspeqmixbg".to_string(), "#15151B".to_string());
+        map.insert("dspfxbg".to_string(), "#151515".to_string());
+        map.insert("dspfxborder".to_string(), "#6d6d6d".to_string());
+        map.insert("dspfxtext".to_string(), "#00ffdd".to_string());
+        map.insert("dspfxsubtext".to_string(), "#6d6d6d".to_string());
+        map.insert("dspfxicon".to_string(), "#9442ff".to_string());
+        map.insert("dspfxhover".to_string(), "#843ff3".to_string());
+        map.insert("dspfxactive".to_string(), "#00ffdd".to_string());
+        map.insert("dspfxslider".to_string(), "#ff1ae0".to_string());
+        map.insert("dspfxsliderbg".to_string(), "#111111".to_string());
+        map.insert("dspfxhandle".to_string(), "#9442ff".to_string());
+        map.insert("dspslider".to_string(), "#00ffdd".to_string());
+        map.insert("dspsliderbg".to_string(), "#15151B".to_string());
+        map.insert("dsphandle".to_string(), "#843ff3".to_string());
+        map.insert("dsp10slider".to_string(), "#ff1ae0".to_string());
+        map.insert("dsp10handle".to_string(), "#9442ff".to_string());
+        map.insert("dsp10bg".to_string(), "#111111".to_string());
+        map.insert("dspfaderslider".to_string(), "#ff1ae0".to_string());
+        map.insert("dspfaderhandle".to_string(), "#9442ff".to_string());
+        map.insert("dspfaderbg".to_string(), "#111111".to_string());
+        map.insert("dspmixslider".to_string(), "#00ffdd".to_string());
+        map.insert("dspmixhandle".to_string(), "#843ff3".to_string());
+        map.insert("dspmixbg".to_string(), "#15151B".to_string());
+        map.insert("dspicon".to_string(), "#9442ff".to_string());
+        map.insert("dsphover".to_string(), "#843ff3".to_string());
+        map.insert("dspactive".to_string(), "#00ffdd".to_string());
+        map
+    }
+}
+
+impl Default for ThemeConfig {
+    fn default() -> Self {
+        let blue_colors = Self::blue_colors();
+        Self {
+            active_theme: "Loonix".to_string(),
+            themes: vec![
+                ThemeEntry { name: "Loonix".to_string(), is_active: true, colors: None },
+                ThemeEntry { name: "Blue".to_string(), is_active: false, colors: None },
+                ThemeEntry { name: "Green".to_string(), is_active: false, colors: None },
+                ThemeEntry { name: "Monochrome".to_string(), is_active: false, colors: None },
+                ThemeEntry { name: "Orange".to_string(), is_active: false, colors: None },
+                ThemeEntry { name: "Pink".to_string(), is_active: false, colors: None },
+                ThemeEntry { name: "Red".to_string(), is_active: false, colors: None },
+                ThemeEntry { name: "Yellow".to_string(), is_active: false, colors: None },
+                ThemeEntry { name: "Custom 1".to_string(), is_active: false, colors: Some(blue_colors.clone()) },
+                ThemeEntry { name: "Custom 2".to_string(), is_active: false, colors: Some(blue_colors.clone()) },
+                ThemeEntry { name: "Custom 3".to_string(), is_active: false, colors: Some(blue_colors) },
+            ],
+        }
+    }
+}
 
 macro_rules! c {
     ($map:expr, { $($key:expr, $val:expr),* $(,)? }) => {
@@ -20,15 +176,15 @@ pub struct ThemeManager {
     pub colormap_changed: qt_signal!(),
     pub current_theme: qt_property!(QString; NOTIFY current_theme_changed),
     pub current_theme_changed: qt_signal!(),
-    pub set_theme: qt_method!(fn(&mut self, name: String)),
-    pub cycle_theme: qt_method!(fn(&mut self)),
+    pub themes_changed: qt_signal!(),
     pub get_custom_theme_count: qt_method!(fn(&self) -> i32),
     pub get_custom_theme_name: qt_method!(fn(&self, index: i32) -> QString),
     pub set_custom_theme_name: qt_method!(fn(&mut self, index: i32, name: String)),
-    pub custom_themes_changed: qt_signal!(),
     pub get_custom_theme_colors: qt_method!(fn(&self, index: i32) -> QVariantMap),
     pub set_custom_theme_colors: qt_method!(fn(&mut self, index: i32, colors: QVariantMap)),
     pub get_default_colors: qt_method!(fn(&self) -> QVariantMap),
+    pub get_theme_list: qt_method!(fn(&self) -> QVariantList),
+    pub get_custom_themes: qt_method!(fn(&self) -> QVariantList),
     pub get_editor_starter_colors:
         qt_method!(fn(&self, is_edit_mode: bool, index: i32) -> QVariantMap),
     pub sync_with_wallpaper: qt_method!(fn(&mut self)),
@@ -39,7 +195,7 @@ pub struct ThemeManager {
     pub report_bug_on_github: qt_method!(fn(&self, bug_title: QString, bug_desc: QString)),
     pub wallpaper_sync_status: qt_signal!(success: bool, message: QString),
 
-    custom_themes: Vec<CustomTheme>,
+    themes: Vec<ThemeEntry>,
     current_raw_colors: HashMap<String, String>,
     config: Option<Arc<Mutex<AppConfig>>>,
     matugen_available: bool,
@@ -50,48 +206,22 @@ impl ThemeManager {
         Self::default()
     }
 
-    pub fn set_config(&mut self, config: Arc<Mutex<AppConfig>>) {
-        let cfg = config.lock().unwrap();
+pub fn set_config(&mut self, config: Arc<Mutex<AppConfig>>) {
+        let theme_config = ThemeConfig::load();
 
-        let theme_name = if cfg.theme.is_empty() {
-            "Default".to_string()
-        } else {
-            cfg.theme.clone()
-        };
-
-        let custom_themes = cfg.custom_themes.clone();
-        let use_wallpaper = cfg.use_wallpaper_theme;
-        let matugen_saved = cfg.matugen_colors.clone();
-        drop(cfg);
-
-        self.custom_themes = custom_themes;
-
-        while self.custom_themes.len() < 3 {
-            self.custom_themes.push(CustomTheme {
-                name: format!("Custom {}", self.custom_themes.len() + 1),
-                colors: HashMap::new(),
-            });
-        }
+        self.themes = theme_config.themes;
 
         self.config = Some(config);
         self.check_matugen();
 
-        if use_wallpaper && !matugen_saved.is_empty() {
-            let qmap: QVariantMap = matugen_saved
-                .iter()
-                .map(|(k, v)| {
-                    (
-                        QString::from(k.as_str()),
-                        QVariant::from(QString::from(v.as_str())),
-                    )
-                })
-                .collect();
-            self.colormap = qmap;
-            self.current_raw_colors = matugen_saved;
-            self.colormap_changed();
-        } else {
-            self.set_theme(theme_name);
-        }
+        // Find active theme
+        let active_name = self.themes
+            .iter()
+            .find(|t| t.is_active)
+            .map(|t| t.name.clone())
+            .unwrap_or_else(|| "Loonix".to_string());
+
+        self.set_theme(active_name);
     }
 
     fn check_matugen(&mut self) {
@@ -420,19 +550,8 @@ impl ThemeManager {
                     .collect();
 
                 self.colormap = qmap.clone();
-                self.current_raw_colors = new_colors.clone();
+                self.current_raw_colors = new_colors;
                 self.colormap_changed();
-
-                if let Some(ref config) = self.config {
-                    if let Ok(mut cfg) = config.lock() {
-                        cfg.use_wallpaper_theme = true;
-                        cfg.matugen_colors = new_colors;
-                        if let Ok(path) = Self::get_active_wallpaper() {
-                            cfg.wallpaper_path = path;
-                        }
-                        let _ = cfg.save();
-                    }
-                }
 
                 self.wallpaper_sync_status(true, QString::from("Tema berhasil disinkronisasi!"));
             }
@@ -443,46 +562,33 @@ impl ThemeManager {
     }
 
     pub fn set_loonix_manual(&mut self) {
-        if let Some(ref config) = self.config {
-            if let Ok(mut cfg) = config.lock() {
-                cfg.use_wallpaper_theme = false;
-                let _ = cfg.save();
-            }
-        }
-
-        let current = self.current_theme.to_string();
-        self.set_theme(current);
+        self.set_theme("Loonix".to_string());
     }
 
-    pub fn set_wallpaper_path(&mut self, path: String) {
-        if let Some(ref config) = self.config {
-            if let Ok(mut cfg) = config.lock() {
-                cfg.wallpaper_path = path;
-                let _ = cfg.save();
-            }
-        }
+    pub fn set_wallpaper_path(&mut self, _path: String) {
+        // No longer needed - wallpaper path handled in memory
     }
 
     pub fn get_custom_theme_count(&self) -> i32 {
-        self.custom_themes.len() as i32
+        3
     }
 
     pub fn get_custom_theme_name(&self, index: i32) -> QString {
-        if index >= 0 && index < self.custom_themes.len() as i32 {
-            QString::from(self.custom_themes[index as usize].name.as_str())
+        if index >= 0 && index < self.themes.len() as i32 {
+            QString::from(self.themes[index as usize].name.as_str())
         } else {
             QString::from("")
         }
     }
 
     pub fn set_custom_theme_name(&mut self, index: i32, name: String) {
-        if index >= 0 && index < self.custom_themes.len() as i32 {
-            let old_name = self.custom_themes[index as usize].name.clone();
+        if index >= 0 && index < self.themes.len() as i32 {
+            let old_name = self.themes[index as usize].name.clone();
             let is_current_theme = old_name == self.current_theme.to_string();
 
-            self.custom_themes[index as usize].name = name.clone();
+            self.themes[index as usize].name = name.clone();
             self.save_config();
-            self.custom_themes_changed();
+            self.themes_changed();
 
             // Smart Apply: Refresh UI if renaming the active theme
             if is_current_theme {
@@ -492,53 +598,54 @@ impl ThemeManager {
     }
 
     pub fn get_custom_theme_colors(&self, index: i32) -> QVariantMap {
-        if index >= 0 && index < self.custom_themes.len() as i32 {
-            let colors = &self.custom_themes[index as usize].colors;
-            if colors.is_empty() {
-                return self
-                    .current_raw_colors
-                    .iter()
-                    .map(|(k, v)| {
-                        (
-                            QString::from(k.as_str()),
-                            QVariant::from(QString::from(v.as_str())),
-                        )
-                    })
-                    .collect();
-            }
-            colors
-                .iter()
-                .map(|(k, v)| {
+        if index >= 0 && index < self.themes.len() as i32 {
+            let colors = &self.themes[index as usize].colors;
+            if let Some(ref c) = colors {
+                if c.is_empty() {
+                    return self
+                        .current_raw_colors
+                        .iter()
+                        .map(|(k, v)| {
+                            (
+                                QString::from(k.as_str()),
+                                QVariant::from(QString::from(v.as_str())),
+                            )
+                        })
+                        .collect();
+                }
+                c.iter().map(|(k, v)| {
                     (
                         QString::from(k.as_str()),
                         QVariant::from(QString::from(v.as_str())),
                     )
-                })
-                .collect()
+                }).collect()
+            } else {
+                QVariantMap::default()
+            }
         } else {
             QVariantMap::default()
         }
     }
 
     pub fn set_custom_theme_colors(&mut self, index: i32, colors: QVariantMap) {
-        let mut color_map: HashMap<String, String> = HashMap::new();
+        let mut color_map = ThemeConfig::blue_colors();
         for (k, v) in &colors {
             color_map.insert(k.to_string(), v.to_qstring().to_string());
         }
 
         let idx = index as usize;
-        if idx < self.custom_themes.len() {
-            self.custom_themes[idx].colors = color_map;
+        if idx < self.themes.len() {
+            self.themes[idx].colors = Some(color_map);
             self.save_config();
-            self.custom_themes_changed();
+            self.themes_changed();
 
-            let theme_name = self.custom_themes[idx].name.clone();
+            let theme_name = self.themes[idx].name.clone();
             self.set_theme(theme_name);
         }
     }
 
     pub fn get_default_colors(&self) -> QVariantMap {
-        AppConfig::default_theme_colors()
+        ThemeConfig::blue_colors()
             .iter()
             .map(|(k, v)| {
                 (
@@ -549,22 +656,46 @@ impl ThemeManager {
             .collect()
     }
 
+    pub fn get_theme_list(&self) -> QVariantList {
+        self.themes
+            .iter()
+            .map(|t| {
+                let mut map = QVariantMap::default();
+                map.insert(QString::from("name"), QVariant::from(QString::from(t.name.clone())));
+                map.insert(QString::from("is_active"), QVariant::from(t.is_active));
+                QVariant::from(map)
+            })
+            .collect()
+    }
+
+    pub fn get_custom_themes(&self) -> QVariantList {
+        self.themes
+            .iter()
+            .filter(|t| t.colors.is_some())
+            .map(|t| {
+                let mut map = QVariantMap::default();
+                map.insert(QString::from("name"), QVariant::from(QString::from(t.name.clone())));
+                map.insert(QString::from("is_active"), QVariant::from(t.is_active));
+                QVariant::from(map)
+            })
+            .collect()
+    }
+
     pub fn get_editor_starter_colors(&self, is_edit_mode: bool, index: i32) -> QVariantMap {
         if is_edit_mode {
-            if index >= 0 && index < self.custom_themes.len() as i32 {
-                let colors = &self.custom_themes[index as usize].colors;
-                if colors.is_empty() {
-                    return self.get_default_colors();
-                }
-                return colors
-                    .iter()
-                    .map(|(k, v)| {
+            if index >= 0 && index < self.themes.len() as i32 {
+                let colors = &self.themes[index as usize].colors;
+                if let Some(ref c) = colors {
+                    if c.is_empty() {
+                        return self.get_default_colors();
+                    }
+                    return c.iter().map(|(k, v)| {
                         (
                             QString::from(k.as_str()),
                             QVariant::from(QString::from(v.as_str())),
                         )
-                    })
-                    .collect();
+                    }).collect();
+                }
             }
         }
         self.current_raw_colors
@@ -579,13 +710,11 @@ impl ThemeManager {
     }
 
     fn save_config(&self) {
-        if let Some(ref config) = self.config {
-            if let Ok(mut cfg) = config.lock() {
-                cfg.theme = self.current_theme.to_string();
-                cfg.custom_themes = self.custom_themes.clone();
-                let _ = cfg.save();
-            }
-        }
+        let theme_config = ThemeConfig {
+            active_theme: self.current_theme.to_string(),
+            themes: self.themes.clone(),
+        };
+        let _ = theme_config.save();
     }
 
     pub fn available_themes() -> Vec<String> {
@@ -599,7 +728,7 @@ impl ThemeManager {
             "Yellow".into(),
         ];
         themes.sort();
-        themes.insert(0, "Default".into());
+        themes.insert(0, "Loonix".into());
         themes
     }
 
@@ -610,38 +739,116 @@ impl ThemeManager {
             let next_idx = (idx + 1) % themes.len();
             self.set_theme(themes[next_idx].clone());
         } else {
-            self.set_theme("Default".to_string());
+            self.set_theme("Loonix".to_string());
         }
     }
 
     pub fn set_theme(&mut self, name: String) {
-        if let Some(custom) = self.custom_themes.iter().find(|t| t.name == name) {
-            if !custom.colors.is_empty() {
-                let qmap: QVariantMap = custom
-                    .colors
-                    .iter()
-                    .map(|(k, v)| {
-                        (
-                            QString::from(k.as_str()),
-                            QVariant::from(QString::from(v.as_str())),
-                        )
-                    })
-                    .collect();
-
-                self.colormap = qmap;
-                self.current_theme = QString::from(name);
-                self.colormap_changed();
-                self.current_theme_changed();
-
-                self.current_raw_colors = custom.colors.clone();
-                self.save_config();
-                return;
+        // Get colors based on theme
+        let base_colors = ThemeConfig::blue_colors();
+        let colors = if let Some(entry) = self.themes.iter().find(|t| t.name == name) {
+            // Check if this is a custom theme (has colors) or built-in (no colors)
+            if let Some(ref c) = entry.colors {
+                if !c.is_empty() {
+                    c.clone()
+                } else {
+                    // Empty custom theme - use blue
+                    base_colors.clone()
+                }
+            } else {
+                // Built-in theme - get from built-in list and merge with defaults
+                let mut merged = base_colors.clone();
+                merged.extend(Self::get_builtin_colors(&name));
+                merged
             }
+        } else {
+            // Not in themes array - get from built-in list
+            let mut merged = base_colors.clone();
+            merged.extend(Self::get_builtin_colors(&name));
+            merged
+        };
+
+        // Update is_active status
+        for theme in &mut self.themes {
+            theme.is_active = theme.name == name;
         }
 
+        let qmap: QVariantMap = colors
+            .iter()
+            .map(|(k, v)| {
+                (
+                    QString::from(k.as_str()),
+                    QVariant::from(QString::from(v.as_str())),
+                )
+            })
+            .collect();
+
+        self.colormap = qmap;
+        self.current_theme = QString::from(name);
+        self.current_raw_colors = colors;
+        self.colormap_changed();
+        self.current_theme_changed();
+        self.save_config();
+    }
+
+    fn get_builtin_colors(name: &str) -> HashMap<String, String> {
         let mut map: HashMap<String, String> = HashMap::new();
 
-        match name.as_str() {
+        match name {
+            "Loonix" => {
+                c!(map, {
+                    "bgmain", "#15151B",
+                    "bgoverlay", "#201f2b",
+                    "graysolid", "#6d6d6d",
+                    "contextmenubg", "#2d2d2d",
+                    "overlay", "#000000",
+                    "headerbg", "#201f2b",
+                    "headericon", "#6d6d6d",
+                    "headertext", "#6d6d6d",
+                    "headerhover", "#ff1ae0",
+                    "playertitle", "#00ffa2",
+                    "playersubtext", "#57caab",
+                    "playeraccent", "#9442ff",
+                    "playerhover", "#ff1ae0",
+                    "tabtext", "#c6c6c6",
+                    "tabborder", "#00ffa2",
+                    "tabhover", "#ff1ae0",
+                    "tabbg", "#1a1a2e",
+                    "tabactive", "#3d3d5c",
+                    "tabtextactive", "#ffffff",
+                    "playlisttext", "#c6c6c6",
+                    "playlistfolder", "#fa7900",
+                    "playlistactive", "#00ffa2",
+                    "playlisticon", "#fa7900",
+
+                    "dspbg", "#15151B",
+                    "dsptext", "#6d6d6d",
+                    "dsptexthover", "#fa7900",
+                    "dsptextactive", "#fa7900",
+                    "dspborder", "#6d6d6d",
+                    "dspgridbg", "#111111",
+                    "dspeqbg", "#151515",
+                    "dspeqicon", "#9442ff",
+                    "dspeqslider", "#ff1ae0",
+                    "dspeqsliderbg", "#15151B",
+                    "dspeqhandle", "#ff1ae0",
+                    "dspeampbg", "#111111",
+                    "dspampslider", "#ff1ae0",
+                    "dspampsliderbg", "#000000",
+                    "dspeamphandle", "#9442ff",
+                    "dspeq10slider", "#ff1ae0",
+                    "dspeq10sliderbg", "#000000",
+                    "dspeq10handle", "#9442ff",
+                    "dspeqfaderbg", "#111111",
+                    "dspeqfaderslider", "#ff1ae0",
+                    "dspeqfaderhandle", "#9442ff",
+                    "dspfxbg", "#151515",
+                    "dspfxicon", "#9442ff",
+                    "dspfxslider", "#ff1ae0",
+                    "dspfxsliderbg", "#111111",
+                    "dspfxhandle", "#9442ff",
+                });
+            }
             "Blue" => {
                 c!(map, {
                     "bgmain", "#121212",
@@ -663,42 +870,34 @@ impl ThemeManager {
                     "playlisttext", "#d1d8e6",
                     "playlistfolder", "#f5a623",
                     "playlistactive", "#843ff3",
-                    "playlisticon", "#00ffdd",
+"playlisticon", "#00ffdd",
 
-                    "dspbg", "#1e1e1e",
-                    "dspborder", "#8a8a8a",
-
-                    "dspeqbg", "#121212",
-                    "dspeqtext", "#00e5ff",
-                    "dspeqsubtext", "#6d6d6d",
-                    "dspeqicon", "#00ffdd",
-                    "dspeqhover", "#843ff3",
-                    "dspeqpresettext", "#6d6d6d",
-                    "dspeqpresetactive", "#00e5ff",
-                    "dspeq10slider", "#843ff3",
-                    "dspeq10handle", "#00ffdd",
-                    "dspeq10bg", "#1e1e1e",
-                    "dspeqfaderslider", "#f5a623",
-                    "dspeqfaderhandle", "#00ffdd",
-                    "dspeqfaderbg", "#1e1e1e",
-                    "dspeqmixslider", "#00ffdd",
-                    "dspeqmixhandle", "#843ff3",
-                    "dspeqmixbg", "#1e1e1e",
-
-                    "dspfxbg", "#121212",
-                    "dspfxborder", "#8a8a8a",
-                    "dspfxtext", "#00e5ff",
-                    "dspfxsubtext", "#6d6d6d",
-                    "dspfxicon", "#00ffdd",
-                    "dspfxhover", "#843ff3",
-                    "dspfxactive", "#00e5ff",
-                    "dspfxslider", "#00e5ff",
-                    "dspfxsliderbg", "#1e1e1e",
-                    "dspfxhandle", "#00ffdd",
-
-                    "dspslider", "#00e5ff",
-                    "dspsliderbg", "#121212",
-                    "dsphandle", "#00ffdd",
+                    "dspbg", "#15151B",
+                    "dsptext", "#6d6d6d",
+                    "dsptexthover", "#fa7900",
+                    "dsptextactive", "#fa7900",
+                    "dspborder", "#6d6d6d",
+                    "dspgridbg", "#111111",
+                    "dspeqbg", "#151515",
+                    "dspeqicon", "#9442ff",
+                    "dspeqslider", "#ff1ae0",
+                    "dspeqsliderbg", "#15151B",
+                    "dspeqhandle", "#ff1ae0",
+                    "dspeampbg", "#111111",
+                    "dspampslider", "#ff1ae0",
+                    "dspampsliderbg", "#000000",
+                    "dspeamphandle", "#9442ff",
+                    "dspeq10slider", "#ff1ae0",
+                    "dspeq10sliderbg", "#000000",
+                    "dspeq10handle", "#9442ff",
+                    "dspeqfaderbg", "#111111",
+                    "dspeqfaderslider", "#ff1ae0",
+                    "dspeqfaderhandle", "#9442ff",
+                    "dspfxbg", "#151515",
+                    "dspfxicon", "#9442ff",
+                    "dspfxslider", "#ff1ae0",
+                    "dspfxsliderbg", "#111111",
+                    "dspfxhandle", "#9442ff",
                 });
             }
             "Green" => {
@@ -1049,36 +1248,63 @@ impl ThemeManager {
                     "dspslider", "#ffea00",
                     "dspsliderbg", "#0d1012",
                     "dsphandle", "#f965d9",
-                });
+});
             }
             _ => {
-                map = AppConfig::default_theme_colors();
-                // Save config when setting to Default or unknown theme
-                self.save_config();
+                c!(map, {
+                    "bgmain", "#15151B",
+                    "bgoverlay", "#201f2b",
+                    "graysolid", "#6d6d6d",
+                    "contextmenubg", "#2d2d2d",
+                    "overlay", "#000000",
+                    "headerbg", "#201f2b",
+                    "headericon", "#6d6d6d",
+                    "headertext", "#6d6d6d",
+                    "headerhover", "#ff1ae0",
+                    "playertitle", "#00ffa2",
+                    "playersubtext", "#57caab",
+                    "playeraccent", "#9442ff",
+                    "playerhover", "#ff1ae0",
+                    "tabtext", "#c6c6c6",
+                    "tabborder", "#00ffa2",
+                    "tabhover", "#ff1ae0",
+                    "tabbg", "#1a1a2e",
+                    "tabactive", "#3d3d5c",
+                    "tabtextactive", "#ffffff",
+                    "playlisttext", "#c6c6c6",
+                    "playlistfolder", "#fa7900",
+                    "playlistactive", "#00ffa2",
+                    "playlisticon", "#fa7900",
+                    "dspbg", "#15151B",
+                    "dsptext", "#6d6d6d",
+                    "dsptexthover", "#fa7900",
+                    "dsptextactive", "#fa7900",
+                    "dspborder", "#6d6d6d",
+                    "dspgridbg", "#111111",
+                    "dspeqbg", "#151515",
+                    "dspeqicon", "#9442ff",
+                    "dspeqslider", "#ff1ae0",
+                    "dspeqsliderbg", "#15151B",
+                    "dspeqhandle", "#ff1ae0",
+                    "dspeampbg", "#111111",
+                    "dspampslider", "#ff1ae0",
+                    "dspampsliderbg", "#000000",
+                    "dspeamphandle", "#9442ff",
+                    "dspeq10slider", "#ff1ae0",
+                    "dspeq10sliderbg", "#000000",
+                    "dspeq10handle", "#9442ff",
+                    "dspeqfaderbg", "#111111",
+                    "dspeqfaderslider", "#ff1ae0",
+                    "dspeqfaderhandle", "#9442ff",
+                    "dspfxbg", "#151515",
+                    "dspfxicon", "#9442ff",
+                    "dspfxslider", "#ff1ae0",
+                    "dspfxsliderbg", "#111111",
+                    "dspfxhandle", "#9442ff",
+                });
             }
         }
 
-        let qmap: QVariantMap = map
-            .iter()
-            .map(|(k, v)| {
-                (
-                    QString::from(k.clone()),
-                    QVariant::from(QString::from(v.clone())),
-                )
-            })
-            .collect();
-
-        self.colormap = qmap;
-        self.current_theme = QString::from(name);
-        self.colormap_changed();
-        self.current_theme_changed();
-
-        self.current_raw_colors = map
-            .into_iter()
-            .map(|(k, v)| (k.to_string(), v.to_string()))
-            .collect();
-
-        // Save config for preset themes (Blue, Green, etc.)
-        self.save_config();
+        map
     }
 }

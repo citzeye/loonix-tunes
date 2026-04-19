@@ -12,11 +12,17 @@ Item {
 
     property int refreshTicker: 0
     property int selectedProfileIndex: 0
-    
+    function getCustomThemeName(index) {
+        var themeList = theme.get_theme_list() || [];
+        if (index >= 0 && index < themeList.length) {
+            return themeList[index].name || "Custom " + (index - 7);
+        }
+        return "Custom Theme";
+    }
 
     Connections {
         target: theme
-        function onCustom_themes_changed() {
+        function onColormapChanged() {
             refreshTicker++;
         }
     }
@@ -219,7 +225,7 @@ Item {
                     id: themeNameInput
                     Layout.fillWidth: true
                     Layout.preferredHeight: 28
-                    text: root.prefThemeEditorProfileTarget >= 0 ? theme.get_custom_theme_name(root.prefThemeEditorProfileTarget) : (prefThemeEditorRoot.selectedProfileIndex >= 0 ? theme.get_custom_theme_name(prefThemeEditorRoot.selectedProfileIndex) : "New Theme")
+                    text: root.prefThemeEditorProfileTarget >= 0 ? prefThemeEditorRoot.getCustomThemeName(root.prefThemeEditorProfileTarget) : (prefThemeEditorRoot.selectedProfileIndex >= 0 ? prefThemeEditorRoot.getCustomThemeName(prefThemeEditorRoot.selectedProfileIndex) : "New Theme")
                     color: theme.colormap.playeraccent
                     font.family: kodeMono.name
                     font.pixelSize: 12
@@ -272,9 +278,9 @@ Item {
                             font.pixelSize: 10
                         }
                         Repeater {
-                            model: theme.get_custom_theme_count()
+                            model: theme.get_theme_list()
                             delegate: RadioButton {
-                                text: theme.get_custom_theme_name(index)
+                                text: modelData.name
                                 checked: prefThemeEditorRoot.selectedProfileIndex === index
                                 onClicked: {
                                     prefThemeEditorRoot.selectedProfileIndex = index;
@@ -576,7 +582,7 @@ Item {
                             var newName = themeNameInput.text;
                             theme.set_custom_theme_name(prefThemeEditorRoot.selectedProfileIndex, newName);
                             theme.set_custom_theme_colors(prefThemeEditorRoot.selectedProfileIndex, scanCurrentEditorColors());
-                            if (root.prefThemeEditorProfileTarget === -1 || (theme.get_custom_theme_name(prefThemeEditorRoot.selectedProfileIndex) === theme.current_theme)) {
+                            if (root.prefThemeEditorProfileTarget === -1 || (prefThemeEditorRoot.getCustomThemeName(prefThemeEditorRoot.selectedProfileIndex) === theme.current_theme)) {
                                 theme.set_theme(newName);
                             }
                             root.prefThemeEditorVisible = false;

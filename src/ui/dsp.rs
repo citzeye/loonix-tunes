@@ -2,7 +2,7 @@
 
 #![allow(non_snake_case)]
 
-use crate::audio::config::{AppConfig, EqPreset, FxPreset};
+use crate::audio::config::{AppConfig, DspConfig, EqPreset, FxPreset};
 use crate::audio::dsp::crystalizer::get_crystal_amount_arc;
 use crate::audio::dsp::pitchshifter::{get_pitch_enabled_arc, get_pitch_ratio_arc};
 use crate::audio::dsp::DspSettings;
@@ -29,15 +29,15 @@ pub struct DspController {
     pub reverb_damp: f64,
     pub reverb_preset: u32,
 
-    pub bass_magic_active: bool,
+    pub bass_active: bool,
     pub bass_gain: f64,
     pub bass_cutoff: f64,
     pub bass_mode: i32,
 
-    pub surround_magic_active: bool,
+    pub surround_active: bool,
     pub surround_width: f64,
 
-    pub crystal_magic_active: bool,
+    pub crystal_active: bool,
     pub crystal_amount: f64,
     pub crystal_freq: f64,
 
@@ -69,6 +69,27 @@ pub struct DspController {
     pub user_eq_names: [String; 6],
     pub user_eq_gains: [[f32; 10]; 6],
     pub user_eq_macro: [f32; 6],
+    // User FX presets (User 1-6)
+    pub user_fx_enabled: [bool; 6],
+    pub user_fx_bass_enabled: [bool; 6],
+    pub user_fx_bass_gain: [f32; 6],
+    pub user_fx_bass_cutoff: [f32; 6],
+    pub user_fx_bass_mode: [i32; 6],
+    pub user_fx_crystal_enabled: [bool; 6],
+    pub user_fx_crystal_amount: [f32; 6],
+    pub user_fx_surround_enabled: [bool; 6],
+    pub user_fx_surround_width: [f32; 6],
+    pub user_fx_mono_enabled: [bool; 6],
+    pub user_fx_mono_width: [f32; 6],
+    pub user_fx_stereo_enabled: [bool; 6],
+    pub user_fx_stereo_amount: [f32; 6],
+    pub user_fx_crossfeed_enabled: [bool; 6],
+    pub user_fx_crossfeed_amount: [f32; 6],
+    pub user_fx_compressor_enabled: [bool; 6],
+    pub user_fx_compressor_threshold: [f32; 6],
+    pub user_fx_reverb_enabled: [bool; 6],
+    pub user_fx_reverb_mode: [i32; 6],
+    pub user_fx_reverb_amount: [i32; 6],
 
     pub preamp_active: bool,
 
@@ -95,13 +116,13 @@ impl Default for DspController {
             reverb_room_size: 0.5,
             reverb_damp: 0.5,
             reverb_preset: 0,
-            bass_magic_active: false,
+            bass_active: false,
             bass_gain: 0.0,
             bass_cutoff: 180.0,
             bass_mode: 0,
-            surround_magic_active: false,
+            surround_active: false,
             surround_width: 1.8,
-            crystal_magic_active: false,
+            crystal_active: false,
             crystal_amount: 0.0,
             crystal_freq: 4000.0,
             compressor_active: false,
@@ -124,6 +145,26 @@ impl Default for DspController {
             user_eq_names: [const { String::new() }; 6],
             user_eq_gains: [[0.0; 10]; 6],
             user_eq_macro: [0.0; 6],
+            user_fx_enabled: [false; 6],
+            user_fx_bass_enabled: [false; 6],
+            user_fx_bass_gain: [0.0; 6],
+            user_fx_bass_cutoff: [180.0; 6],
+            user_fx_bass_mode: [0; 6],
+            user_fx_crystal_enabled: [false; 6],
+            user_fx_crystal_amount: [0.0; 6],
+            user_fx_surround_enabled: [false; 6],
+            user_fx_surround_width: [1.5; 6],
+            user_fx_mono_enabled: [false; 6],
+            user_fx_mono_width: [1.0; 6],
+            user_fx_stereo_enabled: [false; 6],
+            user_fx_stereo_amount: [0.0; 6],
+            user_fx_crossfeed_enabled: [false; 6],
+            user_fx_crossfeed_amount: [0.0; 6],
+            user_fx_compressor_enabled: [false; 6],
+            user_fx_compressor_threshold: [-10.0; 6],
+            user_fx_reverb_enabled: [false; 6],
+            user_fx_reverb_mode: [1; 6],
+            user_fx_reverb_amount: [50; 6],
             preamp_active: false,
             limiter_active: false,
             normalizer_enabled: false,
@@ -172,9 +213,32 @@ impl DspController {
         // 2. Load Preset Definitions into Memory
         self.eq_presets = AppConfig::get_eq_presets();
         self.fx_presets = AppConfig::get_fx_presets();
-        self.user_eq_names = config.user_preset_names.clone();
-        self.user_eq_gains = config.user_preset_gains;
-        self.user_eq_macro = config.user_preset_macro;
+
+        // Load user presets from dsp.json
+        let dsp_config = DspConfig::load();
+        self.user_eq_names = dsp_config.user_preset_names.clone();
+        self.user_eq_gains = dsp_config.user_preset_gains;
+        self.user_eq_macro = dsp_config.user_preset_macro;
+        self.user_fx_enabled = dsp_config.user_fx_enabled;
+        self.user_fx_bass_enabled = dsp_config.user_fx_bass_enabled;
+        self.user_fx_bass_gain = dsp_config.user_fx_bass_gain;
+        self.user_fx_bass_cutoff = dsp_config.user_fx_bass_cutoff;
+        self.user_fx_bass_mode = dsp_config.user_fx_bass_mode;
+        self.user_fx_crystal_enabled = dsp_config.user_fx_crystal_enabled;
+        self.user_fx_crystal_amount = dsp_config.user_fx_crystal_amount;
+        self.user_fx_surround_enabled = dsp_config.user_fx_surround_enabled;
+        self.user_fx_surround_width = dsp_config.user_fx_surround_width;
+        self.user_fx_mono_enabled = dsp_config.user_fx_mono_enabled;
+        self.user_fx_mono_width = dsp_config.user_fx_mono_width;
+        self.user_fx_stereo_enabled = dsp_config.user_fx_stereo_enabled;
+        self.user_fx_stereo_amount = dsp_config.user_fx_stereo_amount;
+        self.user_fx_crossfeed_enabled = dsp_config.user_fx_crossfeed_enabled;
+        self.user_fx_crossfeed_amount = dsp_config.user_fx_crossfeed_amount;
+        self.user_fx_compressor_enabled = dsp_config.user_fx_compressor_enabled;
+        self.user_fx_compressor_threshold = dsp_config.user_fx_compressor_threshold;
+        self.user_fx_reverb_enabled = dsp_config.user_fx_reverb_enabled;
+        self.user_fx_reverb_mode = dsp_config.user_fx_reverb_mode;
+        self.user_fx_reverb_amount = dsp_config.user_fx_reverb_amount;
 
         // 3. THE MASTER BOOT ACTION (0 to 11)
         // Ini memastikan jika user "hanya geser tanpa save", saat restart akan kembali ke preset awal
@@ -208,13 +272,13 @@ impl DspController {
             dsp_bands: self.eq_bands,
             eq_enabled: self.eq_enabled,
             active_preset_index: self.active_preset_index,
-            bass_magic_active: self.bass_magic_active,
+            bass_active: self.bass_active,
             bass_gain: self.bass_gain,
             bass_cutoff: self.bass_cutoff,
-            crystal_magic_active: self.crystal_magic_active,
+            crystal_active: self.crystal_active,
             crystal_amount: self.crystal_amount,
             crystal_frdsp: self.crystal_freq,
-            surround_magic_active: self.surround_magic_active,
+            surround_active: self.surround_active,
             surround_width: self.surround_width,
             mono_active: self.mono_active,
             mono_width: self.mono_width,
@@ -232,6 +296,26 @@ impl DspController {
             user_eq_names: self.user_eq_names.clone(),
             user_eq_gains: self.user_eq_gains,
             user_eq_macro: self.user_eq_macro,
+            user_fx_enabled: self.user_fx_enabled,
+            user_fx_bass_enabled: self.user_fx_bass_enabled,
+            user_fx_bass_gain: self.user_fx_bass_gain,
+            user_fx_bass_cutoff: self.user_fx_bass_cutoff,
+            user_fx_bass_mode: self.user_fx_bass_mode,
+            user_fx_crystal_enabled: self.user_fx_crystal_enabled,
+            user_fx_crystal_amount: self.user_fx_crystal_amount,
+            user_fx_surround_enabled: self.user_fx_surround_enabled,
+            user_fx_surround_width: self.user_fx_surround_width,
+            user_fx_mono_enabled: self.user_fx_mono_enabled,
+            user_fx_mono_width: self.user_fx_mono_width,
+            user_fx_stereo_enabled: self.user_fx_stereo_enabled,
+            user_fx_stereo_amount: self.user_fx_stereo_amount,
+            user_fx_crossfeed_enabled: self.user_fx_crossfeed_enabled,
+            user_fx_crossfeed_amount: self.user_fx_crossfeed_amount,
+            user_fx_compressor_enabled: self.user_fx_compressor_enabled,
+            user_fx_compressor_threshold: self.user_fx_compressor_threshold,
+            user_fx_reverb_enabled: self.user_fx_reverb_enabled,
+            user_fx_reverb_mode: self.user_fx_reverb_mode,
+            user_fx_reverb_amount: self.user_fx_reverb_amount,
         }
     }
 
@@ -245,12 +329,12 @@ impl DspController {
     }
 
     pub fn emit_all_signals(&mut self) {
-        self.bass_magic_changed();
+        self.bass_active_changed();
         self.bass_params_changed();
         self.bass_mode_changed();
-        self.surround_magic_changed();
+        self.surround_active_changed();
         self.surround_width_changed();
-        self.crystal_magic_changed();
+        self.crystal_active_changed();
         self.compressor_changed();
         self.mono_changed();
         self.mono_width_changed();
@@ -278,12 +362,12 @@ impl DspController {
     pub fn reverb_mode_changed(&self) {}
     pub fn reverb_amount_changed(&self) {}
     pub fn reverb_params_changed(&self) {}
-    pub fn bass_magic_changed(&self) {}
+    pub fn bass_active_changed(&self) {}
     pub fn bass_params_changed(&self) {}
     pub fn bass_mode_changed(&self) {}
     pub fn surround_width_changed(&self) {}
-    pub fn surround_magic_changed(&self) {}
-    pub fn crystal_magic_changed(&self) {}
+    pub fn surround_active_changed(&self) {}
+    pub fn crystal_active_changed(&self) {}
     pub fn compressor_changed(&self) {}
     pub fn dsp_changed(&self) {}
     pub fn mono_changed(&self) {}
@@ -400,10 +484,10 @@ impl DspController {
 
     // --- BASS METHODS ---
     pub fn toggle_bass(&mut self) {
-        self.bass_magic_active = !self.bass_magic_active;
-        self.bass_magic_changed();
+        self.bass_active = !self.bass_active;
+        self.bass_active_changed();
 
-        if self.bass_magic_active {
+        if self.bass_active {
             self.bass_gain = 5.5;
             self.applyBassMode(self.bass_mode);
         } else {
@@ -413,10 +497,9 @@ impl DspController {
         }
 
         crate::audio::dsp::bassbooster::get_bass_enabled_arc()
-            .store(self.bass_magic_active, std::sync::atomic::Ordering::Relaxed);
+            .store(self.bass_active, std::sync::atomic::Ordering::Relaxed);
 
         self.bass_params_changed();
-        self.save_config();
     }
 
     pub fn set_bass_mode(&mut self, mode: i32) {
@@ -424,7 +507,7 @@ impl DspController {
         self.bass_mode = mode;
         self.bass_mode_changed();
 
-        if self.bass_magic_active {
+        if self.bass_active {
             self.applyBassMode(mode);
         }
 
@@ -436,7 +519,7 @@ impl DspController {
         self.bass_gain = val.clamp(0.0, 12.0);
         self.bass_params_changed();
 
-        if self.bass_magic_active {
+        if self.bass_active {
             crate::audio::dsp::bassbooster::get_bass_gain_arc().store(
                 (self.bass_gain as f32).to_bits(),
                 std::sync::atomic::Ordering::Relaxed,
@@ -449,7 +532,7 @@ impl DspController {
         self.bass_cutoff = val.clamp(20.0, 500.0);
         self.bass_params_changed();
 
-        if self.bass_magic_active {
+        if self.bass_active {
             crate::audio::dsp::bassbooster::get_bass_freq_arc().store(
                 (self.bass_cutoff as f32).to_bits(),
                 std::sync::atomic::Ordering::Relaxed,
@@ -460,14 +543,12 @@ impl DspController {
 
     // --- SURROUND METHODS ---
     pub fn toggle_surround(&mut self) {
-        self.surround_magic_active = !self.surround_magic_active;
-        self.surround_magic_changed();
+        self.surround_active = !self.surround_active;
+        self.surround_active_changed();
 
         // Toggle only bypasses - do NOT reset width values
-        crate::audio::dsp::surround::get_surround_enabled_arc().store(
-            self.surround_magic_active,
-            std::sync::atomic::Ordering::Relaxed,
-        );
+        crate::audio::dsp::surround::get_surround_enabled_arc()
+            .store(self.surround_active, std::sync::atomic::Ordering::Relaxed);
 
         self.save_config();
     }
@@ -476,9 +557,9 @@ impl DspController {
         let val = val.max(0.0).min(2.0);
         self.surround_width = val;
 
-        if !self.surround_magic_active {
-            self.surround_magic_active = true;
-            self.surround_magic_changed();
+        if !self.surround_active {
+            self.surround_active = true;
+            self.surround_active_changed();
             crate::audio::dsp::surround::get_surround_enabled_arc()
                 .store(true, std::sync::atomic::Ordering::Relaxed);
         }
@@ -494,12 +575,12 @@ impl DspController {
 
     // --- CRYSTALIZER METHODS ---
     pub fn toggle_crystalizer(&mut self) {
-        self.crystal_magic_active = !self.crystal_magic_active;
-        self.crystal_magic_changed();
+        self.crystal_active = !self.crystal_active;
+        self.crystal_active_changed();
 
-        if self.crystal_magic_active {
+        if self.crystal_active {
             if self.crystal_amount <= 0.0 {
-                self.crystal_amount = 0.2;
+                self.crystal_amount = 0.5;
             }
             get_crystal_amount_arc().store(
                 (self.crystal_amount as f32).to_bits(),
@@ -509,18 +590,14 @@ impl DspController {
             get_crystal_amount_arc().store(0.0_f32.to_bits(), std::sync::atomic::Ordering::Relaxed);
         }
 
-        crate::audio::dsp::crystalizer::get_crystal_enabled_arc().store(
-            self.crystal_magic_active,
-            std::sync::atomic::Ordering::Relaxed,
-        );
-
-        self.save_config();
+        crate::audio::dsp::crystalizer::get_crystal_enabled_arc()
+            .store(self.crystal_active, std::sync::atomic::Ordering::Relaxed);
     }
 
     pub fn set_crystalizer_amount(&mut self, amount: f64) {
         let amount = amount.max(0.0).min(1.0);
         self.crystal_amount = amount;
-        self.crystal_magic_changed();
+        self.crystal_active_changed();
 
         get_crystal_amount_arc().store(
             (amount as f32).to_bits(),
@@ -861,17 +938,68 @@ impl DspController {
         if trimmed_name.is_empty() {
             return -1;
         }
+        let name_upper = trimmed_name.to_uppercase();
 
+        // Find slot: first empty OR matching name
+        let mut found_idx: Option<usize> = None;
+
+        // First try to find matching name
         for idx in 0..6 {
-            if self.user_eq_names[idx].trim().is_empty() {
-                self.user_eq_names[idx] = trimmed_name.to_uppercase();
-                self.user_eq_gains[idx] = self.eq_bands;
-                self.user_eq_macro[idx] = self.fader_offset as f32;
-                self.save_config();
-                return idx as i32;
+            if self.user_eq_names[idx].trim().to_uppercase() == name_upper {
+                found_idx = Some(idx);
+                break;
             }
         }
-        -1
+
+        // If no matching name, find first empty slot
+        if found_idx.is_none() {
+            for idx in 0..6 {
+                if self.user_eq_names[idx].trim().is_empty() {
+                    found_idx = Some(idx);
+                    break;
+                }
+            }
+        }
+
+        // No empty slot and no matching name
+        if found_idx.is_none() {
+            return -2; // No slot available
+        }
+
+        let idx = found_idx.unwrap();
+
+        // Save ALL DSP (EQ + FX)
+        self.user_eq_names[idx] = name_upper;
+        self.user_eq_gains[idx] = self.eq_bands;
+        self.user_eq_macro[idx] = self.fader_offset as f32;
+
+        // FX settings
+        self.user_fx_enabled[idx] = self.bass_active
+            || self.crystal_active
+            || self.surround_active
+            || self.compressor_active;
+        self.user_fx_bass_enabled[idx] = self.bass_active;
+        self.user_fx_bass_gain[idx] = self.bass_gain as f32;
+        self.user_fx_bass_cutoff[idx] = self.bass_cutoff as f32;
+        self.user_fx_bass_mode[idx] = self.bass_mode;
+        self.user_fx_crystal_enabled[idx] = self.crystal_active;
+        self.user_fx_crystal_amount[idx] = self.crystal_amount as f32;
+        self.user_fx_surround_enabled[idx] = self.surround_active;
+        self.user_fx_surround_width[idx] = self.surround_width as f32;
+        self.user_fx_mono_enabled[idx] = self.mono_active;
+        self.user_fx_mono_width[idx] = self.mono_width as f32;
+        self.user_fx_stereo_enabled[idx] = self.stereo_active;
+        self.user_fx_stereo_amount[idx] = self.stereo_amount as f32;
+        self.user_fx_crossfeed_enabled[idx] = self.crossfeed_active;
+        self.user_fx_crossfeed_amount[idx] = self.crossfeed_amount as f32;
+        self.user_fx_compressor_enabled[idx] = self.compressor_active;
+        self.user_fx_compressor_threshold[idx] = self.compressor_threshold as f32;
+        self.user_fx_reverb_enabled[idx] = self.reverb_active;
+        self.user_fx_reverb_mode[idx] = self.reverb_mode;
+        self.user_fx_reverb_amount[idx] = self.reverb_amount;
+
+        self.save_config();
+        idx as i32
     }
 
     pub fn get_eq_preset_count(&self) -> i32 {
@@ -968,14 +1096,19 @@ impl DspController {
                 true,
             )
         } else {
-            // USER PRESET (6-11): Load EQ from JSON, preserve FX
+            // USER PRESET (6-11)
             let user_idx = (index - 6) as usize;
             if self.user_eq_names[user_idx].trim().is_empty() {
                 // INVALID/EMPTY: FALLBACK to LOONIX (factory preset 0)
                 (PresetSource::Factory(0), PresetSource::Factory(0), true)
             } else {
-                // VALID: EQ from JSON, FX preserved (current active settings)
-                (PresetSource::User(user_idx), PresetSource::Preserve, false)
+                // VALID: Load user saved EQ + FX
+                self.load_user_fx_preset(user_idx);
+                (
+                    PresetSource::User(user_idx),
+                    PresetSource::User(user_idx),
+                    true,
+                )
             }
         };
 
@@ -1023,7 +1156,11 @@ impl DspController {
 
         self.active_preset_index = index;
         self.active_preset_index_changed();
-        self.save_config();
+
+        // Only save untuk user preset (6-11), bukan default preset (0-5)
+        if index >= 6 {
+            self.save_config();
+        }
     }
 
     pub fn load_fx_preset(&mut self, index: i32) {
@@ -1033,7 +1170,7 @@ impl DspController {
 
         let preset = &self.fx_presets[index as usize];
 
-        self.bass_magic_active = preset.bass_enabled || preset.bass_gain > 0.0;
+        self.bass_active = preset.bass_enabled || preset.bass_gain > 0.0;
         self.bass_gain = preset.bass_gain as f64;
         self.bass_cutoff = preset.bass_cutoff as f64;
         self.bass_mode = preset.bass_mode as i32;
@@ -1047,11 +1184,11 @@ impl DspController {
             preset.bass_cutoff.to_bits(),
             std::sync::atomic::Ordering::Relaxed,
         );
-        self.bass_magic_changed();
+        self.bass_active_changed();
         self.bass_params_changed();
         self.bass_mode_changed();
 
-        self.crystal_magic_active = preset.crystal_enabled || preset.crystal_amount > 0.0;
+        self.crystal_active = preset.crystal_enabled || preset.crystal_amount > 0.0;
         self.crystal_amount = preset.crystal_amount as f64;
         self.crystal_freq = preset.crystal_freq as f64;
         crate::audio::dsp::crystalizer::get_crystal_enabled_arc()
@@ -1060,9 +1197,9 @@ impl DspController {
             preset.crystal_amount.to_bits(),
             std::sync::atomic::Ordering::Relaxed,
         );
-        self.crystal_magic_changed();
+        self.crystal_active_changed();
 
-        self.surround_magic_active = preset.surround_enabled || preset.surround_width > 0.0;
+        self.surround_active = preset.surround_enabled || preset.surround_width > 0.0;
         self.surround_width = preset.surround_width.clamp(0.0, 2.0) as f64;
         crate::audio::dsp::surround::get_surround_enabled_arc().store(
             preset.surround_enabled,
@@ -1072,7 +1209,7 @@ impl DspController {
             preset.surround_width.clamp(0.0, 2.0).to_bits(),
             std::sync::atomic::Ordering::Relaxed,
         );
-        self.surround_magic_changed();
+        self.surround_active_changed();
         self.surround_width_changed();
 
         self.mono_active = preset.mono_enabled || preset.mono_width != 1.0;
@@ -1163,9 +1300,136 @@ impl DspController {
         self.save_config();
     }
 
+    pub fn load_user_fx_preset(&mut self, idx: usize) {
+        // Load user saved FX settings
+        if !self.user_fx_enabled[idx] {
+            return;
+        }
+
+        // Bass
+        self.bass_active = self.user_fx_bass_enabled[idx];
+        self.bass_gain = self.user_fx_bass_gain[idx] as f64;
+        self.bass_cutoff = self.user_fx_bass_cutoff[idx] as f64;
+        self.bass_mode = self.user_fx_bass_mode[idx];
+        crate::audio::dsp::bassbooster::get_bass_enabled_arc().store(
+            self.user_fx_bass_enabled[idx],
+            std::sync::atomic::Ordering::Relaxed,
+        );
+        crate::audio::dsp::bassbooster::get_bass_gain_arc().store(
+            self.user_fx_bass_gain[idx].to_bits(),
+            std::sync::atomic::Ordering::Relaxed,
+        );
+        self.bass_active_changed();
+        self.bass_params_changed();
+
+        // Crystalizer
+        self.crystal_active = self.user_fx_crystal_enabled[idx];
+        self.crystal_amount = self.user_fx_crystal_amount[idx] as f64;
+        crate::audio::dsp::crystalizer::get_crystal_enabled_arc().store(
+            self.user_fx_crystal_enabled[idx],
+            std::sync::atomic::Ordering::Relaxed,
+        );
+        crate::audio::dsp::crystalizer::get_crystal_amount_arc().store(
+            self.user_fx_crystal_amount[idx].to_bits(),
+            std::sync::atomic::Ordering::Relaxed,
+        );
+        self.crystal_active_changed();
+
+        // Surround
+        self.surround_active = self.user_fx_surround_enabled[idx];
+        self.surround_width = self.user_fx_surround_width[idx] as f64;
+        crate::audio::dsp::surround::get_surround_enabled_arc().store(
+            self.user_fx_surround_enabled[idx],
+            std::sync::atomic::Ordering::Relaxed,
+        );
+        crate::audio::dsp::surround::get_surround_width_arc().store(
+            self.user_fx_surround_width[idx].to_bits(),
+            std::sync::atomic::Ordering::Relaxed,
+        );
+        self.surround_active_changed();
+        self.surround_width_changed();
+
+        // Mono
+        self.mono_active = self.user_fx_mono_enabled[idx];
+        self.mono_width = self.user_fx_mono_width[idx] as f64;
+        crate::audio::dsp::stereowidth::get_mono_enabled_arc().store(
+            self.user_fx_mono_enabled[idx],
+            std::sync::atomic::Ordering::Relaxed,
+        );
+        self.mono_changed();
+        self.mono_width_changed();
+
+        // Stereo
+        self.stereo_active = self.user_fx_stereo_enabled[idx];
+        self.stereo_amount = self.user_fx_stereo_amount[idx] as f64;
+        crate::audio::dsp::stereoenhance::get_stereo_enabled_arc().store(
+            self.user_fx_stereo_enabled[idx],
+            std::sync::atomic::Ordering::Relaxed,
+        );
+        self.stereo_changed();
+        self.stereo_amount_changed();
+
+        // Crossfeed
+        self.crossfeed_active = self.user_fx_crossfeed_enabled[idx];
+        self.crossfeed_amount = self.user_fx_crossfeed_amount[idx] as f64;
+        crate::audio::dsp::crossfeed::get_crossfeed_enabled_arc().store(
+            self.user_fx_crossfeed_enabled[idx],
+            std::sync::atomic::Ordering::Relaxed,
+        );
+        self.crossfeed_changed();
+        self.crossfeed_amount_changed();
+
+        // Compressor
+        self.compressor_active = self.user_fx_compressor_enabled[idx];
+        let threshold = self.user_fx_compressor_threshold[idx].clamp(-60.0, 0.0);
+        self.compressor_threshold = ((threshold + 60.0) / 60.0) as f64;
+        crate::audio::dsp::compressor::get_compressor_enabled_arc().store(
+            self.user_fx_compressor_enabled[idx],
+            std::sync::atomic::Ordering::Relaxed,
+        );
+        crate::audio::dsp::compressor::get_compressor_threshold_arc()
+            .store(threshold.to_bits(), std::sync::atomic::Ordering::Relaxed);
+        self.compressor_changed();
+
+        // Reverb
+        self.reverb_active = self.user_fx_reverb_enabled[idx];
+        self.reverb_mode = self.user_fx_reverb_mode[idx];
+        self.reverb_amount = self.user_fx_reverb_amount[idx];
+        crate::audio::dsp::reverb::get_reverb_enabled_arc().store(
+            self.user_fx_reverb_enabled[idx],
+            std::sync::atomic::Ordering::Relaxed,
+        );
+        crate::audio::dsp::reverb::get_reverb_mode_arc().store(
+            self.user_fx_reverb_mode[idx] as u32,
+            std::sync::atomic::Ordering::Relaxed,
+        );
+        crate::audio::dsp::reverb::get_reverb_amount_arc().store(
+            self.user_fx_reverb_amount[idx] as u32,
+            std::sync::atomic::Ordering::Relaxed,
+        );
+        self.reverb_changed();
+        self.reverb_mode_changed();
+        self.reverb_amount_changed();
+    }
+
     // --- RESET METHODS ---
     pub fn reset_compressor(&mut self) {
-        self.set_compressor_threshold(1.0);
+        let preset_idx = self.active_preset_index.clamp(0, 11) as usize;
+        if preset_idx < self.fx_presets.len() {
+            let preset = &self.fx_presets[preset_idx];
+            self.compressor_active =
+                preset.compressor_enabled || preset.compressor_threshold > -60.0;
+            self.compressor_threshold = preset.compressor_threshold as f64;
+            crate::audio::dsp::compressor::get_compressor_enabled_arc()
+                .store(self.compressor_active, std::sync::atomic::Ordering::Relaxed);
+            crate::audio::dsp::compressor::get_compressor_threshold_arc().store(
+                preset.compressor_threshold.to_bits(),
+                std::sync::atomic::Ordering::Relaxed,
+            );
+            // compressor_active_changed not needed
+        } else {
+            self.set_compressor_threshold(1.0);
+        }
     }
 
     pub fn reset_surround(&mut self) {
@@ -1193,8 +1457,58 @@ impl DspController {
     }
 
     pub fn reset_bass(&mut self) {
-        self.set_bass_gain(0.0);
-        self.set_bass_cutoff(180.0);
+        let preset_idx = self.active_preset_index.clamp(0, 11) as usize;
+        if preset_idx < self.fx_presets.len() {
+            let preset = &self.fx_presets[preset_idx];
+            self.bass_active = preset.bass_enabled || preset.bass_gain > 0.0;
+            self.bass_gain = preset.bass_gain as f64;
+            self.bass_cutoff = preset.bass_cutoff as f64;
+            self.bass_mode = preset.bass_mode as i32;
+            crate::audio::dsp::bassbooster::get_bass_enabled_arc()
+                .store(preset.bass_enabled, std::sync::atomic::Ordering::Relaxed);
+            crate::audio::dsp::bassbooster::get_bass_gain_arc().store(
+                preset.bass_gain.to_bits(),
+                std::sync::atomic::Ordering::Relaxed,
+            );
+            crate::audio::dsp::bassbooster::get_bass_freq_arc().store(
+                preset.bass_cutoff.to_bits(),
+                std::sync::atomic::Ordering::Relaxed,
+            );
+            self.bass_active_changed();
+            self.bass_params_changed();
+            self.bass_mode_changed();
+        } else {
+            self.set_bass_gain(0.0);
+            self.set_bass_cutoff(180.0);
+            self.set_bass_mode(0);
+        }
+    }
+
+    pub fn reset_reverb(&mut self) {
+        let preset_idx = self.active_preset_index.clamp(0, 11) as usize;
+        if preset_idx < self.fx_presets.len() {
+            let preset = &self.fx_presets[preset_idx];
+            self.reverb_active = preset.reverb_enabled || preset.reverb_amount > 0;
+            self.reverb_mode = preset.reverb_mode;
+            self.reverb_amount = preset.reverb_amount;
+            crate::audio::dsp::reverb::get_reverb_enabled_arc()
+                .store(self.reverb_active, std::sync::atomic::Ordering::Relaxed);
+            crate::audio::dsp::reverb::get_reverb_mode_arc().store(
+                preset.reverb_mode as u32,
+                std::sync::atomic::Ordering::Relaxed,
+            );
+            crate::audio::dsp::reverb::get_reverb_amount_arc().store(
+                preset.reverb_amount as u32,
+                std::sync::atomic::Ordering::Relaxed,
+            );
+            self.reverb_active_changed();
+            self.reverb_mode_changed();
+            self.reverb_amount_changed();
+        } else {
+            self.toggle_reverb();
+            self.set_reverb_mode(1);
+            self.set_reverb_amount(50);
+        }
     }
 
     // --- EQ INSTANT APPLY ---
