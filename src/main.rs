@@ -18,7 +18,7 @@ use crate::audio::popup::PopupMenu;
 use crate::audio::sysmedia::SysMediaManager;
 use crate::ui::core::MusicModel;
 use crate::ui::playerbridge::PlayerBridge;
-use crate::ui::theme::{CustomThemeListModel, ThemeEntry, ThemeManager};
+use crate::ui::theme::{CustomThemeListModel, ThemeConfig, ThemeEntry, ThemeManager};
 
 struct App {
     music_model: QObjectBox<MusicModel>,
@@ -39,9 +39,14 @@ impl App {
             theme.pinned().borrow_mut().set_config(shared_config);
         }
 
+        // Create empty custom theme list - will be populated from QML via get_custom_themes()
+        let custom_list = CustomThemeListModel::default();
+        let custom_theme_list = QObjectBox::new(custom_list);
+
         Self {
             music_model,
             theme,
+            custom_theme_list,
             popup: QObjectBox::new(PopupMenu::default()),
             bridge: QObjectBox::new(PlayerBridge::new()),
             #[cfg(target_os = "linux")]
@@ -107,11 +112,13 @@ fn main() {
     qml_register_type::<PopupMenu>(cstr!("Loonix"), 1, 0, cstr!("PopupMenu"));
     qml_register_type::<ThemeManager>(cstr!("Loonix"), 1, 0, cstr!("ThemeManager"));
     qml_register_type::<SysMediaManager>(cstr!("Loonix"), 1, 0, cstr!("SysMediaManager"));
+    qml_register_type::<CustomThemeListModel>(cstr!("Loonix"), 1, 0, cstr!("CustomThemeListModel"));
 
     // set_object_property() internally calls QQmlEngine::rootContext()->setContextProperty()
     // Yang penting: App struct hidup selama main() scope
     engine.set_object_property("musicModel".into(), app.music_model.pinned());
     engine.set_object_property("theme".into(), app.theme.pinned());
+    engine.set_object_property("customThemeList".into(), app.custom_theme_list.pinned());
     engine.set_object_property("popupMenu".into(), app.popup.pinned());
     engine.set_object_property("playerBridge".into(), app.bridge.pinned());
     #[cfg(target_os = "linux")]

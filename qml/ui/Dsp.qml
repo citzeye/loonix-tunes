@@ -638,11 +638,38 @@ Popup {
         }
     }
 
-    // EQ Controls (RESET - SAVE AS)
+    // EQ Controls (BYPASS - RESET - SAVE AS)
     RowLayout {
         Layout.fillWidth: true
         Layout.preferredHeight: 20
         spacing: 3
+
+        Button {
+            id: bypassBtn
+            Layout.fillWidth: true
+            Layout.preferredWidth: 1
+            Layout.preferredHeight: 20
+
+            onClicked: {
+                musicModel.toggleDsp()
+            }
+
+            background: Rectangle {
+                color: musicModel.dsp_enabled ? theme.colormap.dspgridbg : theme.colormap.playeraccent
+                border.color: theme.colormap.dspborder
+                radius: 2
+            }
+
+            contentItem: Text {
+                text: musicModel.dsp_enabled ? "BYPASS" : "ACTIVE"
+                font.family: kodeMono.name
+                font.pixelSize: 10
+                font.bold: true
+                color: bypassBtn.hovered ? theme.colormap.dsptexthover : theme.colormap.dsptext
+                horizontalAlignment: Text.AlignHCenter
+                verticalAlignment: Text.AlignVCenter
+            }
+        }
 
         Button {
             id: resetBtn

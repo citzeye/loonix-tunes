@@ -7,7 +7,6 @@ import "../contextmenu"
 Item {
     id: prefAppearanceRoot
     property int refreshTicker: 0
-    property var customThemeModel: theme.get_custom_themes()
     property string wallSyncError: ""
     property string currentWallpaper: ""
     property bool wallSyncEnabled: false
@@ -23,14 +22,6 @@ Item {
         target: theme
         function onColormapChanged() {
             refreshTicker++
-        }
-    }
-
-    Connections {
-        target: theme
-        function onThemesChanged() {
-            console.log("PrefAppearance: themesChanged signal received")
-            customThemeModel = theme.get_custom_themes()
         }
     }
 
@@ -134,11 +125,11 @@ Item {
 
                 Repeater {
                     id: customThemeRepeater
-                    model: prefAppearanceRoot.customThemeModel
+                    model: customThemeList
 
                     delegate: Rectangle {
-                        property int presetIndex: modelData.original_index
-                        property string presetName: modelData.name
+                        property int presetIndex: model.id
+                        property string presetName: model.name
 
                         Layout.preferredWidth: 200
                         Layout.preferredHeight: 32

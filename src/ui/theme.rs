@@ -20,12 +20,12 @@ const ROLE_COLORS: i32 = 258;
 #[derive(QObject, Default)]
 pub struct CustomThemeListModel {
     base: qt_base_class!(trait QAbstractListModel),
-    themes: Vec<ThemeEntry>,
+    pub themes: Vec<ThemeEntry>,
 }
 
 impl CustomThemeListModel {
-    pub fn set_themes(&mut self, themes: Vec<ThemeEntry>) {
-        self.themes = themes;
+    pub fn set_themes(&mut self) {
+        // Left empty - QML will populate directly
     }
 
     pub fn rename_theme(&mut self, index: i32, new_name: String) {
@@ -261,7 +261,6 @@ pub struct ThemeManager {
     pub colormap_changed: qt_signal!(),
     pub current_theme: qt_property!(QString; NOTIFY current_theme_changed),
     pub current_theme_changed: qt_signal!(),
-    pub themes_changed: qt_signal!(),
     pub get_custom_theme_count: qt_method!(fn(&self) -> i32),
     pub get_custom_theme_name: qt_method!(fn(&self, index: i32) -> QString),
     pub set_custom_theme_name: qt_method!(fn(&mut self, index: i32, name: String)),
@@ -269,6 +268,7 @@ pub struct ThemeManager {
     pub set_custom_theme_colors: qt_method!(fn(&mut self, index: i32, colors: QVariantMap)),
     pub get_default_colors: qt_method!(fn(&self) -> QVariantMap),
     pub get_theme_list: qt_method!(fn(&self) -> QVariantList),
+    pub get_custom_theme_list: qt_method!(fn(&self) -> QVariantList),
     pub set_theme: qt_method!(fn(&mut self, name: String)),
     pub cycle_theme: qt_method!(fn(&mut self)),
     pub get_editor_starter_colors:
@@ -677,7 +677,6 @@ impl ThemeManager {
 
             self.themes[index as usize].name = name.clone();
             self.save_config();
-            self.themes_changed();
 
             // Smart Apply: Refresh UI if renaming the active theme
             if is_current_theme {
@@ -725,7 +724,6 @@ impl ThemeManager {
         if idx < self.themes.len() {
             self.themes[idx].colors = Some(color_map);
             self.save_config();
-            self.themes_changed();
 
             let theme_name = self.themes[idx].name.clone();
             self.set_theme(theme_name);
@@ -755,7 +753,6 @@ impl ThemeManager {
             self.themes[idx].name = name.clone();
             self.themes[idx].colors = Some(color_map);
             self.save_config();
-            self.themes_changed();
 
             self.set_theme(name);
         }
@@ -776,6 +773,27 @@ impl ThemeManager {
     pub fn get_theme_list(&self) -> QVariantList {
         self.themes
             .iter()
+            .map(|t| {
+                let mut map = QVariantMap::default();
+                map.insert(QString::from("name"), QVariant::from(QString::from(t.name.clone())));
+                map.insert(QString::from("is_active"), QVariant::from(t.is_active));
+                QVariant::from(map)
+            })
+            .collect()
+    }
+
+    pub fn get_custom_theme_entries(&self) -> Vec<ThemeEntry> {
+        self.themes
+            .iter()
+            .filter(|t| t.colors.is_some())
+            .cloned()
+            .collect()
+    }
+
+    pub fn get_custom_theme_list(&self) -> QVariantList {
+        self.themes
+            .iter()
+            .filter(|t| t.colors.is_some())
             .map(|t| {
                 let mut map = QVariantMap::default();
                 map.insert(QString::from("name"), QVariant::from(QString::from(t.name.clone())));
