@@ -80,6 +80,16 @@ Window {
         id: popupMenu
     }
 
+    // Global theme signal handler - handles Pref.qml being hidden
+    Connections {
+        target: theme
+        function onThemesChanged() {
+            if (prefPopup.prefAppearanceRoot) {
+                prefPopup.prefAppearanceRoot.customThemeModel = theme.get_custom_themes()
+            }
+        }
+    }
+
     // MPRIS Media Controls
     SysMediaManager {
         id: sysMedia

@@ -18,11 +18,12 @@ use crate::audio::popup::PopupMenu;
 use crate::audio::sysmedia::SysMediaManager;
 use crate::ui::core::MusicModel;
 use crate::ui::playerbridge::PlayerBridge;
-use crate::ui::theme::ThemeManager;
+use crate::ui::theme::{CustomThemeListModel, ThemeEntry, ThemeManager};
 
 struct App {
     music_model: QObjectBox<MusicModel>,
     theme: QObjectBox<ThemeManager>,
+    custom_theme_list: QObjectBox<CustomThemeListModel>,
     popup: QObjectBox<PopupMenu>,
     bridge: QObjectBox<PlayerBridge>,
     #[cfg(target_os = "linux")]

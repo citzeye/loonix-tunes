@@ -19,6 +19,11 @@ Item {
     property real appearanceMenuX: 0
     property real appearanceMenuY: 0
     property int appearanceMenuIndex: -1
+    property int themesRefreshTrigger: 0
+
+    function refreshThemes() {
+        themesRefreshTrigger += 1;
+    }
 
     function openAppearanceMenu(x, y, index) {
         appearanceMenuX = x;
@@ -300,5 +305,5 @@ Item {
                 presetIndex: prefPage.appearanceMenuIndex
             }
         }
-    }
+}
 }
