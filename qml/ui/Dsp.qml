@@ -245,6 +245,7 @@ RowLayout {
                         id: compSlider
                         enabled: compToggle.isOn && musicModel.dsp_enabled
                         controlValue: musicModel.compressor_threshold
+                        sliderRange: "db"
                         onSliderChanged: val => musicModel.setStdCompressorThreshold(val)
                     }
                     FxValueBox {
@@ -461,9 +462,17 @@ RowLayout {
                     }
 
                     FxBassAmountBox {
+                        id: bassGainBox
                         boxEnabled: bassToggle.isOn && musicModel.dsp_enabled
                         currentValue: musicModel.bass_gain
                         onValueChanged: val => musicModel.setStdBassGain(val)
+
+                        Connections {
+                            target: musicModel
+                            function onBass_gain_changed() {
+                                bassGainBox.currentValue = musicModel.bass_gain
+                            }
+                        }
                     }
 
                     FxResetButton {
@@ -834,35 +843,40 @@ RowLayout {
             spacing: 0
 
             Text {
+                id: iconText
                 text: isOn ? '󰔡' : '󰨙'
                 font.family: symbols.name
                 font.pixelSize: 16
-                color: boxEnabled ? (isOn ? theme.colormap.dspfxicon : theme.colormap.dsptext) : theme.colormap.dsptext + "66"
+                color: !rootItem.boxEnabled ? theme.colormap.dsptext + "66" :
+                       (toggleIconArea.containsMouse ? theme.colormap.dsptexthover :
+                       (isOn ? theme.colormap.dspfxicon : theme.colormap.dsptext))
                 Layout.preferredWidth: 30
+
                 MouseArea {
                     id: toggleIconArea
                     enabled: rootItem.boxEnabled
                     anchors.fill: parent
                     hoverEnabled: true
-                    onEntered: parent.color = theme.colormap.dsptexthover
-                    onExited: parent.color = boxEnabled ? (isOn ? theme.colormap.dspfxicon : theme.colormap.dsptext) : theme.colormap.dsptext + "66"
                     onClicked: rootItem.toggled()
                 }
             }
 
             Text {
+                id: titleText
                 text: title
                 font.family: kodeMono.name
                 font.pixelSize: 11
-                color: boxEnabled ? (isOn ? theme.colormap.dsptext : theme.colormap.dsptext) : theme.colormap.dsptext + "66"
+                color: !rootItem.boxEnabled ? theme.colormap.dsptext + "66" :
+                       (titleArea.containsMouse ? theme.colormap.dsptexthover :
+                       (isOn ? theme.colormap.dsptextactive : theme.colormap.dsptext))
                 Layout.preferredWidth: 160
                 elide: Text.ElideRight
+
                 MouseArea {
+                    id: titleArea
                     enabled: rootItem.boxEnabled
                     anchors.fill: parent
                     hoverEnabled: true
-                    onEntered: parent.color = theme.colormap.dsptexthover
-                    onExited: parent.color = boxEnabled ? (isOn ? theme.colormap.dsptext : theme.colormap.dsptext) : theme.colormap.dsptext + "66"
                     onClicked: rootItem.toggled()
                 }
             }
@@ -875,6 +889,7 @@ RowLayout {
         property real controlValue: 0.0
         property alias currentValue: sld.value
         property string leftLabel: ""
+        property string sliderRange: "linear" 
         signal sliderChanged(real val)
 
         Layout.fillWidth: true
@@ -882,6 +897,13 @@ RowLayout {
         color: theme.colormap.dspgridbg
         radius: 2
         antialiasing: false
+
+        onControlValueChanged: {
+            if (sld && !sld.pressed) {
+                sld.value = controlValue
+                rootItem.currentValue = sld.value
+            }
+        }
 
         RowLayout {
             anchors.fill: parent
@@ -901,9 +923,9 @@ RowLayout {
                 id: sld
                 Layout.fillWidth: true
                 Layout.fillHeight: true
-                from: 0.0
-                to: 1.0
-                stepSize: 0.01
+                from: rootItem.sliderRange === "db" ? -60.0 : 0.0
+                to: rootItem.sliderRange === "db" ? 0.0 : 1.0
+                stepSize: rootItem.sliderRange === "db" ? 1.0 : 0.01
                 value: rootItem.controlValue
                 onMoved: rootItem.sliderChanged(sld.value)
 
@@ -912,9 +934,11 @@ RowLayout {
                     acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
                     orientation: Qt.Vertical
                     onWheel: function (event) {
-                        var step = 0.05;
+                        var step = rootItem.sliderRange === "db" ? 1.0 : 0.05;
+                        var minVal = rootItem.sliderRange === "db" ? -60.0 : 0.0;
+                        var maxVal = rootItem.sliderRange === "db" ? 0.0 : 1.0;
                         var delta = event.angleDelta.y > 0 ? step : -step;
-                        var newVal = Math.max(0.0, Math.min(1.0, sld.value + delta));
+                        var newVal = Math.max(minVal, Math.min(maxVal, sld.value + delta));
                         sld.value = newVal;
                         rootItem.sliderChanged(newVal);
                     }
@@ -1079,14 +1103,14 @@ RowLayout {
             font.family: kodeMono.name
             font.pixelSize: 11
             font.bold: isActive
-            color: isActive ? theme.colormap.dsptextactive : theme.colormap.dsptext
+            color: buttonArea.containsMouse ? theme.colormap.dsptexthover : 
+                   (isActive ? theme.colormap.dsptextactive : theme.colormap.dsptext)
         }
 
         MouseArea {
+            id: buttonArea
             anchors.fill: parent
             hoverEnabled: true
-            onEntered: modeText.color = theme.colormap.dsptexthover
-            onExited: modeText.color = isActive ? theme.colormap.dsptextactive : theme.colormap.dsptext
             onClicked: rootItem.clicked()
         }
     }
@@ -1403,8 +1427,7 @@ RowLayout {
             anchors.centerIn: parent
             text: {
                 if (showDbCompressor) {
-                    var db = -60.0 + (sliderValue * 60.0);
-                    return Math.round(db) + " dB";
+                    return Math.round(sliderValue) + " dB";
                 } else if (showHz) {
                     var freq = hzMin + (sliderValue * (hzMax - hzMin));
                     return Math.round(freq) + " Hz";

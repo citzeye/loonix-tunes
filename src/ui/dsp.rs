@@ -490,17 +490,11 @@ impl DspController {
         self.bass_active = !self.bass_active;
         self.bass_active_changed();
 
-        if self.bass_active {
-            self.bass_gain = 5.5;
-            self.applyBassMode(self.bass_mode);
-        } else {
-            self.bass_gain = 0.0;
-            crate::audio::dsp::bassbooster::get_bass_gain_arc()
-                .store(0.0_f32.to_bits(), std::sync::atomic::Ordering::Relaxed);
-        }
-
+        // Murni cuma ngasih tau engine buat bypass/enable, tanpa ngotak-ngatik parameter slider!
         crate::audio::dsp::bassbooster::get_bass_enabled_arc()
             .store(self.bass_active, std::sync::atomic::Ordering::Relaxed);
+            
+        self.save_config();
     }
 
     pub fn set_bass_mode(&mut self, mode: i32) {
@@ -518,6 +512,7 @@ impl DspController {
 
     pub fn set_bass_gain(&mut self, val: f64) {
         self.bass_gain = val.clamp(0.0, 12.0);
+        self.bass_gain_changed(); 
         self.bass_params_changed();
 
         if self.bass_active {
@@ -619,19 +614,20 @@ impl DspController {
     }
 
     pub fn set_compressor_threshold(&mut self, val: f64) {
-        let threshold_db = -60.0 + (val * 60.0);
+        let clamped = val.clamp(-60.0, 0.0);
+        self.compressor_threshold = clamped;     
         crate::audio::dsp::compressor::get_compressor_threshold_arc().store(
-            (threshold_db as f32).to_bits(),
+            (clamped as f32).to_bits(),
             std::sync::atomic::Ordering::Relaxed,
         );
+        self.compressor_threshold_changed();    
         self.save_config();
     }
 
     pub fn get_compressor_threshold(&self) -> f64 {
         let bits = crate::audio::dsp::compressor::get_compressor_threshold_arc()
             .load(std::sync::atomic::Ordering::Relaxed);
-        let threshold_db = f32::from_bits(bits);
-        ((threshold_db + 60.0) / 60.0) as f64
+        f32::from_bits(bits) as f64
     }
 
     // --- PITCH METHODS ---
@@ -1218,7 +1214,7 @@ impl DspController {
         self.surround_active_changed();
         self.surround_width_changed();
 
-        self.mono_active = preset.mono_enabled || preset.mono_width != 1.0;
+        self.mono_active = preset.mono_enabled;
         self.mono_width = preset.mono_width as f64;
         crate::audio::dsp::stereowidth::get_mono_enabled_arc()
             .store(preset.mono_enabled, std::sync::atomic::Ordering::Relaxed);
@@ -1274,13 +1270,12 @@ impl DspController {
         self.crossfeed_changed();
         self.crossfeed_amount_changed();
 
-        self.compressor_active = preset.compressor_enabled || preset.compressor_threshold > -60.0;
-        let db = preset.compressor_threshold.clamp(-60.0, 0.0) as f64;
-        self.compressor_threshold = (db + 60.0) / 60.0;
+        self.compressor_active = preset.compressor_enabled;
+        self.compressor_threshold = preset.compressor_threshold.clamp(-60.0, 0.0) as f64;
         crate::audio::dsp::compressor::get_compressor_enabled_arc()
             .store(self.compressor_active, std::sync::atomic::Ordering::Relaxed);
         crate::audio::dsp::compressor::get_compressor_threshold_arc().store(
-            preset.compressor_threshold.clamp(-60.0, 0.0).to_bits(),
+            (self.compressor_threshold as f32).to_bits(),
             std::sync::atomic::Ordering::Relaxed,
         );
         self.compressor_active_changed();
@@ -1389,14 +1384,13 @@ impl DspController {
 
         // Compressor
         self.compressor_active = self.user_fx_compressor_enabled[idx];
-        let threshold = self.user_fx_compressor_threshold[idx].clamp(-60.0, 0.0);
-        self.compressor_threshold = ((threshold + 60.0) / 60.0) as f64;
+        self.compressor_threshold = self.user_fx_compressor_threshold[idx].clamp(-60.0, 0.0) as f64;
         crate::audio::dsp::compressor::get_compressor_enabled_arc().store(
             self.user_fx_compressor_enabled[idx],
             std::sync::atomic::Ordering::Relaxed,
         );
         crate::audio::dsp::compressor::get_compressor_threshold_arc()
-            .store(threshold.to_bits(), std::sync::atomic::Ordering::Relaxed);
+            .store((self.compressor_threshold as f32).to_bits(), std::sync::atomic::Ordering::Relaxed);
         self.compressor_active_changed();
         self.compressor_threshold_changed();
 
@@ -1452,9 +1446,9 @@ impl DspController {
     // --- RESET METHODS ---
     pub fn compressor_indie_reset(&mut self) {
         if let Some(default) = &self.default_fx_snapshot {
-            let db = default.compressor_threshold.clamp(-60.0, 0.0) as f64;
-            self.compressor_threshold = (db + 60.0) / 60.0;
-            self.compressor_active = default.compressor_enabled || default.compressor_threshold > -60.0;
+            let db = default.compressor_threshold.clamp(-60.0, 0.0);
+            self.compressor_threshold = db as f64;
+            self.compressor_active = default.compressor_enabled;
             crate::audio::dsp::compressor::get_compressor_enabled_arc()
                 .store(self.compressor_active, std::sync::atomic::Ordering::Relaxed);
             crate::audio::dsp::compressor::get_compressor_threshold_arc().store(
@@ -1483,7 +1477,7 @@ impl DspController {
 
     pub fn stereo_width_indie_reset(&mut self) {
         if let Some(default) = &self.default_fx_snapshot {
-            self.mono_active = default.mono_enabled || default.mono_width > 0.0;
+            self.mono_active = default.mono_enabled;
             self.mono_width = default.mono_width.clamp(0.0, 2.0) as f64;
             crate::audio::dsp::stereowidth::get_mono_enabled_arc()
                 .store(self.mono_active, std::sync::atomic::Ordering::Relaxed);

@@ -1740,6 +1740,8 @@ impl MusicModel {
 
     pub fn reset_compressor(&mut self) {
         self.dsp.compressor_indie_reset();
+        self.compressor_threshold = self.dsp.get_compressor_threshold();
+        self.compressor_threshold_changed();
         self.sync_dsp_from_controller();
     }
     pub fn reset_surround(&mut self) {
