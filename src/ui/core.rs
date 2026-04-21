@@ -275,15 +275,16 @@ pub struct MusicModel {
     pub get_user_eq_gains: qt_method!(fn(&self, preset: i32) -> QVariantList),
     pub get_user_eq_macro: qt_method!(fn(&self, preset: i32) -> f64),
     pub get_user_preset_name: qt_method!(fn(&self, preset: i32) -> QString),
-    pub reset_std_compressor: qt_method!(fn(&mut self)),
-    pub reset_std_surround: qt_method!(fn(&mut self)),
-    pub reset_std_stereo_width: qt_method!(fn(&mut self)),
-    pub reset_std_middle_clarity: qt_method!(fn(&mut self)),
-    pub reset_std_stereo_enhance: qt_method!(fn(&mut self)),
-    pub reset_std_crossfeed: qt_method!(fn(&mut self)),
-    pub reset_std_crystalizer: qt_method!(fn(&mut self)),
-    pub reset_std_bass: qt_method!(fn(&mut self)),
-    pub reset_std_reverb: qt_method!(fn(&mut self)),
+    pub reset_compressor: qt_method!(fn(&mut self)),
+    pub reset_surround: qt_method!(fn(&mut self)),
+    pub reset_stereo_width: qt_method!(fn(&mut self)),
+    pub reset_middle_clarity: qt_method!(fn(&mut self)),
+    pub reset_stereo_enhance: qt_method!(fn(&mut self)),
+    pub reset_crossfeed: qt_method!(fn(&mut self)),
+    pub reset_crystalizer: qt_method!(fn(&mut self)),
+    pub reset_bass: qt_method!(fn(&mut self)),
+    pub reset_reverb: qt_method!(fn(&mut self)),
+    pub reset_pitch: qt_method!(fn(&mut self)),
 
     pub scan_music: qt_method!(fn(&mut self)),
     pub scan_folder: qt_method!(fn(&mut self, path: String)),
@@ -1737,40 +1738,44 @@ impl MusicModel {
         self.dsp.get_user_preset_name(preset)
     }
 
-    pub fn reset_std_compressor(&mut self) {
+    pub fn reset_compressor(&mut self) {
         self.dsp.compressor_indie_reset();
         self.sync_dsp_from_controller();
     }
-    pub fn reset_std_surround(&mut self) {
+    pub fn reset_surround(&mut self) {
         self.dsp.surround_indie_reset();
         self.sync_dsp_from_controller();
     }
-    pub fn reset_std_stereo_width(&mut self) {
+    pub fn reset_stereo_width(&mut self) {
         self.dsp.stereo_width_indie_reset();
         self.sync_dsp_from_controller();
     }
-    pub fn reset_std_middle_clarity(&mut self) {
+    pub fn reset_middle_clarity(&mut self) {
         self.dsp.middle_clarity_indie_reset();
         self.sync_dsp_from_controller();
     }
-    pub fn reset_std_stereo_enhance(&mut self) {
+    pub fn reset_stereo_enhance(&mut self) {
         self.dsp.stereo_enhance_indie_reset();
         self.sync_dsp_from_controller();
     }
-    pub fn reset_std_crossfeed(&mut self) {
+    pub fn reset_crossfeed(&mut self) {
         self.dsp.crossfeed_indie_reset();
         self.sync_dsp_from_controller();
     }
-    pub fn reset_std_crystalizer(&mut self) {
+    pub fn reset_crystalizer(&mut self) {
         self.dsp.crystalizer_indie_reset();
         self.sync_dsp_from_controller();
     }
-    pub fn reset_std_bass(&mut self) {
+    pub fn reset_bass(&mut self) {
         self.dsp.bass_indie_reset();
         self.sync_dsp_from_controller();
     }
-    pub fn reset_std_reverb(&mut self) {
+    pub fn reset_reverb(&mut self) {
         self.dsp.reverb_indie_reset();
+        self.sync_dsp_from_controller();
+    }
+    pub fn reset_pitch(&mut self) {
+        self.dsp.pitch_indie_reset();
         self.sync_dsp_from_controller();
     }
 

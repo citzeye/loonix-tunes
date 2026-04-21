@@ -1452,12 +1452,13 @@ impl DspController {
     // --- RESET METHODS ---
     pub fn compressor_indie_reset(&mut self) {
         if let Some(default) = &self.default_fx_snapshot {
+            let db = default.compressor_threshold.clamp(-60.0, 0.0) as f64;
+            self.compressor_threshold = (db + 60.0) / 60.0;
             self.compressor_active = default.compressor_enabled || default.compressor_threshold > -60.0;
-            self.compressor_threshold = default.compressor_threshold as f64;
             crate::audio::dsp::compressor::get_compressor_enabled_arc()
                 .store(self.compressor_active, std::sync::atomic::Ordering::Relaxed);
             crate::audio::dsp::compressor::get_compressor_threshold_arc().store(
-                default.compressor_threshold.to_bits(),
+                (db as f32).to_bits(),
                 std::sync::atomic::Ordering::Relaxed,
             );
             self.compressor_active_changed();
@@ -1544,6 +1545,7 @@ impl DspController {
         if let Some(default) = &self.default_fx_snapshot {
             self.crystal_active = default.crystal_enabled || default.crystal_amount > 0.0;
             self.crystal_amount = default.crystal_amount.clamp(0.0, 1.0) as f64;
+            self.crystal_freq = default.crystal_freq as f64;
             crate::audio::dsp::crystalizer::get_crystal_enabled_arc()
                 .store(self.crystal_active, std::sync::atomic::Ordering::Relaxed);
             crate::audio::dsp::crystalizer::get_crystal_amount_arc().store(
@@ -1551,6 +1553,8 @@ impl DspController {
                 std::sync::atomic::Ordering::Relaxed,
             );
             self.crystal_active_changed();
+            self.crystal_amount_changed();
+            self.crystal_freq_changed();
         }
     }
 
@@ -1595,6 +1599,20 @@ impl DspController {
             self.reverb_active_changed();
             self.reverb_mode_changed();
             self.reverb_amount_changed();
+        }
+    }
+
+    pub fn pitch_indie_reset(&mut self) {
+        if let Some(default) = &self.default_fx_snapshot {
+            self.pitch_semitones = default.pitch_semitones as f64;
+            self.pitch_active = default.pitch_enabled;
+            crate::audio::dsp::pitchshifter::get_pitch_enabled_arc()
+                .store(default.pitch_enabled, std::sync::atomic::Ordering::Relaxed);
+            crate::audio::dsp::pitchshifter::get_pitch_ratio_arc().store(
+                2.0_f32.powf(default.pitch_semitones / 12.0).to_bits(),
+                std::sync::atomic::Ordering::Relaxed,
+            );
+            self.pitch_changed();
         }
     }
 

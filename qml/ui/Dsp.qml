@@ -256,7 +256,7 @@ RowLayout {
                     FxResetButton {
                         enabled: compToggle.isOn && musicModel.dsp_enabled
                         useNoArgReset: true
-                        onResetNoArg: musicModel.reset_std_compressor()
+                        onResetNoArg: musicModel.reset_compressor()
                     }
                 }
 
@@ -288,7 +288,7 @@ RowLayout {
                     FxResetButton {
                         enabled: surrToggle.isOn && musicModel.dsp_enabled
                         useNoArgReset: true
-                        onResetNoArg: musicModel.reset_std_surround()
+                        onResetNoArg: musicModel.reset_surround()
                     }
                 }
 
@@ -318,7 +318,7 @@ RowLayout {
                     FxResetButton {
                         enabled: monoToggle.isOn && musicModel.dsp_enabled
                         useNoArgReset: true
-                        onResetNoArg: musicModel.reset_std_stereo_width()
+                        onResetNoArg: musicModel.reset_stereo_width()
                     }
                 }
 
@@ -348,7 +348,7 @@ RowLayout {
                     FxResetButton {
                         enabled: midToggle.isOn
                         useNoArgReset: true
-                        onResetNoArg: musicModel.reset_std_middle_clarity()
+                        onResetNoArg: musicModel.reset_middle_clarity()
                     }
                 }
 
@@ -378,7 +378,7 @@ RowLayout {
                     FxResetButton {
                         enabled: stereoEnhToggle.isOn
                         useNoArgReset: true
-                        onResetNoArg: musicModel.reset_std_stereo_enhance()
+                        onResetNoArg: musicModel.reset_stereo_enhance()
                     }
                 }
 
@@ -408,7 +408,7 @@ RowLayout {
                     FxResetButton {
                         enabled: crossfeedToggle.isOn
                         useNoArgReset: true
-                        onResetNoArg: musicModel.reset_std_crossfeed()
+                        onResetNoArg: musicModel.reset_crossfeed()
                     }
                 }
 
@@ -438,7 +438,7 @@ RowLayout {
                     FxResetButton {
                         enabled: crystalToggle.isOn
                         useNoArgReset: true
-                        onResetNoArg: musicModel.reset_std_crystalizer()
+                        onResetNoArg: musicModel.reset_crystalizer()
                     }
                 }
 
@@ -469,7 +469,7 @@ RowLayout {
                     FxResetButton {
                         enabled: bassToggle.isOn && musicModel.dsp_enabled
                         useNoArgReset: true
-                        onResetNoArg: musicModel.reset_std_bass()
+                        onResetNoArg: musicModel.reset_bass()
                     }
                 }
 
@@ -500,9 +500,8 @@ RowLayout {
                     }
                     FxResetButton {
                         enabled: pitchToggle.isOn
-                        defaultValue: 0.0
-                        sliderValue: pitchSlider.controlValue
-                        onReset: val => musicModel.setStdPitchSemitones(val)
+                        useNoArgReset: true
+                        onResetNoArg: musicModel.reset_pitch()
                     }
                 }
 
@@ -534,7 +533,7 @@ RowLayout {
                     FxResetButton {
                         enabled: reverbToggle.isOn && musicModel.dsp_enabled
                         useNoArgReset: true
-                        onResetNoArg: musicModel.reset_std_reverb()
+                        onResetNoArg: musicModel.reset_reverb()
                     }
                 }
             }
@@ -874,16 +873,9 @@ RowLayout {
     component FxSliderBox: Rectangle {
         id: rootItem
         property real controlValue: 0.0
-        property real currentValue: controlValue
+        property alias currentValue: sld.value
         property string leftLabel: ""
         signal sliderChanged(real val)
-
-        onControlValueChanged: {
-            if (sld && !sld.pressed) {
-                sld.value = controlValue;
-                rootItem.currentValue = controlValue;
-            }
-        }
 
         Layout.fillWidth: true
         Layout.preferredHeight: 20
@@ -913,7 +905,6 @@ RowLayout {
                 to: 1.0
                 stepSize: 0.01
                 value: rootItem.controlValue
-                onValueChanged: rootItem.currentValue = sld.value
                 onMoved: rootItem.sliderChanged(sld.value)
 
                 WheelHandler {
