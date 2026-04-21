@@ -1,4 +1,4 @@
-/* --- LOONIX-TUNES src/audio/engine/scheduler.rs --- */
+/* --- loonixtunesv2/src/audio/engine/scheduler.rs | Scheduler --- */
 
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;

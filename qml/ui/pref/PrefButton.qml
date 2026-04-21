@@ -1,5 +1,5 @@
 
-/* --- LOONIX-TUNES qml/ui/pref/PrefButton.qml --- */
+/* --- loonixtunesv2/qml/ui/pref/PrefButton.qml | Button Pref --- */
 
 import QtQuick
 import QtQuick.Layouts

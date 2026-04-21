@@ -1,4 +1,4 @@
-/* --- LOONIX-TUNES src/audio/buffer/mod.rs --- */
+/* --- loonixtunesv2/src/audio/buffer/mod.rs | Buffer Module --- */
 
 pub mod ringbuffer;
 

@@ -1,4 +1,4 @@
-/* --- loonix-tunes/qml/ui/Dsp.qml --- */
+/* --- loonixtunesv2/qml/ui/Dsp.qml | DSP Panel --- */
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts

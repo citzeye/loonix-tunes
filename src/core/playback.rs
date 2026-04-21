@@ -1,4 +1,4 @@
-/* --- LOONIX-TUNES src/core/playback.rs --- */
+/* --- loonixtunesv2/src/core/playback.rs | Playback --- */
 
 #![allow(non_snake_case)]
 

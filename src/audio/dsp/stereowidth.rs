@@ -1,4 +1,4 @@
-/* --- LOONIX-TUNES src/audio/dsp/std/stdstereowidth.rs --- */
+/* --- loonixtunesv2/src/audio/dsp/stereowidth.rs | Stereo Width --- */
 
 use crate::audio::dsp::DspProcessor;
 use std::sync::atomic::{AtomicBool, AtomicU32, Ordering};

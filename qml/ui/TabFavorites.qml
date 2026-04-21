@@ -1,4 +1,4 @@
-/* --- LOONIX-TUNES qml/ui/TabFavorites.qml --- */
+/* --- loonixtunesv2/qml/ui/TabFavorites.qml | Favorites Tab --- */
 
 import QtQuick
 import QtQuick.Layouts

@@ -1,4 +1,4 @@
-/* --- LOONIX-TUNES src/audio/dsp/normalizer.rs | Fixed Gain + Transition Smoothing --- */
+/* --- loonixtunesv2/src/audio/dsp/normalizer.rs | Normalizer --- */
 use crate::audio::dsp::DspProcessor;
 use std::sync::atomic::{AtomicBool, AtomicU32, Ordering};
 use std::sync::{Arc, OnceLock};

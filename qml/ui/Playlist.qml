@@ -1,4 +1,4 @@
-/* --- LOONIX-TUNES qml/ui/Playlist.qml --- */
+/* --- loonixtunesv2/qml/ui/Playlist.qml | Playlist --- */
 
 import QtQuick
 import QtQuick.Layouts

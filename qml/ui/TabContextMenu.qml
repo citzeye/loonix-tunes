@@ -1,4 +1,4 @@
-/* --- LOONIX-TUNES qml/ui/TabContextMenu.qml --- */
+/* --- loonixtunesv2/qml/ui/TabContextMenu.qml | Tab Context --- */
 
 import QtQuick
 import QtQuick.Layouts

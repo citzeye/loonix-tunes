@@ -1,4 +1,4 @@
-/* --- LOONIX-TUNES src/ui/queuecontroller.rs | Queue Controller --- */
+/* --- loonixtunesv2/src/ui/queue.rs | Queue Controller --- */
 
 use crate::audio::engine::MusicItem;
 use qmetaobject::prelude::*;

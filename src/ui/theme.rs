@@ -1,4 +1,4 @@
-/* --- LOONIX-TUNES src/ui/theme.rs --- */
+/* --- loonixtunesv2/src/ui/theme.rs | Theme --- */
 #![allow(non_snake_case)]
 
 use qmetaobject::prelude::*;

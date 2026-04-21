@@ -1,4 +1,4 @@
-/* --- LOONIX-TUNES src/audio/dsp/rack.rs --- */
+/* --- loonixtunesv2/src/audio/dsp/rack.rs | DSP Rack --- */
 
 #![allow(non_snake_case)]
 

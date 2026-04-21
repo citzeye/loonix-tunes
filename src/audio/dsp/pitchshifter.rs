@@ -1,4 +1,4 @@
-/* --- LOONIX-TUNES src/audio/dsp/fx/fxpitchshifter.rs --- */
+/* --- loonixtunesv2/src/audio/dsp/pitchshifter.rs | Pitch Shifter --- */
 use crate::audio::dsp::rubberbandffi::{
     rubberband_available, rubberband_delete, rubberband_new, rubberband_process, rubberband_reset,
     rubberband_retrieve, rubberband_set_pitch_scale, RubberBandState, RB_OPTION_FORMANT_PRESERVED,

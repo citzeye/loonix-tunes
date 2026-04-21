@@ -1,4 +1,4 @@
-/* --- LOONIX-TUNES qml/ui/pref/PrefTab.qml --- */
+/* --- loonixtunesv2/qml/ui/pref/PrefTab.qml | Tab Pref --- */
 
 import QtQuick
 import QtQuick.Layouts

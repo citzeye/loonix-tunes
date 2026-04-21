@@ -1,4 +1,4 @@
-/* --- LOONIX-TUNES src/audio/sysmedia.rs --- */
+/* --- loonixtunesv2/src/audio/sysmedia.rs | System Media --- */
 /* MPRIS Media Controls via souvlaki */
 
 use qmetaobject::*;

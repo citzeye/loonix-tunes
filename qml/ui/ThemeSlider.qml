@@ -1,4 +1,4 @@
-/* --- LOONIX-TUNES qml/ui/ThemeSlider.qml --- */
+/* --- loonixtunesv2/qml/ui/ThemeSlider.qml | Theme Slider --- */
 import QtQuick
 import QtQuick.Controls
 

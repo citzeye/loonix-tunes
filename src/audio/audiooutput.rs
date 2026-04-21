@@ -1,4 +1,4 @@
-/* --- LOONIX-TUNES src/audio/audiooutput.rs --- */
+/* --- loonixtunesv2/src/audio/audiooutput.rs | Audio Output --- */
 
 use crate::audio::dsp::crystalizer::get_crystal_amount_arc;
 use crate::audio::dsp::{DspChain, DspProcessor};

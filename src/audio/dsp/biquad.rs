@@ -1,4 +1,4 @@
-/* --- LOONIX-TUNES src/audio/dsp/biquad.rs --- */
+/* --- loonixtunesv2/src/audio/dsp/biquad.rs | Biquad Filter --- */
 
 use std::f32::consts::PI;
 

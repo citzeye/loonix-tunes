@@ -1,4 +1,4 @@
-/* --- LOONIX-TUNES src/audio/dsp/eq.rs --- */
+/* --- loonixtunesv2/src/audio/dsp/eq.rs | Equalizer --- */
 
 use crate::audio::dsp::DspProcessor;
 use std::sync::atomic::{AtomicU32, Ordering};

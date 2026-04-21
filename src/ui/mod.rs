@@ -1,4 +1,4 @@
-/* --- LOONIX-TUNES src/ui/mod.rs --- */
+/* --- loonixtunesv2/src/ui/mod.rs | UI Module --- */
 
 pub mod core;
 pub mod dsp;

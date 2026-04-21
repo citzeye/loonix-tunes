@@ -1,4 +1,4 @@
-/* --- LOONIX-TUNES src/core/dspconfig.rs --- */
+/* --- loonixtunesv2/src/core/dspconfig.rs | DSP Config --- */
 
 #![allow(non_snake_case)]
 

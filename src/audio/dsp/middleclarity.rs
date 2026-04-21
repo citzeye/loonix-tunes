@@ -1,4 +1,4 @@
-/* --- LOONIX-TUNES src/audio/dsp/middleclarity.rs --- */
+/* --- loonixtunesv2/src/audio/dsp/middleclarity.rs | Middle Clarity --- */
 
 use crate::audio::dsp::DspProcessor;
 use std::sync::atomic::{AtomicBool, AtomicU32, Ordering};

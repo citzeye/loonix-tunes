@@ -1,5 +1,4 @@
-
-/* --- LOONIX-TUNES qml/ui/pref/PrefSwitch.qml --- */
+/* --- loonixtunesv2/qml/ui/pref/PrefSwitch.qml | Switch Pref --- */
 
 import QtQuick
 import QtQuick.Layouts

@@ -1,3 +1,4 @@
+/* --- loonixtunesv2/qml/ui/pref/PrefDonate.qml | Donate Pref --- */
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts

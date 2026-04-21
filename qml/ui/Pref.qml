@@ -1,4 +1,4 @@
-/* --- LOONIX-TUNES qml/ui/Pref.qml --- */
+/* --- loonixtunesv2/qml/ui/Pref.qml | Preferences --- */
 
 import QtQuick
 import QtQuick.Controls

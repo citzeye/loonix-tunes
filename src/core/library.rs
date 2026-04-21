@@ -1,4 +1,4 @@
-/* --- LOONIX-TUNES src/core/library.rs --- */
+/* --- loonixtunesv2/src/core/library.rs | Library --- */
 
 #![allow(non_snake_case)]
 

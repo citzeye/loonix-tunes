@@ -1,4 +1,4 @@
-/* --- LOONIX-TUNES src/audio/scanner.rs | Pre-scan Loudness Scanner --- */
+/* --- loonixtunesv2/src/audio/scanner.rs | Loudness Scanner --- */
 
 use ffmpeg::format::input;
 use ffmpeg::media::Type;

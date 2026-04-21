@@ -1,4 +1,4 @@
-/* --- LOONIX-TUNES qml/ui/RenameDialog.qml --- */
+/* --- loonixtunesv2/qml/ui/RenameDialog.qml | Rename Dialog --- */
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts

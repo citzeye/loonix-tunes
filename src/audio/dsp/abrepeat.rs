@@ -1,4 +1,4 @@
-/* --- LOONIX-TUNES src/audio/dsp/abrepeat.rs --- */
+/* --- loonixtunesv2/src/audio/dsp/abrepeat.rs | A-B Repeat --- */
 
 #[derive(Debug, Clone, Copy, PartialEq, Default)]
 pub enum ABRepeatState {

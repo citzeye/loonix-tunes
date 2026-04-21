@@ -1,5 +1,5 @@
 
-/* --- LOONIX-TUNES qml/ui/pref/PrefDropdown.qml --- */
+/* --- loonixtunesv2/qml/ui/pref/PrefDropdown.qml | Dropdown Pref --- */
 
 import QtQuick
 import QtQuick.Controls

@@ -1,4 +1,4 @@
-/* --- LOONIX-TUNES src/audio/engine/engine.rs | The Boss --- */
+/* --- loonixtunesv2/src/audio/engine/engine.rs | Engine --- */
 
 use crate::audio::audiooutput::AudioOutput;
 use crate::audio::decoder::{DecoderControl, DecoderEvent, DecoderHandle, SEEK_STATE_DECODING};

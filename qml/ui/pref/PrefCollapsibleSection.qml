@@ -1,5 +1,5 @@
 
-/* --- LOONIX-TUNES qml/ui/pref/CollapsibleSection.qml --- */
+/* --- loonixtunesv2/qml/ui/pref/PrefCollapsibleSection.qml | Collapsible Section --- */
 
 import QtQuick
 import QtQuick.Layouts

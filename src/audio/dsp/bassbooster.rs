@@ -1,4 +1,4 @@
-/* --- LOONIX-TUNES src/audio/dsp/std/stdbassbooster.rs --- */
+/* --- loonixtunesv2/src/audio/dsp/bassbooster.rs | Bass Booster --- */
 
 use crate::audio::dsp::biquad::BiquadLowShelf;
 use crate::audio::dsp::DspProcessor;

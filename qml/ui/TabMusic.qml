@@ -1,4 +1,4 @@
-/* --- LOONIX-TUNES qml/ui/TabMusic.qml --- */
+/* --- loonixtunesv2/qml/ui/TabMusic.qml | Music Tab --- */
 
 import QtQuick
 import QtQuick.Layouts

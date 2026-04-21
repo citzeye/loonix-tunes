@@ -1,4 +1,4 @@
-/* --- LOONIX-TUNES qml/ui/contextmenu/AppearanceContextMenu.qml --- */
+/* --- loonixtunesv2/qml/ui/contextmenu/AppearanceContextMenu.qml | Appearance Context --- */
 
 import QtQuick
 import QtQuick.Layouts

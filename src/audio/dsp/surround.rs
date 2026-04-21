@@ -1,4 +1,4 @@
-/* --- LOONIX-TUNES src/audio/dsp/std/stdsurround.rs --- */
+/* --- loonixtunesv2/src/audio/dsp/surround.rs | Surround --- */
 
 use crate::audio::dsp::DspProcessor;
 use std::sync::atomic::{AtomicBool, AtomicU32, Ordering};

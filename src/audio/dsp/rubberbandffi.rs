@@ -1,4 +1,4 @@
-/* --- LOONIX-TUNES src/audio/dsp/rubberbandffi.rs --- */
+/* --- loonixtunesv2/src/audio/dsp/rubberbandffi.rs | Rubberband FFI --- */
 use std::os::raw::{c_double, c_int, c_uint};
 
 #[repr(C)]

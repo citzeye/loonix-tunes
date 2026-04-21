@@ -1,4 +1,4 @@
-/* --- LOONIX-TUNES src/ui/core.rs | The Bridge (QML)--- */
+/* --- loonixtunesv2/src/ui/core.rs | The Bridge (QML) --- */
 
 #![allow(non_snake_case)]
 
