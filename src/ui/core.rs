@@ -162,21 +162,26 @@ pub struct MusicModel {
     pub reverb_amount_changed: qt_signal!(),
     pub bass_active: qt_property!(bool; NOTIFY bass_active_changed),
     pub bass_active_changed: qt_signal!(),
-    pub bass_gain: qt_property!(f64; NOTIFY bass_params_changed),
-    pub bass_cutoff: qt_property!(f64; NOTIFY bass_params_changed),
+    pub bass_gain: qt_property!(f64; NOTIFY bass_gain_changed),
+    pub bass_cutoff: qt_property!(f64; NOTIFY bass_cutoff_changed),
     pub bass_mode: qt_property!(i32; NOTIFY bass_mode_changed),
-    pub bass_params_changed: qt_signal!(),
+    pub bass_gain_changed: qt_signal!(),
+    pub bass_cutoff_changed: qt_signal!(),
     pub bass_mode_changed: qt_signal!(),
-    pub surround_active: qt_property!(bool; NOTIFY surround_magic_changed),
-    pub surround_magic_changed: qt_signal!(),
+    pub surround_active: qt_property!(bool; NOTIFY surround_active_changed),
+    pub surround_active_changed: qt_signal!(),
     pub surround_width: qt_property!(f64; NOTIFY surround_width_changed),
     pub surround_width_changed: qt_signal!(),
     pub crystal_active: qt_property!(bool; NOTIFY crystal_active_changed),
     pub crystal_active_changed: qt_signal!(),
-    pub crystal_amount: qt_property!(f64; NOTIFY crystal_active_changed),
-    pub compressor_active: qt_property!(bool; NOTIFY compressor_changed),
-    pub compressor_changed: qt_signal!(),
-    pub compressor_threshold: qt_property!(f64; NOTIFY compressor_changed),
+    pub crystal_amount: qt_property!(f64; NOTIFY crystal_amount_changed),
+    pub crystal_amount_changed: qt_signal!(),
+    pub crystal_freq: qt_property!(f64; NOTIFY crystal_freq_changed),
+    pub crystal_freq_changed: qt_signal!(),
+    pub compressor_active: qt_property!(bool; NOTIFY compressor_active_changed),
+    pub compressor_active_changed: qt_signal!(),
+    pub compressor_threshold: qt_property!(f64; NOTIFY compressor_threshold_changed),
+    pub compressor_threshold_changed: qt_signal!(),
     pub mono_active: qt_property!(bool; NOTIFY mono_changed),
     pub mono_changed: qt_signal!(),
     pub mono_width: qt_property!(f64; NOTIFY mono_width_changed),
@@ -210,9 +215,10 @@ pub struct MusicModel {
     pub normalizer_changed: qt_signal!(),
     pub active_preset_index: qt_property!(i32; NOTIFY active_preset_index_changed),
     pub active_preset_index_changed: qt_signal!(),
-    pub reverb_room_size: qt_property!(f64; NOTIFY reverb_params_changed),
-    pub reverb_damp: qt_property!(f64; NOTIFY reverb_params_changed),
-    pub reverb_params_changed: qt_signal!(),
+    pub reverb_room_size: qt_property!(f64; NOTIFY reverb_room_size_changed),
+    pub reverb_damp: qt_property!(f64; NOTIFY reverb_damp_changed),
+    pub reverb_room_size_changed: qt_signal!(),
+    pub reverb_damp_changed: qt_signal!(),
     pub user_presets_changed: qt_signal!(),
 
     // DSP wrapper methods for QML
@@ -449,7 +455,8 @@ impl MusicModel {
 
         model.saved_config = saved_config_arc;
 
-        model.output.set_dsp_enabled(saved_config.dsp_enabled);
+        let dsp_settings = crate::audio::dsp::DspSettings::default();
+        model.output.set_dsp_enabled(dsp_settings.dsp_enabled);
         model
             .output
             .set_normalizer_enabled(saved_config.normalizer_enabled);
@@ -1419,13 +1426,13 @@ impl MusicModel {
     pub fn setStdReverbRoomSize(&mut self, val: f64) {
         self.dsp.set_reverb_room_size(val);
         self.reverb_room_size = self.dsp.reverb_room_size;
-        self.reverb_params_changed();
+        self.reverb_room_size_changed();
     }
 
     pub fn setStdReverbDamp(&mut self, val: f64) {
         self.dsp.set_reverb_damp(val);
         self.reverb_damp = self.dsp.reverb_damp;
-        self.reverb_params_changed();
+        self.reverb_damp_changed();
     }
 
     pub fn toggleReverb(&mut self) {
@@ -1493,7 +1500,7 @@ impl MusicModel {
     pub fn setStdCompressorThreshold(&mut self, val: f64) {
         self.dsp.set_compressor_threshold(val);
         self.compressor_threshold = self.dsp.compressor_threshold;
-        self.compressor_changed();
+        self.compressor_threshold_changed();
     }
 
     pub fn getStdCompressorThreshold(&self) -> f64 {
@@ -1556,10 +1563,13 @@ impl MusicModel {
     }
 
     pub fn resetAllDsp(&mut self) {
-        // FIRST: Force OFF all FX - this prevents auto-enable from keeping them ON
-        if self.compressor_active {
+        // FIRST: Handle Compressor - stay ON with 50% threshold
+        if !self.compressor_active {
             self.toggleCompressor();
         }
+        self.setStdCompressorThreshold(0.5);
+
+        // SECOND: Force OFF all other FX
         if self.surround_active {
             self.toggleSurround();
         }
@@ -1588,16 +1598,14 @@ impl MusicModel {
             self.togglePitch();
         }
 
-        // SECOND: Set all values to ZERO (no default musical values)
+        // THIRD: Set all values to ZERO (except compressor which is handled above)
         // Set EQ flat
         for i in 0..10 {
             self.set_eq_band(i as i32, 0.0);
         }
-        self.set_preamp_gain(0.0);
-        self.set_fader(0.0);
+        // Note: preamp and fader NOT reset - they are always ON
 
         // Set all FX amounts to ZERO
-        self.setStdCompressorThreshold(0.0);
         self.setStdSurroundWidth(0.0);
         self.setStdStereoWidthAmount(0.0);
         self.setStdMiddleClarityAmount(0.0);
@@ -1730,39 +1738,39 @@ impl MusicModel {
     }
 
     pub fn reset_std_compressor(&mut self) {
-        self.dsp.reset_compressor();
+        self.dsp.compressor_indie_reset();
         self.sync_dsp_from_controller();
     }
     pub fn reset_std_surround(&mut self) {
-        self.dsp.reset_surround();
+        self.dsp.surround_indie_reset();
         self.sync_dsp_from_controller();
     }
     pub fn reset_std_stereo_width(&mut self) {
-        self.dsp.reset_stereo_width();
+        self.dsp.stereo_width_indie_reset();
         self.sync_dsp_from_controller();
     }
     pub fn reset_std_middle_clarity(&mut self) {
-        self.dsp.reset_middle_clarity();
+        self.dsp.middle_clarity_indie_reset();
         self.sync_dsp_from_controller();
     }
     pub fn reset_std_stereo_enhance(&mut self) {
-        self.dsp.reset_stereo_enhance();
+        self.dsp.stereo_enhance_indie_reset();
         self.sync_dsp_from_controller();
     }
     pub fn reset_std_crossfeed(&mut self) {
-        self.dsp.reset_crossfeed();
+        self.dsp.crossfeed_indie_reset();
         self.sync_dsp_from_controller();
     }
     pub fn reset_std_crystalizer(&mut self) {
-        self.dsp.reset_crystalizer();
+        self.dsp.crystalizer_indie_reset();
         self.sync_dsp_from_controller();
     }
     pub fn reset_std_bass(&mut self) {
-        self.dsp.reset_bass();
+        self.dsp.bass_indie_reset();
         self.sync_dsp_from_controller();
     }
     pub fn reset_std_reverb(&mut self) {
-        self.dsp.reset_reverb();
+        self.dsp.reverb_indie_reset();
         self.sync_dsp_from_controller();
     }
 
@@ -1776,25 +1784,28 @@ impl MusicModel {
         self.reverb_amount = self.dsp.reverb_amount;
         self.reverb_amount_changed();
         self.reverb_room_size = self.dsp.reverb_room_size;
+        self.reverb_room_size_changed();
         self.reverb_damp = self.dsp.reverb_damp;
-        self.reverb_params_changed();
+        self.reverb_damp_changed();
         self.bass_active = self.dsp.bass_active;
         self.bass_active_changed();
         self.bass_gain = self.dsp.bass_gain;
+        self.bass_gain_changed();
         self.bass_cutoff = self.dsp.bass_cutoff;
+        self.bass_cutoff_changed();
         self.bass_mode = self.dsp.bass_mode;
-        self.bass_params_changed();
         self.bass_mode_changed();
         self.surround_active = self.dsp.surround_active;
-        self.surround_magic_changed();
+        self.surround_active_changed();
         self.surround_width = self.dsp.surround_width;
         self.surround_width_changed();
         self.crystal_active = self.dsp.crystal_active;
         self.crystal_active_changed();
         self.crystal_amount = self.dsp.crystal_amount;
         self.compressor_active = self.dsp.compressor_active;
-        self.compressor_changed();
+        self.compressor_active_changed();
         self.compressor_threshold = self.dsp.compressor_threshold;
+        self.compressor_threshold_changed();
         self.mono_active = self.dsp.mono_active;
         self.mono_changed();
         self.mono_width = self.dsp.mono_width;

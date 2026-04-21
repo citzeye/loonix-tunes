@@ -71,6 +71,8 @@ pub trait DspProcessor: Send + Sync {
 
 #[derive(Clone)]
 pub struct DspSettings {
+    pub dsp_enabled: bool,
+    pub eq_enabled: bool,
     pub preamp_db: f32,
     pub bass_enabled: bool,
     pub bass_gain: f32,
@@ -100,13 +102,15 @@ pub struct DspSettings {
 impl Default for DspSettings {
     fn default() -> Self {
         Self {
+            dsp_enabled: true,
+            eq_enabled: true,
             preamp_db: 0.0,
             bass_enabled: false,
             bass_gain: 6.0,
             bass_cutoff: 80.0,
             bass_q: 0.7,
             crystal_enabled: false,
-            crystal_amount: 0.20,
+            crystal_amount: 0.0,
             crystal_freq: 4000.0,
             surround_enabled: false,
             surround_width: 1.3,

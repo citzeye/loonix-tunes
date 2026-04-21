@@ -24,35 +24,6 @@ Popup {
 
         // EQ Properties & Functions
         readonly property var freqLabels: ["31", "62", "125", "250", "500", "1k", "2k", "4k", "8k", "16k"]
-        property var defaultPresets: []
-        property var defaultPresetValues: []
-        property var userPresets: ["USER 1", "USER 2", "USER 3", "USER 4", "USER 5", "USER 6"]
-
-        function loadDefaultPresets() {
-            var count = musicModel.get_eq_preset_count();
-            var names = [];
-            var values = [];
-            for (var i = 0; i < count; i++) {
-                names.push(musicModel.get_eq_preset_name(i));
-                values.push(musicModel.get_eq_preset_gains(i));
-            }
-            defaultPresets = names;
-            defaultPresetValues = values;
-        }
-
-        function refreshUserPresetNames() {
-            var newNames = [];
-            for (var i = 0; i < 6; i++) {
-                let name = musicModel.get_user_preset_name(i);
-                newNames.push(name !== "" ? name : "User " + (i + 1));
-            }
-            dspContent.userPresets = newNames;
-        }
-
-        Component.onCompleted: {
-            loadDefaultPresets();
-            refreshUserPresetNames();
-        }
 
         function loadPresetByIndex(index) {
             if (index < 0 || index >= 12) {
@@ -577,14 +548,14 @@ Popup {
         spacing: 3
 
         Repeater {
-            model: dspContent.defaultPresets
+            model: musicModel.get_eq_preset_count()
             delegate: Button {
                 id: defBtn
                 property bool isActive: musicModel.active_preset_index === index
                 Layout.fillWidth: true
                 Layout.preferredHeight: 20
                 contentItem: Text {
-                    text: modelData
+                    text: musicModel.get_eq_preset_name(index)
                     font.family: kodeMono.name
                     font.pixelSize: 10
                     color: defBtn.isActive ? theme.colormap.dsptextactive : (defBtn.hovered ? theme.colormap.dsptexthover : theme.colormap.dsptext)
@@ -611,14 +582,14 @@ Popup {
         spacing: 3
 
         Repeater {
-            model: dspContent.userPresets
+            model: 6
             delegate: Button {
                 id: pBtn
                 property bool isActive: musicModel.active_preset_index === index + 6
                 Layout.fillWidth: true
                 Layout.preferredHeight: 20
                 contentItem: Text {
-                    text: modelData
+                    text: musicModel.get_user_preset_name(index)
                     font.family: kodeMono.name
                     font.pixelSize: 10
                     color: pBtn.isActive ? theme.colormap.dsptextactive : (pBtn.hovered ? theme.colormap.dsptexthover : theme.colormap.dsptext)

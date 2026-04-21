@@ -9,7 +9,7 @@ static EQ_BANDS_ARC: OnceLock<Arc<[AtomicU32; 10]>> = OnceLock::new();
 static EQ_ENABLED_ARC: OnceLock<AtomicU32> = OnceLock::new();
 
 pub fn get_eq_preamp_arc() -> &'static AtomicU32 {
-    EQ_PREAMP_ARC.get_or_init(|| AtomicU32::new(0_f32.to_bits()))
+    EQ_PREAMP_ARC.get_or_init(|| AtomicU32::new(0))
 }
 
 pub fn get_eq_bands_arc() -> &'static Arc<[AtomicU32; 10]> {

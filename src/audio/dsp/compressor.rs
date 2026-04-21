@@ -10,13 +10,13 @@ static COMPRESSOR_THRESHOLD: OnceLock<Arc<AtomicU32>> = OnceLock::new();
 
 pub fn get_compressor_enabled_arc() -> Arc<AtomicBool> {
     COMPRESSOR_ENABLED
-        .get_or_init(|| Arc::new(AtomicBool::new(true)))
+        .get_or_init(|| Arc::new(AtomicBool::new(false)))
         .clone()
 }
 
 pub fn get_compressor_threshold_arc() -> Arc<AtomicU32> {
     COMPRESSOR_THRESHOLD
-        .get_or_init(|| Arc::new(AtomicU32::new((-6.0_f32).to_bits())))
+        .get_or_init(|| Arc::new(AtomicU32::new(0.0_f32.to_bits())))
         .clone()
 }
 

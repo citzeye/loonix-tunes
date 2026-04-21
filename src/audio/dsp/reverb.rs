@@ -24,11 +24,11 @@ pub fn get_reverb_amount_arc() -> &'static AtomicU32 {
 }
 
 pub fn get_reverb_room_size_arc() -> &'static AtomicU32 {
-    REVERB_ROOM_SIZE.get_or_init(|| AtomicU32::new((0.5_f32).to_bits()))
+    REVERB_ROOM_SIZE.get_or_init(|| AtomicU32::new(0.0_f32.to_bits()))
 }
 
 pub fn get_reverb_damp_arc() -> &'static AtomicU32 {
-    REVERB_DAMP.get_or_init(|| AtomicU32::new((0.5_f32).to_bits()))
+    REVERB_DAMP.get_or_init(|| AtomicU32::new(0.0_f32.to_bits()))
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

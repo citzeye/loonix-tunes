@@ -141,7 +141,7 @@ impl Default for DspController {
             eq_enabled: false,
             eq_bands: [0.0; 10],
             fader_offset: 0.0,
-            active_preset_index: 0,
+            active_preset_index: -1,
             user_eq_names: [const { String::new() }; 6],
             user_eq_gains: [[0.0; 10]; 6],
             user_eq_macro: [0.0; 6],
@@ -188,12 +188,12 @@ impl DspController {
         controller.config_manager = DspConfigManager::new(saved_config);
         controller.eq_presets = AppConfig::get_eq_presets();
         controller.fx_presets = AppConfig::get_fx_presets();
+
         controller
     }
 
     pub fn init_from_config(&mut self, config: &AppConfig) {
-        // 1. Load Engine / Non-Preset Settings
-        self.dsp_enabled = config.dsp_enabled;
+        // 1. Load Normalizer Settings from config.json
         self.normalizer_enabled = config.normalizer_enabled;
         self.normalizer_target_lufs = config.normalizer_target_lufs as f64;
         self.normalizer_true_peak_dbtp = config.normalizer_true_peak_dbtp as f64;
@@ -205,10 +205,10 @@ impl DspController {
             std::sync::atomic::Ordering::Relaxed,
         );
 
-        let eq_enabled_val: u32 = if config.eq_enabled { 1 } else { 0 };
-        self.eq_enabled = config.eq_enabled;
-        crate::audio::dsp::eq::get_eq_enabled_arc()
-            .store(eq_enabled_val, std::sync::atomic::Ordering::Relaxed);
+        // 2. Load all DSP settings from dsp.json or defaults
+        let dsp_settings = crate::audio::dsp::DspSettings::default();
+        self.dsp_enabled = dsp_settings.dsp_enabled;
+        self.eq_enabled = dsp_settings.eq_enabled;
 
         // 2. Load Preset Definitions into Memory
         self.eq_presets = AppConfig::get_eq_presets();
@@ -241,8 +241,8 @@ impl DspController {
         self.user_fx_reverb_amount = dsp_config.user_fx_reverb_amount;
 
         // 3. THE MASTER BOOT ACTION (0 to 11)
-        // Ini memastikan jika user "hanya geser tanpa save", saat restart akan kembali ke preset awal
-        let preset_index = config.active_preset_index.clamp(0, 11);
+        // Read preset index from dsp.json (not config.json)
+        let preset_index = dsp_config.active_preset_index.clamp(0, 11);
         self.load_preset(preset_index);
     }
 
@@ -330,12 +330,11 @@ impl DspController {
 
     pub fn emit_all_signals(&mut self) {
         self.bass_active_changed();
-        self.bass_params_changed();
         self.bass_mode_changed();
         self.surround_active_changed();
         self.surround_width_changed();
         self.crystal_active_changed();
-        self.compressor_changed();
+        self.compressor_active_changed();
         self.mono_changed();
         self.mono_width_changed();
         self.pitch_changed();
@@ -361,14 +360,18 @@ impl DspController {
     pub fn reverb_active_changed(&self) {}
     pub fn reverb_mode_changed(&self) {}
     pub fn reverb_amount_changed(&self) {}
-    pub fn reverb_params_changed(&self) {}
     pub fn bass_active_changed(&self) {}
-    pub fn bass_params_changed(&self) {}
+    pub fn bass_gain_changed(&self) {}
+    pub fn bass_cutoff_changed(&self) {}
     pub fn bass_mode_changed(&self) {}
+    pub fn bass_params_changed(&self) {}
     pub fn surround_width_changed(&self) {}
     pub fn surround_active_changed(&self) {}
     pub fn crystal_active_changed(&self) {}
-    pub fn compressor_changed(&self) {}
+    pub fn crystal_amount_changed(&self) {}
+    pub fn crystal_freq_changed(&self) {}
+    pub fn compressor_active_changed(&self) {}
+    pub fn compressor_threshold_changed(&self) {}
     pub fn dsp_changed(&self) {}
     pub fn mono_changed(&self) {}
     pub fn mono_width_changed(&self) {}
@@ -424,7 +427,6 @@ impl DspController {
     pub fn set_reverb_room_size(&mut self, val: f64) {
         let val = val.clamp(0.0, 1.0);
         self.reverb_room_size = val;
-        self.reverb_params_changed();
         crate::audio::dsp::reverb::get_reverb_room_size_arc()
             .store((val as f32).to_bits(), std::sync::atomic::Ordering::Relaxed);
         self.save_config();
@@ -433,7 +435,6 @@ impl DspController {
     pub fn set_reverb_damp(&mut self, val: f64) {
         let val = val.clamp(0.0, 1.0);
         self.reverb_damp = val;
-        self.reverb_params_changed();
         crate::audio::dsp::reverb::get_reverb_damp_arc()
             .store((val as f32).to_bits(), std::sync::atomic::Ordering::Relaxed);
         self.save_config();
@@ -498,8 +499,6 @@ impl DspController {
 
         crate::audio::dsp::bassbooster::get_bass_enabled_arc()
             .store(self.bass_active, std::sync::atomic::Ordering::Relaxed);
-
-        self.bass_params_changed();
     }
 
     pub fn set_bass_mode(&mut self, mode: i32) {
@@ -609,7 +608,7 @@ impl DspController {
     // --- COMPRESSOR METHODS ---
     pub fn toggle_compressor(&mut self) {
         self.compressor_active = !self.compressor_active;
-        self.compressor_changed();
+        self.compressor_active_changed();
 
         crate::audio::dsp::compressor::get_compressor_enabled_arc()
             .store(self.compressor_active, std::sync::atomic::Ordering::Relaxed);
@@ -1087,6 +1086,10 @@ impl DspController {
             return;
         }
 
+        if index == self.active_preset_index {
+            return;
+        }
+
         let (eq_source, fx_source, use_factory_fx) = if index < 6 {
             // FACTORY PRESET (0-5): Load ALL from internal code (presets.rs)
             // JSON is completely IGNORED for these indices
@@ -1185,7 +1188,6 @@ impl DspController {
             std::sync::atomic::Ordering::Relaxed,
         );
         self.bass_active_changed();
-        self.bass_params_changed();
         self.bass_mode_changed();
 
         self.crystal_active = preset.crystal_enabled || preset.crystal_amount > 0.0;
@@ -1198,6 +1200,8 @@ impl DspController {
             std::sync::atomic::Ordering::Relaxed,
         );
         self.crystal_active_changed();
+        self.crystal_amount_changed();
+        self.crystal_freq_changed();
 
         self.surround_active = preset.surround_enabled || preset.surround_width > 0.0;
         self.surround_width = preset.surround_width.clamp(0.0, 2.0) as f64;
@@ -1277,7 +1281,8 @@ impl DspController {
             preset.compressor_threshold.clamp(-60.0, 0.0).to_bits(),
             std::sync::atomic::Ordering::Relaxed,
         );
-        self.compressor_changed();
+        self.compressor_active_changed();
+        self.compressor_threshold_changed();
 
         // REVERB: Sync from preset (raw u32, no to_bits())
         self.reverb_active = preset.reverb_enabled;
@@ -1389,7 +1394,8 @@ impl DspController {
         );
         crate::audio::dsp::compressor::get_compressor_threshold_arc()
             .store(threshold.to_bits(), std::sync::atomic::Ordering::Relaxed);
-        self.compressor_changed();
+        self.compressor_active_changed();
+        self.compressor_threshold_changed();
 
         // Reverb
         self.reverb_active = self.user_fx_reverb_enabled[idx];
@@ -1413,7 +1419,7 @@ impl DspController {
     }
 
     // --- RESET METHODS ---
-    pub fn reset_compressor(&mut self) {
+    pub fn compressor_indie_reset(&mut self) {
         let preset_idx = self.active_preset_index.clamp(0, 11) as usize;
         if preset_idx < self.fx_presets.len() {
             let preset = &self.fx_presets[preset_idx];
@@ -1426,37 +1432,115 @@ impl DspController {
                 preset.compressor_threshold.to_bits(),
                 std::sync::atomic::Ordering::Relaxed,
             );
-            // compressor_active_changed not needed
+            self.compressor_active_changed();
+            self.compressor_threshold_changed();
         } else {
             self.set_compressor_threshold(1.0);
         }
     }
 
-    pub fn reset_surround(&mut self) {
-        self.set_surround_width(1.0);
+    pub fn surround_indie_reset(&mut self) {
+        let preset_idx = self.active_preset_index.clamp(0, 11) as usize;
+        if preset_idx < self.fx_presets.len() {
+            let preset = &self.fx_presets[preset_idx];
+            self.surround_active = preset.surround_enabled || preset.surround_width > 0.0;
+            self.surround_width = preset.surround_width.clamp(0.0, 2.0) as f64;
+            crate::audio::dsp::surround::get_surround_enabled_arc()
+                .store(self.surround_active, std::sync::atomic::Ordering::Relaxed);
+            crate::audio::dsp::surround::get_surround_width_arc().store(
+                preset.surround_width.to_bits(),
+                std::sync::atomic::Ordering::Relaxed,
+            );
+            self.surround_active_changed();
+            self.surround_width_changed();
+        }
     }
 
-    pub fn reset_stereo_width(&mut self) {
-        self.set_stereo_width_amount(1.0);
+    pub fn stereo_width_indie_reset(&mut self) {
+        let preset_idx = self.active_preset_index.clamp(0, 11) as usize;
+        if preset_idx < self.fx_presets.len() {
+            let preset = &self.fx_presets[preset_idx];
+            self.mono_active = preset.mono_enabled || preset.mono_width > 0.0;
+            self.mono_width = preset.mono_width.clamp(0.0, 2.0) as f64;
+            crate::audio::dsp::stereowidth::get_mono_enabled_arc()
+                .store(self.mono_active, std::sync::atomic::Ordering::Relaxed);
+            crate::audio::dsp::stereowidth::get_mono_width_arc().store(
+                preset.mono_width.to_bits(),
+                std::sync::atomic::Ordering::Relaxed,
+            );
+            self.mono_changed();
+            self.mono_width_changed();
+        }
     }
 
-    pub fn reset_middle_clarity(&mut self) {
-        self.set_middle_clarity_amount(0.0);
+    pub fn middle_clarity_indie_reset(&mut self) {
+        let preset_idx = self.active_preset_index.clamp(0, 11) as usize;
+        if preset_idx < self.fx_presets.len() {
+            let preset = &self.fx_presets[preset_idx];
+            self.middle_active = preset.middle_enabled || preset.middle_amount > 0.0;
+            self.middle_amount = preset.middle_amount as f64;
+            crate::audio::dsp::middleclarity::get_middle_enabled_arc()
+                .store(self.middle_active, std::sync::atomic::Ordering::Relaxed);
+            crate::audio::dsp::middleclarity::get_middle_amount_arc().store(
+                preset.middle_amount.to_bits(),
+                std::sync::atomic::Ordering::Relaxed,
+            );
+            self.middle_changed();
+            self.middle_amount_changed();
+        }
     }
 
-    pub fn reset_stereo_enhance(&mut self) {
-        self.set_stereo_enhance_amount(0.0);
+    pub fn stereo_enhance_indie_reset(&mut self) {
+        let preset_idx = self.active_preset_index.clamp(0, 11) as usize;
+        if preset_idx < self.fx_presets.len() {
+            let preset = &self.fx_presets[preset_idx];
+            self.stereo_active = preset.stereo_enabled || preset.stereo_amount > 0.0;
+            self.stereo_amount = preset.stereo_amount.clamp(0.0, 1.0) as f64;
+            crate::audio::dsp::stereoenhance::get_stereo_enabled_arc()
+                .store(self.stereo_active, std::sync::atomic::Ordering::Relaxed);
+            crate::audio::dsp::stereoenhance::get_stereo_amount_arc().store(
+                preset.stereo_amount.to_bits(),
+                std::sync::atomic::Ordering::Relaxed,
+            );
+            self.stereo_changed();
+            self.stereo_amount_changed();
+        }
     }
 
-    pub fn reset_crossfeed(&mut self) {
-        self.set_crossfeed_amount(0.0);
+    pub fn crossfeed_indie_reset(&mut self) {
+        let preset_idx = self.active_preset_index.clamp(0, 11) as usize;
+        if preset_idx < self.fx_presets.len() {
+            let preset = &self.fx_presets[preset_idx];
+            self.crossfeed_active = preset.crossfeed_enabled || preset.crossfeed_amount > 0.0;
+            self.crossfeed_amount = preset.crossfeed_amount.clamp(0.0, 1.0) as f64;
+            crate::audio::dsp::crossfeed::get_crossfeed_enabled_arc()
+                .store(self.crossfeed_active, std::sync::atomic::Ordering::Relaxed);
+            crate::audio::dsp::crossfeed::get_crossfeed_amount_arc().store(
+                preset.crossfeed_amount.to_bits(),
+                std::sync::atomic::Ordering::Relaxed,
+            );
+            self.crossfeed_changed();
+            self.crossfeed_amount_changed();
+        }
     }
 
-    pub fn reset_crystalizer(&mut self) {
-        self.set_crystalizer_amount(0.0);
+    pub fn crystalizer_indie_reset(&mut self) {
+        let preset_idx = self.active_preset_index.clamp(0, 11) as usize;
+        if preset_idx < self.fx_presets.len() {
+            let preset = &self.fx_presets[preset_idx];
+            self.crystal_active = preset.crystal_enabled || preset.crystal_amount > 0.0;
+            self.crystal_amount = preset.crystal_amount.clamp(0.0, 1.0) as f64;
+            crate::audio::dsp::crystalizer::get_crystal_enabled_arc()
+                .store(self.crystal_active, std::sync::atomic::Ordering::Relaxed);
+            crate::audio::dsp::crystalizer::get_crystal_amount_arc().store(
+                preset.crystal_amount.to_bits(),
+                std::sync::atomic::Ordering::Relaxed,
+            );
+            self.crystal_active_changed();
+        }
     }
 
-    pub fn reset_bass(&mut self) {
+    pub fn bass_indie_reset(&mut self) {
         let preset_idx = self.active_preset_index.clamp(0, 11) as usize;
         if preset_idx < self.fx_presets.len() {
             let preset = &self.fx_presets[preset_idx];
@@ -1475,7 +1559,8 @@ impl DspController {
                 std::sync::atomic::Ordering::Relaxed,
             );
             self.bass_active_changed();
-            self.bass_params_changed();
+            self.bass_gain_changed();
+            self.bass_cutoff_changed();
             self.bass_mode_changed();
         } else {
             self.set_bass_gain(0.0);
@@ -1484,7 +1569,7 @@ impl DspController {
         }
     }
 
-    pub fn reset_reverb(&mut self) {
+    pub fn reverb_indie_reset(&mut self) {
         let preset_idx = self.active_preset_index.clamp(0, 11) as usize;
         if preset_idx < self.fx_presets.len() {
             let preset = &self.fx_presets[preset_idx];

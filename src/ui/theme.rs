@@ -1007,7 +1007,7 @@ impl ThemeManager {
                     "playlisttext", "#d1d8e6",
                     "playlistfolder", "#f5a623",
                     "playlistactive", "#843ff3",
-"playlisticon", "#00ffdd",
+                    "playlisticon", "#843ff3",
 
                     "dspbg", "#15151B",
                     "dsptext", "#6d6d6d",

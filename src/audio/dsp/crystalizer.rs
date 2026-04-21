@@ -8,6 +8,7 @@ static CRYSTAL_ENABLED: OnceLock<AtomicBool> = OnceLock::new();
 static CRYSTAL_AMOUNT: OnceLock<AtomicU32> = OnceLock::new();
 static CRYSTAL_FREQ: OnceLock<AtomicU32> = OnceLock::new();
 static CRYSTAL_MAGIC_MODE: OnceLock<AtomicBool> = OnceLock::new();
+static LAST_CRYSTAL_AMOUNT: AtomicU32 = AtomicU32::new(0);
 
 pub fn get_crystal_enabled_arc() -> &'static AtomicBool {
     CRYSTAL_ENABLED.get_or_init(|| AtomicBool::new(false))
@@ -57,8 +58,16 @@ impl Crystalizer {
 impl DspProcessor for Crystalizer {
     fn process(&mut self, input: &[f32], output: &mut [f32]) {
         let is_on = get_crystal_enabled_arc().load(Ordering::Relaxed);
-        let amount = bits_to_f32(get_crystal_amount_arc().load(Ordering::Relaxed));
+        let crystal_raw = get_crystal_amount_arc().load(Ordering::Relaxed);
+        let amount = bits_to_f32(crystal_raw);
         let freq = bits_to_f32(get_crystal_freq_arc().load(Ordering::Relaxed));
+
+        // Log only when crystal amount changes
+        let last_raw = LAST_CRYSTAL_AMOUNT.load(Ordering::Relaxed);
+        if crystal_raw != last_raw {
+            LAST_CRYSTAL_AMOUNT.store(crystal_raw, Ordering::Relaxed);
+            eprintln!("[ENGINE] crystal amount changed → {}", amount);
+        }
 
         if !is_on || amount < 0.01 {
             output.copy_from_slice(input);

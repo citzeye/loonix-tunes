@@ -36,6 +36,7 @@ pub fn config_dir() -> Option<PathBuf> {
 
 #[derive(Serialize, Deserialize, Clone)]
 pub struct DspConfig {
+    pub active_preset_index: i32,
     pub user_preset_names: [String; 6],
     pub user_preset_gains: [[f32; 10]; 6],
     pub user_preset_macro: [f32; 6],
@@ -78,6 +79,7 @@ impl DspConfig {
 
     pub fn dsp_user_template() -> Self {
         Self {
+            active_preset_index: -1,
             user_preset_names: [
                 "User 1".into(),
                 "User 2".into(),
@@ -131,6 +133,7 @@ impl DspConfig {
 impl Default for DspConfig {
     fn default() -> Self {
         Self {
+            active_preset_index: -1,
             user_preset_names: [
                 "User 1".into(),
                 "User 2".into(),
@@ -147,7 +150,7 @@ impl Default for DspConfig {
             user_fx_bass_cutoff: [180.0; 6],
             user_fx_bass_mode: [0; 6],
             user_fx_crystal_enabled: [false; 6],
-            user_fx_crystal_amount: [0.20; 6],
+            user_fx_crystal_amount: [0.0; 6],
             user_fx_surround_enabled: [false; 6],
             user_fx_surround_width: [1.8; 6],
             user_fx_mono_enabled: [false; 6],
@@ -167,54 +170,26 @@ impl Default for DspConfig {
 
 #[derive(Serialize, Deserialize, Clone)]
 pub struct AppConfig {
-    pub eq_bands: [f32; 10],
     pub volume: f64,
     pub balance: f64,
     pub shuffle: bool,
     pub loop_playlist: bool,
+    #[serde(default)]
     pub custom_folders: Vec<(String, String)>,
+    #[serde(default)]
     pub favorites: Vec<(String, String)>,
+    #[serde(default)]
     pub locked_folders: Vec<i32>,
     pub mode: crate::audio::engine::OutputMode,
+    #[serde(default)]
     pub last_track_path: String,
     // Window position
     pub window_x: i32,
     pub window_y: i32,
     pub window_width: i32,
     pub window_height: i32,
-    // DSP settings
-    pub dsp_enabled: bool,
-    pub bass_enabled: bool,
-    pub bass_gain: f32,
-    #[serde(default = "default_bass_cutoff")]
-    pub bass_cutoff: f32,
+    // Normalizer settings (stored in config.json)
     #[serde(default)]
-    pub bass_mode: i32,
-    pub bass_q: f32,
-    pub crystal_enabled: bool,
-    pub crystal_amount: f32,
-    pub crystal_freq: f32,
-    pub surround_enabled: bool,
-    pub surround_width: f32,
-    pub surround_room_size: f32,
-    pub surround_bass_safe: bool,
-    pub mono_enabled: bool,
-    pub mono_width: f32,
-    pub pitch_enabled: bool,
-    pub pitch_semitones: f32,
-    pub middle_enabled: bool,
-    pub middle_amount: f32,
-    pub reverb_enabled: bool,
-    pub reverb_mode: i32,   // 0=Off, 1=Studio, 2=Stage, 3=Stadium
-    pub reverb_amount: i32, // 0-100 percentage
-    pub compressor_enabled: bool,
-    pub compressor_threshold: f32,
-    pub stereo_enabled: bool,
-    pub stereo_amount: f32,
-    pub preamp_db: f32,
-    pub crossfeed_enabled: bool,
-    pub crossfeed_amount: f32,
-    pub eq_enabled: bool,
     pub normalizer_enabled: bool,
     #[serde(default = "default_norm_target_lufs")]
     pub normalizer_target_lufs: f32,
@@ -224,12 +199,8 @@ pub struct AppConfig {
     pub normalizer_max_gain_db: f32,
     #[serde(default = "default_norm_smoothing")]
     pub normalizer_smoothing: f32,
-    pub active_preset_index: i32,
 }
 
-fn default_bass_cutoff() -> f32 {
-    180.0
-}
 fn default_norm_target_lufs() -> f32 {
     -14.0
 }
@@ -245,9 +216,7 @@ fn default_norm_smoothing() -> f32 {
 
 impl Default for AppConfig {
     fn default() -> Self {
-        let p = &FX_PRESETS[0]; // LOONIX - auto from presets.rs
         Self {
-            eq_bands: EQ_PRESETS[0].gains,
             volume: 0.2,
             balance: 0.0,
             shuffle: false,
@@ -261,42 +230,11 @@ impl Default for AppConfig {
             window_y: -1,
             window_width: 350,
             window_height: 700,
-            dsp_enabled: true,
-            bass_enabled: p.bass_enabled,
-            bass_gain: p.bass_gain,
-            bass_cutoff: p.bass_cutoff,
-            bass_mode: p.bass_mode,
-            bass_q: 0.7,
-            crystal_enabled: p.crystal_enabled,
-            crystal_amount: p.crystal_amount,
-            crystal_freq: p.crystal_freq,
-            surround_enabled: p.surround_enabled,
-            surround_width: p.surround_width,
-            surround_room_size: 15.0,
-            surround_bass_safe: true,
-            mono_enabled: p.mono_enabled,
-            mono_width: p.mono_width,
-            pitch_enabled: p.pitch_enabled,
-            pitch_semitones: p.pitch_semitones,
-            middle_enabled: p.middle_enabled,
-            middle_amount: p.middle_amount,
-            reverb_enabled: p.reverb_enabled,
-            reverb_mode: p.reverb_mode,
-            reverb_amount: p.reverb_amount,
-            compressor_enabled: p.compressor_enabled,
-            compressor_threshold: p.compressor_threshold,
-            stereo_enabled: p.stereo_enabled,
-            stereo_amount: p.stereo_amount,
-            preamp_db: 0.0,
-            crossfeed_enabled: p.crossfeed_enabled,
-            crossfeed_amount: p.crossfeed_amount,
-            eq_enabled: true,
             normalizer_enabled: true,
             normalizer_target_lufs: default_norm_target_lufs(),
             normalizer_true_peak_dbtp: default_norm_true_peak(),
             normalizer_max_gain_db: default_norm_max_gain(),
             normalizer_smoothing: default_norm_smoothing(),
-            active_preset_index: 0,
         }
     }
 }
@@ -387,7 +325,7 @@ impl Default for FxPreset {
             bass_cutoff: 180.0,
             bass_mode: 0,
             crystal_enabled: false,
-            crystal_amount: 0.20,
+            crystal_amount: 0.0,
             crystal_freq: 8000.0,
             surround_enabled: false,
             surround_width: 1.8,

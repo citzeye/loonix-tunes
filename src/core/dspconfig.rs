@@ -50,6 +50,8 @@ impl DspConfigManager {
 
     pub fn get_current_dsp_settings(&self, state: &DspStateView) -> DspSettings {
         DspSettings {
+            dsp_enabled: state.dsp_enabled,
+            eq_enabled: state.eq_enabled,
             preamp_db: 0.0,
             bass_enabled: state.bass_active,
             bass_gain: state.bass_gain as f32,
@@ -80,6 +82,7 @@ impl DspConfigManager {
     pub fn save_dsp_config(&mut self, state: &DspStateView) {
         // Save user presets to dsp.json
         let dsp_config = DspConfig {
+            active_preset_index: state.active_preset_index,
             user_preset_names: state.user_eq_names.clone(),
             user_preset_gains: state.user_eq_gains,
             user_preset_macro: state.user_eq_macro,
@@ -106,40 +109,8 @@ impl DspConfigManager {
         };
         let _ = dsp_config.save();
 
-        // Also update main config with current DSP state
-        if let Some(ref config) = &self.saved_config {
-            if let Ok(mut cfg) = config.lock() {
-                cfg.dsp_enabled = state.dsp_enabled;
-                cfg.eq_bands = state.dsp_bands;
-                cfg.eq_enabled = state.eq_enabled;
-                cfg.active_preset_index = state.active_preset_index;
-                cfg.bass_enabled = state.bass_active;
-                cfg.bass_gain = state.bass_gain as f32;
-                cfg.bass_cutoff = state.bass_cutoff as f32;
-                cfg.crystal_enabled = state.crystal_active;
-                cfg.crystal_amount = state.crystal_amount as f32;
-                cfg.crystal_freq = state.crystal_frdsp as f32;
-                cfg.surround_enabled = state.surround_active;
-                cfg.surround_width = state.surround_width as f32;
-                cfg.mono_enabled = state.mono_active;
-                cfg.mono_width = state.mono_width as f32;
-                cfg.pitch_enabled = state.pitch_active;
-                cfg.pitch_semitones = state.pitch_semitones as f32;
-                cfg.middle_enabled = state.middle_active;
-                cfg.middle_amount = state.middle_amount as f32;
-                cfg.reverb_mode = state.reverb_mode as i32;
-                cfg.reverb_amount = state.reverb_amount as i32;
-                cfg.compressor_enabled = state.compressor_active;
-                let threshold_bits = crate::audio::dsp::compressor::get_compressor_threshold_arc()
-                    .load(std::sync::atomic::Ordering::Relaxed);
-                cfg.compressor_threshold = f32::from_bits(threshold_bits);
-                cfg.stereo_enabled = state.stereo_active;
-                cfg.stereo_amount = state.stereo_amount as f32;
-                cfg.crossfeed_enabled = state.crossfeed_active;
-                cfg.crossfeed_amount = state.crossfeed_amount as f32;
-                let _ = cfg.save();
-            }
-        }
+        // DSP settings are saved ONLY to dsp.json - NOT to config.json
+        // Config.json only contains app settings (volume, balance, window position, etc.)
         self.is_dirty = false;
     }
 
@@ -206,7 +177,7 @@ impl Default for DspStateView {
             dsp_enabled: true,
             dsp_bands: [0.0; 10],
             eq_enabled: false,
-            active_preset_index: 0,
+            active_preset_index: -1,
             bass_active: false,
             bass_gain: 0.0,
             bass_cutoff: 180.0,
@@ -256,34 +227,35 @@ impl Default for DspStateView {
 }
 
 impl DspStateView {
-    pub fn from_config(config: &AppConfig) -> Self {
+    pub fn from_config(_config: &AppConfig) -> Self {
         let dsp_config = DspConfig::load();
+        let defaults = crate::audio::dsp::DspSettings::default();
         Self {
-            dsp_enabled: config.dsp_enabled,
-            dsp_bands: config.eq_bands,
-            eq_enabled: config.eq_enabled,
-            active_preset_index: config.active_preset_index,
-            bass_active: config.bass_enabled,
-            bass_gain: config.bass_gain as f64,
-            bass_cutoff: config.bass_cutoff as f64,
-            crystal_active: config.crystal_enabled,
-            crystal_amount: config.crystal_amount as f64,
-            crystal_frdsp: config.crystal_freq as f64,
-            surround_active: config.surround_enabled,
-            surround_width: config.surround_width as f64,
-            mono_active: config.mono_enabled,
-            mono_width: config.mono_width as f64,
-            pitch_active: config.pitch_enabled,
-            pitch_semitones: config.pitch_semitones as f64,
-            middle_active: config.middle_enabled,
-            middle_amount: config.middle_amount as f64,
-            reverb_mode: config.reverb_mode as u32,
-            reverb_amount: config.reverb_amount as u32,
-            compressor_active: config.compressor_enabled,
-            stereo_active: config.stereo_enabled,
-            stereo_amount: config.stereo_amount as f64,
-            crossfeed_active: config.crossfeed_enabled,
-            crossfeed_amount: config.crossfeed_amount as f64,
+            dsp_enabled: defaults.dsp_enabled,
+            dsp_bands: defaults.eq_bands,
+            eq_enabled: defaults.eq_enabled,
+            active_preset_index: dsp_config.active_preset_index,
+            bass_active: defaults.bass_enabled,
+            bass_gain: defaults.bass_gain as f64,
+            bass_cutoff: defaults.bass_cutoff as f64,
+            crystal_active: defaults.crystal_enabled,
+            crystal_amount: defaults.crystal_amount as f64,
+            crystal_frdsp: defaults.crystal_freq as f64,
+            surround_active: defaults.surround_enabled,
+            surround_width: defaults.surround_width as f64,
+            mono_active: defaults.mono_enabled,
+            mono_width: defaults.mono_width as f64,
+            pitch_active: defaults.pitch_enabled,
+            pitch_semitones: defaults.pitch_semitones as f64,
+            middle_active: defaults.middle_enabled,
+            middle_amount: defaults.middle_amount as f64,
+            reverb_mode: 0,
+            reverb_amount: 0,
+            compressor_active: defaults.compressor_enabled,
+            stereo_active: defaults.stereo_enabled,
+            stereo_amount: defaults.stereo_amount as f64,
+            crossfeed_active: defaults.crossfeed_enabled,
+            crossfeed_amount: defaults.crossfeed_amount as f64,
             user_eq_names: dsp_config.user_preset_names.clone(),
             user_eq_gains: dsp_config.user_preset_gains,
             user_eq_macro: dsp_config.user_preset_macro,
