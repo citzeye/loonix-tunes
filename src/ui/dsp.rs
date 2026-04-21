@@ -249,10 +249,13 @@ impl DspController {
     }
 
     fn applyBassMode(&mut self, mode: i32) {
-        let freqs: [f32; 4] = [50.0, 60.0, 90.0, 150.0];
+        // Frekuensi disesuaikan biar selaras sama preset (Punch dapet 180.0 biar tebel!)
+        // 0=Deep(80Hz), 1=Soft(120Hz), 2=Punch(180Hz), 3=Warm(220Hz)
+        let freqs: [f32; 4] = [80.0, 120.0, 180.0, 220.0]; 
         let q_vals: [f32; 4] = [0.5, 0.6, 0.7, 0.8];
 
         self.bass_cutoff = freqs[mode as usize] as f64;
+        
         crate::audio::dsp::bassbooster::get_bass_freq_arc().store(
             freqs[mode as usize].to_bits(),
             std::sync::atomic::Ordering::Relaxed,
@@ -261,6 +264,9 @@ impl DspController {
             q_vals[mode as usize].to_bits(),
             std::sync::atomic::Ordering::Relaxed,
         );
+        
+        // Panggil ini biar UI (kalau nanti ada slider cutoff) ikut update
+        self.bass_cutoff_changed(); 
     }
 
     pub fn save_config(&mut self) {
@@ -1169,14 +1175,15 @@ impl DspController {
             return;
         }
 
-        let preset = &self.fx_presets[index as usize];
+        let preset = self.fx_presets[index as usize].clone();
 
-        self.bass_active = preset.bass_enabled || preset.bass_gain > 0.0;
+        self.bass_active = preset.bass_enabled; 
         self.bass_gain = preset.bass_gain as f64;
         self.bass_cutoff = preset.bass_cutoff as f64;
         self.bass_mode = preset.bass_mode as i32;
+        
         crate::audio::dsp::bassbooster::get_bass_enabled_arc()
-            .store(preset.bass_enabled, std::sync::atomic::Ordering::Relaxed);
+            .store(self.bass_active, std::sync::atomic::Ordering::Relaxed);
         crate::audio::dsp::bassbooster::get_bass_gain_arc().store(
             preset.bass_gain.to_bits(),
             std::sync::atomic::Ordering::Relaxed,
@@ -1185,7 +1192,10 @@ impl DspController {
             preset.bass_cutoff.to_bits(),
             std::sync::atomic::Ordering::Relaxed,
         );
+        
         self.bass_active_changed();
+        self.bass_gain_changed();
+        self.bass_cutoff_changed();
         self.bass_mode_changed();
 
         self.crystal_active = preset.crystal_enabled || preset.crystal_amount > 0.0;
@@ -1314,6 +1324,7 @@ impl DspController {
         self.bass_gain = self.user_fx_bass_gain[idx] as f64;
         self.bass_cutoff = self.user_fx_bass_cutoff[idx] as f64;
         self.bass_mode = self.user_fx_bass_mode[idx];
+        
         crate::audio::dsp::bassbooster::get_bass_enabled_arc().store(
             self.user_fx_bass_enabled[idx],
             std::sync::atomic::Ordering::Relaxed,
@@ -1322,8 +1333,15 @@ impl DspController {
             self.user_fx_bass_gain[idx].to_bits(),
             std::sync::atomic::Ordering::Relaxed,
         );
+        crate::audio::dsp::bassbooster::get_bass_freq_arc().store(
+            self.user_fx_bass_cutoff[idx].to_bits(),
+            std::sync::atomic::Ordering::Relaxed,
+        );
+        
         self.bass_active_changed();
-        self.bass_params_changed();
+        self.bass_gain_changed();
+        self.bass_cutoff_changed();
+        self.bass_mode_changed();
 
         // Crystalizer
         self.crystal_active = self.user_fx_crystal_enabled[idx];
@@ -1554,12 +1572,13 @@ impl DspController {
 
     pub fn bass_indie_reset(&mut self) {
         if let Some(default) = &self.default_fx_snapshot {
-            self.bass_active = default.bass_enabled || default.bass_gain > 0.0;
+            self.bass_active = default.bass_enabled;
             self.bass_gain = default.bass_gain as f64;
             self.bass_cutoff = default.bass_cutoff as f64;
             self.bass_mode = default.bass_mode as i32;
+            
             crate::audio::dsp::bassbooster::get_bass_enabled_arc()
-                .store(default.bass_enabled, std::sync::atomic::Ordering::Relaxed);
+                .store(self.bass_active, std::sync::atomic::Ordering::Relaxed);
             crate::audio::dsp::bassbooster::get_bass_gain_arc().store(
                 default.bass_gain.to_bits(),
                 std::sync::atomic::Ordering::Relaxed,
@@ -1568,6 +1587,7 @@ impl DspController {
                 default.bass_cutoff.to_bits(),
                 std::sync::atomic::Ordering::Relaxed,
             );
+            
             self.bass_active_changed();
             self.bass_gain_changed();
             self.bass_cutoff_changed();
