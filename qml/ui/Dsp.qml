@@ -1659,22 +1659,29 @@ RowLayout {
                 height: parent.height
                 radius: 1.5
                 color: theme.colormap.dspeq10sliderbg
+                
                 Rectangle {
                     width: parent.width
                     y: eqSld.visualPosition * parent.height
                     height: parent.height - y
-                    color: theme.colormap.dspeq10slider
                     radius: 1.5
+                    // Murni pakai warna dspeqslider, opacity yang main untuk greyout
+                    color: theme.colormap.dspeqslider
+                    opacity: musicModel.dsp_enabled ? 1.0 : 0.4
                 }
             }
+            
             handle: Rectangle {
                 anchors.horizontalCenter: parent.horizontalCenter
                 y: eqSld.visualPosition * (eqSld.availableHeight - height)
                 width: 10
                 height: 10
                 radius: 5
-                color: eqSld.pressed ? theme.colormap.dspeq10slider : theme.colormap.dspeq10handle
+                // Murni pakai warna dspeqhandle, tanpa ganti warna pas pressed
+                color: theme.colormap.dspeqhandle
+                opacity: musicModel.dsp_enabled ? 1.0 : 0.4
             }
+
             MouseArea {
                 anchors.fill: parent
                 acceptedButtons: Qt.NoButton

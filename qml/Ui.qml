@@ -618,7 +618,7 @@ Window {
                                 implicitWidth: 10
                                 implicitHeight: 10
                                 radius: 5
-                                color: seekbar.pressed ? theme.colormap.playerhover : theme.colormap.playeraccent
+                                color: seekbar.pressed ? theme.colormap.playerhandle : theme.colormap.playeraccent
                             }
 
                             // AB Repeat markers
@@ -654,7 +654,7 @@ Window {
                                 Rectangle {
                                     width: musicModel.duration > 0 && musicModel.position >= 0 ? (musicModel.position / musicModel.duration) * seekbar.availableWidth : 0
                                     height: parent.height
-                                    color: theme.colormap.playeraccent
+                                    color: theme.colormap.playerslider
                                     radius: 2
                                 }
                             }

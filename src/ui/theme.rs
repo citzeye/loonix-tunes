@@ -161,6 +161,8 @@ impl ThemeConfig {
         map.insert("playersubtext".to_string(), "#6d6d6d".to_string());
         map.insert("playeraccent".to_string(), "#00ffdd".to_string());
         map.insert("playerhover".to_string(), "#843ff3".to_string());
+        map.insert("playerslider".to_string(), "#00ffdd".to_string());
+        map.insert("playerhandle".to_string(), "#843ff3".to_string());
         map.insert("tabtext".to_string(), "#d1d8e6".to_string());
         map.insert("tabborder".to_string(), "#8a8a8a".to_string());
         map.insert("tabhover".to_string(), "#00ffdd".to_string());
@@ -587,6 +589,8 @@ impl ThemeManager {
         map.insert("playersubtext".to_string(), on_surface_variant.to_string());
         map.insert("playeraccent".to_string(), primary.to_string());
         map.insert("playerhover".to_string(), secondary.to_string());
+        map.insert("playerslider".to_string(), primary.to_string());
+        map.insert("playerhandle".to_string(), secondary.to_string());
         map.insert("tabtext".to_string(), on_surface.to_string());
         map.insert("tabborder".to_string(), outline.to_string());
         map.insert("tabhover".to_string(), primary.to_string());
@@ -944,11 +948,13 @@ impl ThemeManager {
                     "headertext", "#6d6d6d",
                     "headerhover", "#ff1ae0",
                     "playertitle", "#00ffa2",
-                    "playersubtext", "#57caab",
+                    "playersubtext", "#00ffa2",
                     "playeraccent", "#9442ff",
                     "playerhover", "#ff1ae0",
+                    "playerslider", "#ff1ae0",
+                    "playerhandle", "#9442ff",
                     "tabtext", "#c6c6c6",
-                    "tabborder", "#00ffa2",
+                    "tabborder", "#6d6d6d",
                     "tabhover", "#ff1ae0",
                     "tabbg", "#1a1a2e",
                     "tabactive", "#3d3d5c",
@@ -1001,6 +1007,8 @@ impl ThemeManager {
                     "playersubtext", "#6d6d6d",
                     "playeraccent", "#00ffdd",
                     "playerhover", "#843ff3",
+                    "playerslider", "#9442ff",
+                    "playerhandle", "#00ffa2",
                     "tabtext", "#d1d8e6",
                     "tabborder", "#8a8a8a",
                     "tabhover", "#00ffdd",
@@ -1019,7 +1027,7 @@ impl ThemeManager {
                     "dspeqicon", "#9442ff",
                     "dspeqslider", "#00ffdd",
                     "dspeqsliderbg", "#15151B",
-                    "dspeqhandle", "#ff1ae0",
+                    "dspeqhandle", "#9442ff",
                     "dspeampbg", "#111111",
                     "dspampslider", "#ff1ae0",
                     "dspampsliderbg", "#000000",
@@ -1052,6 +1060,8 @@ impl ThemeManager {
                     "playersubtext", "#6d6d6d",
                     "playeraccent", "#00ff26",
                     "playerhover", "#ffcc00",
+                    "playerslider", "#00ffa2",
+                    "playerhandle", "#9442ff",
                     "tabtext", "#d1e6d8",
                     "tabborder", "#6d6d6d",
                     "tabhover", "#00ff26",
@@ -1111,6 +1121,8 @@ impl ThemeManager {
                     "playersubtext", "#6d6d6d",
                     "playeraccent", "#555555",
                     "playerhover", "#ffffff",
+                    "playerslider", "#ffffff",
+                    "playerhandle", "#555555",
                     "tabtext", "#e0e0e0",
                     "tabborder", "#ffffff",
                     "tabhover", "#ffffff",
@@ -1170,6 +1182,8 @@ impl ThemeManager {
                     "playersubtext", "#6d6d6d",
                     "playeraccent", "#ff5500",
                     "playerhover", "#ffea00",
+                    "playerslider", "#ff5500",
+                    "playerhandle", "#ffea00",
                     "tabtext", "#ecdcd9",
                     "tabborder", "#6d6d6d",
                     "tabhover", "#ff5500",
@@ -1229,6 +1243,8 @@ impl ThemeManager {
                     "playersubtext", "#6d6d6d",
                     "playeraccent", "#f965d9",
                     "playerhover", "#00ffcc",
+                    "playerslider", "#f965d9",
+                    "playerhandle", "#00ffcc",
                     "tabtext", "#eedef2",
                     "tabborder", "#6d6d6d",
                     "tabhover", "#f965d9",
@@ -1284,6 +1300,8 @@ impl ThemeManager {
                     "playersubtext", "#bdbdbd",
                     "playeraccent", "#ff003c",
                     "playerhover", "#2b00ff",
+                    "playerslider", "#ff003c",
+                    "playerhandle", "#2b00ff",
                     "tabtext", "#bdbdbd",
                     "tabborder", "#6d6d6d",
                     "tabhover", "#ff003c",
@@ -1343,6 +1361,8 @@ impl ThemeManager {
                     "playersubtext", "#6d6d6d",
                     "playeraccent", "#ffea00",
                     "playerhover", "#f965d9",
+                    "playerslider", "#ffea00",
+                    "playerhandle", "#f965d9",
                     "tabtext", "#dde0d1",
                     "tabborder", "#6d6d6d",
                     "tabhover", "#ffea00",
@@ -1402,6 +1422,8 @@ impl ThemeManager {
                     "playersubtext", "#57caab",
                     "playeraccent", "#9442ff",
                     "playerhover", "#ff1ae0",
+                    "playerslider", "#00ffa2",
+                    "playerhandle", "#9442ff",
                     "tabtext", "#c6c6c6",
                     "tabborder", "#00ffa2",
                     "tabhover", "#ff1ae0",

@@ -1809,6 +1809,7 @@ impl MusicModel {
         self.crystal_active = self.dsp.crystal_active;
         self.crystal_active_changed();
         self.crystal_amount = self.dsp.crystal_amount;
+        self.crystal_amount_changed();
         self.compressor_active = self.dsp.compressor_active;
         self.compressor_active_changed();
         self.compressor_threshold = self.dsp.compressor_threshold;
