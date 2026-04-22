@@ -6,6 +6,7 @@ pub mod playerbridge;
 pub mod queue;
 pub mod theme;
 pub mod updater;
+pub mod reportbug;
 
 pub use self::core::MusicModel;
 pub use self::dsp::DspController;

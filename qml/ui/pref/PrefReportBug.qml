@@ -1,7 +1,7 @@
 /* --- loonixtunesv2/qml/ui/pref/PrefReportBug.qml | Report Bug --- */
-import QtQuick 2.15
-import QtQuick.Layouts 1.15
-import QtQuick.Controls 2.15
+import QtQuick
+import QtQuick.Layouts
+import QtQuick.Controls
 
 Rectangle {
     id: root
@@ -97,7 +97,7 @@ Rectangle {
                 cursorShape: Qt.PointingHandCursor
                 onClicked: {
                     if (titleInput.text && descInput.text) {
-                        theme.report_bug_on_github(titleInput.text, descInput.text)
+                        bugReport.report_bug(titleInput.text, descInput.text)
                         titleInput.text = ""
                         descInput.text = ""
                     }

@@ -1,8 +1,4 @@
 /* --- loonixtunesv2/src/main.rs | Main Entry --- */
-
-#![allow(non_snake_case)]
-#![allow(unused_imports)]
-#![allow(dead_code)]
 #![cfg_attr(
     all(target_os = "windows", not(debug_assertions)),
     windows_subsystem = "windows"
@@ -16,6 +12,7 @@ pub mod ui;
 
 use crate::audio::popup::PopupMenu;
 use crate::audio::sysmedia::SysMediaManager;
+use crate::ui::reportbug::BugReportManager;
 use crate::ui::core::MusicModel;
 use crate::ui::playerbridge::PlayerBridge;
 use crate::ui::theme::{CustomThemeListModel, ThemeConfig, ThemeEntry, ThemeManager};
@@ -26,6 +23,7 @@ struct App {
     custom_theme_list: QObjectBox<CustomThemeListModel>,
     popup: QObjectBox<PopupMenu>,
     bridge: QObjectBox<PlayerBridge>,
+    bug_report: QObjectBox<BugReportManager>,
     #[cfg(target_os = "linux")]
     sysmedia: QObjectBox<SysMediaManager>,
 }
@@ -49,6 +47,7 @@ impl App {
             custom_theme_list,
             popup: QObjectBox::new(PopupMenu::default()),
             bridge: QObjectBox::new(PlayerBridge::new()),
+            bug_report: QObjectBox::new(BugReportManager::default()),
             #[cfg(target_os = "linux")]
             sysmedia: QObjectBox::new(SysMediaManager::new()),
         }
@@ -113,6 +112,7 @@ fn main() {
     qml_register_type::<ThemeManager>(cstr!("Loonix"), 1, 0, cstr!("ThemeManager"));
     qml_register_type::<SysMediaManager>(cstr!("Loonix"), 1, 0, cstr!("SysMediaManager"));
     qml_register_type::<CustomThemeListModel>(cstr!("Loonix"), 1, 0, cstr!("CustomThemeListModel"));
+    qml_register_type::<BugReportManager>(cstr!("Loonix"), 1, 0, cstr!("BugReportManager"));
 
     // set_object_property() internally calls QQmlEngine::rootContext()->setContextProperty()
     // Yang penting: App struct hidup selama main() scope
@@ -123,6 +123,7 @@ fn main() {
     engine.set_object_property("playerBridge".into(), app.bridge.pinned());
     #[cfg(target_os = "linux")]
     engine.set_object_property("sysMedia".into(), app.sysmedia.pinned());
+    engine.set_object_property("bugReport".into(), app.bug_report.pinned());
 
     // Check for command line arguments (file paths)
     let args: Vec<String> = std::env::args().collect();
