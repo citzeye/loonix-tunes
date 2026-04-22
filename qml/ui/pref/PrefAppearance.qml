@@ -13,6 +13,17 @@ Item {
     property bool wallSyncEnabled: false
     property bool wallSyncSyncing: false
     property bool playlistContextMenuVisible: false
+    property bool themeInitialized: false
+
+    Component.onCompleted: {
+        if (!themeInitialized) {
+            var customThemes = theme.get_custom_themes();
+            if (customThemes.length === 0) {
+                theme.initialize_default_theme();
+            }
+            themeInitialized = true;
+        }
+    }
 
     function openThemeEditorWithTarget(targetIndex) {
         root.prefThemeEditorProfileTarget = targetIndex
@@ -126,11 +137,11 @@ Item {
 
                 Repeater {
                     id: customThemeRepeater
-                    model: customThemeList
+                    model: theme.get_custom_themes()
 
                     delegate: Rectangle {
-                        property int presetIndex: model.id
-                        property string presetName: model.name
+                        property int presetIndex: modelData.original_index
+                        property string presetName: modelData.name
 
                         Layout.preferredWidth: 200
                         Layout.preferredHeight: 32

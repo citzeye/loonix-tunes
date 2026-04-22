@@ -285,6 +285,7 @@ pub struct ThemeManager {
     pub report_bug_on_github: qt_method!(fn(&self, bug_title: QString, bug_desc: QString)),
     pub wallpaper_sync_status: qt_signal!(success: bool, message: QString),
     pub get_custom_themes: qt_method!(fn(&self) -> QVariantList),
+    pub initialize_default_theme: qt_method!(fn(&mut self)),
 
     themes: Vec<ThemeEntry>,
     current_raw_colors: HashMap<String, String>,
@@ -820,6 +821,10 @@ impl ThemeManager {
                 QVariant::from(map)
             })
             .collect()
+    }
+
+    pub fn initialize_default_theme(&mut self) {
+        self.save_config();
     }
 
     pub fn get_editor_starter_colors(&self, is_edit_mode: bool, index: i32) -> QVariantMap {
