@@ -15,7 +15,7 @@ use crate::audio::sysmedia::SysMediaManager;
 use crate::ui::reportbug::BugReportManager;
 use crate::ui::core::MusicModel;
 use crate::ui::playerbridge::PlayerBridge;
-use crate::ui::theme::{CustomThemeListModel, ThemeConfig, ThemeEntry, ThemeManager};
+use crate::ui::theme::{CustomThemeListModel, ThemeManager};
 
 struct App {
     music_model: QObjectBox<MusicModel>,

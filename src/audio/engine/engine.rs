@@ -1,7 +1,7 @@
 /* --- loonixtunesv2/src/audio/engine/engine.rs | Engine --- */
 
 use crate::audio::audiooutput::AudioOutput;
-use crate::audio::decoder::{DecoderControl, DecoderEvent, DecoderHandle, SEEK_STATE_DECODING};
+use crate::audio::decoder::{DecoderControl, DecoderEvent, DecoderHandle};
 use crate::audio::dsp::DspSettings;
 use crate::audio::scanner;
 use ringbuf::traits::Split;

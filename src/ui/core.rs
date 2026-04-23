@@ -3,7 +3,7 @@
 #![allow(non_snake_case)]
 
 use crate::audio::audiooutput::AudioOutput;
-use crate::audio::engine::{is_audio_file, AudioState, FfmpegEngine, MusicItem, PlaybackState};
+use crate::audio::engine::{is_audio_file, AudioState, FfmpegEngine, MusicItem};
 
 use crate::audio::dsp::abrepeat::ABRepeat;
 use crate::core::library::LibraryManager;
@@ -546,41 +546,6 @@ impl MusicModel {
         self.begin_reset_model();
         self.end_reset_model();
         self.current_folder_changed();
-    }
-
-    fn scan_directory(&mut self, dir: &Path) {
-        if let Ok(entries) = std::fs::read_dir(dir) {
-            let mut dirs: Vec<_> = Vec::new();
-            let mut files: Vec<_> = Vec::new();
-            for entry in entries.flatten() {
-                let path = entry.path();
-                let name = entry.file_name().to_string_lossy().to_string();
-                if path.is_dir() {
-                    dirs.push((name, path));
-                } else if is_audio_file(&path) {
-                    files.push((name, path));
-                }
-            }
-            dirs.sort_by(|a, b| a.0.to_lowercase().cmp(&b.0.to_lowercase()));
-            files.sort_by(|a, b| a.0.to_lowercase().cmp(&b.0.to_lowercase()));
-            for (name, path) in dirs {
-                self.all_items.push(MusicItem {
-                    name,
-                    path: path.to_string_lossy().to_string(),
-                    is_folder: true,
-                    parent_folder: None,
-                });
-            }
-            for (name, path) in files {
-                self.all_items.push(MusicItem {
-                    name,
-                    path: path.to_string_lossy().to_string(),
-                    is_folder: false,
-                    parent_folder: None,
-                });
-            }
-        }
-        self.display_list = self.all_items.clone();
     }
 
     pub fn get_folder_contents(&self, folder_path: &Path) -> Vec<MusicItem> {

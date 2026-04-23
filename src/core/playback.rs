@@ -4,9 +4,7 @@
 
 use crate::audio::dsp::abrepeat::ABRepeat;
 use crate::audio::engine::{AudioState, FfmpegEngine, MusicItem, PlaybackState};
-use qmetaobject::prelude::*;
 use qmetaobject::QString;
-use rand::Rng;
 use std::sync::{Arc, Mutex};
 
 pub struct PlaybackController {

@@ -5,9 +5,7 @@
 use crate::audio::config::{AppConfig, DspConfig, EqPreset, FxPreset};
 use crate::audio::dsp::crystalizer::get_crystal_amount_arc;
 use crate::audio::dsp::pitchshifter::{get_pitch_enabled_arc, get_pitch_ratio_arc};
-use crate::audio::dsp::DspSettings;
 use crate::core::dspconfig::DspConfigManager;
-use qmetaobject::prelude::*;
 use qmetaobject::{QString, QVariant, QVariantList};
 use std::sync::{Arc, Mutex};
 

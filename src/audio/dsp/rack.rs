@@ -1,20 +1,9 @@
 /* --- loonixtunesv2/src/audio/dsp/rack.rs | DSP Rack --- */
 
-#![allow(non_snake_case)]
-
-use std::sync::atomic::Ordering;
-
 use crate::audio::dsp::{
-    get_bass_enabled_arc, get_bass_freq_arc, get_bass_gain_arc, get_bass_q_arc,
-    get_compressor_enabled_arc, get_compressor_threshold_arc, get_crossfeed_amount_arc,
-    get_crossfeed_enabled_arc, get_crystal_amount_arc, get_crystal_enabled_arc,
-    get_crystal_freq_arc, get_eq_band_arc, get_eq_bands_arc, get_eq_enabled_arc,
-    get_limiter_enabled_arc, get_middle_amount_arc, get_middle_enabled_arc, get_mono_enabled_arc,
-    get_mono_width_arc, get_pitch_enabled_arc, get_pitch_ratio_arc, get_preamp_enabled_arc,
-    get_preamp_gain_arc, get_stereo_amount_arc, get_stereo_enabled_arc, get_surround_enabled_arc,
-    get_surround_width_arc, AudioNormalizer, BassBooster, Compressor, Crossfeed, Crystalizer,
-    DspProcessor, DspSettings, EqPreamp, EqProcessor, Limiter, MiddleClarity, PitchShifter, Reverb,
-    StereoEnhance, StereoWidth, SurroundProcessor,
+    AudioNormalizer, BassBooster, Compressor, Crossfeed, Crystalizer, DspProcessor, DspSettings,
+    EqPreamp, EqProcessor, Limiter, MiddleClarity, PitchShifter, Reverb, StereoEnhance,
+    StereoWidth, SurroundProcessor,
 };
 
 pub struct DspRack {
@@ -43,28 +32,24 @@ impl DspRack {
     pub fn build_processors(_settings: &DspSettings) -> Vec<Box<dyn DspProcessor + Send + Sync>> {
         let mut processors: Vec<Box<dyn DspProcessor + Send + Sync>> = Vec::new();
 
-        type B = Box<dyn DspProcessor + Send + Sync>;
+        // LANGSUNG PUSH SAJA. Rust akan melakukan "Unsizing Coercion" secara otomatis
+        // karena tipe Vec sudah didefinisikan di atas.
 
-        // HAPUS SEMUA .store() DI SINI.
-        // Biarkan processor mengambil nilai dari atomics saat audio berjalan (lewat sync_from_atomics).
+        processors.push(Box::new(EqPreamp::new()));
+        processors.push(Box::new(AudioNormalizer::new(true, -14.0)));
 
-        processors.push(Box::new(EqPreamp::new()) as B);
-        processors.push(Box::new(AudioNormalizer::new(true, -14.0)) as B);
-
-        // Gunakan new() tanpa melempar array gains kosong.
-        processors.push(Box::new(EqProcessor::new()) as B);
-
-        processors.push(Box::new(Compressor::new()) as B);
-        processors.push(Box::new(BassBooster::new()) as B);
-        processors.push(Box::new(Reverb::new()) as B);
-        processors.push(Box::new(StereoEnhance::new()) as B);
-        processors.push(Box::new(Crystalizer::new(48000.0)) as B);
-        processors.push(Box::new(SurroundProcessor::new()) as B);
-        processors.push(Box::new(StereoWidth::new()) as B);
-        processors.push(Box::new(PitchShifter::new()) as B);
-        processors.push(Box::new(MiddleClarity::new()) as B);
-        processors.push(Box::new(Crossfeed::new()) as B);
-        processors.push(Box::new(Limiter::new()) as B);
+        processors.push(Box::new(EqProcessor::new()));
+        processors.push(Box::new(Compressor::new()));
+        processors.push(Box::new(BassBooster::new()));
+        processors.push(Box::new(Reverb::new()));
+        processors.push(Box::new(StereoEnhance::new()));
+        processors.push(Box::new(Crystalizer::new(48000.0)));
+        processors.push(Box::new(SurroundProcessor::new()));
+        processors.push(Box::new(StereoWidth::new()));
+        processors.push(Box::new(PitchShifter::new()));
+        processors.push(Box::new(MiddleClarity::new()));
+        processors.push(Box::new(Crossfeed::new()));
+        processors.push(Box::new(Limiter::new()));
 
         processors
     }

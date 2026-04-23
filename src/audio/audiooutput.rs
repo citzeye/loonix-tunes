@@ -1,9 +1,7 @@
 /* --- loonixtunesv2/src/audio/audiooutput.rs | Audio Output --- */
-
-use crate::audio::dsp::crystalizer::get_crystal_amount_arc;
+#[allow(non_snake_case)]
 use crate::audio::dsp::{DspChain, DspProcessor};
 use crate::audio::engine::OutputMode;
-use libpulse_binding as pa;
 use libpulse_binding::def::BufferAttr;
 use libpulse_binding::sample::{Format, Spec};
 use libpulse_binding::stream::Direction;
@@ -39,6 +37,7 @@ pub enum AudioCommand {
         device_name: Option<String>,
         output_state: Arc<AtomicU32>,
         decoder_eof: Arc<AtomicBool>,
+        is_bluetooth_detected: Arc<AtomicBool>,
     },
     Stop,
     Flush,
@@ -478,6 +477,7 @@ impl AudioOutput {
                     device_name: device_name.map(|s| s.to_string()),
                     output_state: self.output_state.clone(),
                     decoder_eof: self.decoder_eof.clone(),
+                    is_bluetooth_detected: self.is_bluetooth_detected.clone(),
                 });
 
                 self.is_started.store(true, Ordering::SeqCst);
@@ -610,6 +610,7 @@ impl AudioOutput {
                     device_name: _device_name,
                     output_state,
                     decoder_eof,
+                    is_bluetooth_detected,
                 }) => {
                     current_handle = Some(handle);
                     current_flush = Some(flush_req);
@@ -636,6 +637,7 @@ impl AudioOutput {
                             empty_callback_count,
                             output_state,
                             decoder_eof,
+                            is_bluetooth_detected,
                         );
                     }
 
@@ -683,6 +685,7 @@ impl AudioOutput {
         empty_callback_count: Arc<AtomicU32>,
         output_state: Arc<AtomicU32>,
         decoder_eof: Arc<AtomicBool>,
+        is_bluetooth_detected: Arc<AtomicBool>,
     ) {
         let channels = 2;
         let frames_per_write = 1024usize;
@@ -693,6 +696,9 @@ impl AudioOutput {
         let mut norm_input = vec![0.0f32; samples_per_write];
         let mut norm_output = vec![0.0f32; samples_per_write];
 
+        let mut bluetooth_detected = is_bluetooth_detected.load(Ordering::Relaxed);
+        let mut norm_output = vec![0.0f32; samples_per_write];
+
         let mut reconnect_attempts = 0u32;
         const MAX_RECONNECT_ATTEMPTS: u32 = 2;
 
@@ -700,6 +706,14 @@ impl AudioOutput {
 
         loop {
             if should_stop.load(Ordering::SeqCst) {
+                break;
+            }
+
+            let current_detected = crate::audio::wireless::isBluetoothDetected();
+            if current_detected != bluetooth_detected {
+                bluetooth_detected = current_detected;
+                is_bluetooth_detected.store(current_detected, Ordering::Relaxed);
+                eprintln!("[AudioOutput] Device change detected, reconnecting...");
                 break;
             }
 

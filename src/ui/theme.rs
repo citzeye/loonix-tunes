@@ -4,7 +4,6 @@
 use qmetaobject::prelude::*;
 use qmetaobject::{QAbstractListModel, QByteArray, QModelIndex, QVariant, QVariantList, QVariantMap};
 use serde::{Deserialize, Serialize};
-use serde_json::Value;
 use std::collections::HashMap;
 use std::fs;
 use std::path::PathBuf;

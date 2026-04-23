@@ -1,8 +1,7 @@
 /* --- loonixtunesv2/src/ui/queue.rs | Queue Controller --- */
 
 use crate::audio::engine::MusicItem;
-use qmetaobject::prelude::*;
-use qmetaobject::{QString, QVariant, QVariantMap};
+use qmetaobject::{QString, QVariantMap};
 
 #[derive(Default, Clone)]
 pub struct QueueController {

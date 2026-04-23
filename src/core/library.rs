@@ -3,11 +3,7 @@
 #![allow(non_snake_case)]
 
 use crate::audio::engine::{is_audio_file, MusicItem};
-use qmetaobject::prelude::*;
 use qmetaobject::QString;
-use qmetaobject::QVariant;
-use qmetaobject::QVariantList;
-use qmetaobject::QVariantMap;
 use std::collections::{HashMap, HashSet};
 use std::path::Path;
 
