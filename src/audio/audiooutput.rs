@@ -121,6 +121,7 @@ pub struct AudioOutput {
     is_bluetooth_detected: Arc<AtomicBool>,
     switching: Arc<AtomicBool>,
     reconnecting: Arc<AtomicBool>,
+    reconnect_attempts: u32,
     current_device_name: Arc<Mutex<Option<String>>>,
     available_devices: Arc<Mutex<Vec<AudioDevice>>>,
     output_state: Arc<AtomicU32>,
@@ -144,47 +145,48 @@ impl AudioOutput {
             })
             .ok();
 
-        Self {
-            is_running: Arc::new(AtomicBool::new(false)),
-            is_started: Arc::new(AtomicBool::new(false)),
-            should_stop: Arc::new(AtomicBool::new(false)),
-            volume_bits: Arc::new(AtomicU32::new(f32_to_bits(1.0))),
-            balance_bits: Arc::new(AtomicU32::new(f32_to_bits(0.0))),
-            mode_shared: Arc::new(Mutex::new(OutputMode::Stereo)),
-            mode: OutputMode::Stereo,
-            command_tx: tx,
-            thread_handle,
-            dsp_chain: DspChain::default(),
-            dsp_enabled: Arc::new(AtomicBool::new(true)),
-            samples_played: Arc::new(AtomicU64::new(0)),
-            sample_rate: 48000,
-            ring_buffer_capacity: 0,
-            empty_callback_count: Arc::new(AtomicU32::new(0)),
-            loop_reset: Arc::new(AtomicBool::new(false)),
-            _consumer: None,
-            clear_request: Arc::new(AtomicBool::new(false)),
-            seek_fade_remaining: Arc::new(AtomicU32::new(0)),
-            seek_mode: Arc::new(AtomicBool::new(false)),
-            paused: Arc::new(AtomicBool::new(false)),
-            flush_requested: Arc::new(AtomicBool::new(false)),
-            resume_frame_counter: Arc::new(AtomicU32::new(0)),
-            shared_consumer: Arc::new(Mutex::new(None)),
-            old_track_consumer: Arc::new(Mutex::new(None)),
-            normalizer_enabled: Arc::new(AtomicBool::new(false)),
-            normalizer: Arc::new(Mutex::new(
-                crate::audio::dsp::normalizer::AudioNormalizer::new(true, -14.0),
-            )),
-            norm_input: vec![0.0f32; 16384],
-            norm_output: vec![0.0f32; 16384],
-            selected_device_index: Arc::new(Mutex::new(None)),
-            is_bluetooth_detected: Arc::new(AtomicBool::new(false)),
-            switching: Arc::new(AtomicBool::new(false)),
-            reconnecting: Arc::new(AtomicBool::new(false)),
-            current_device_name: Arc::new(Mutex::new(None)),
-            available_devices: Arc::new(Mutex::new(Vec::new())),
-            output_state: Arc::new(AtomicU32::new(OUTPUT_STATE_PRIMING)),
-            decoder_eof: Arc::new(AtomicBool::new(false)),
-        }
+         Self {
+             is_running: Arc::new(AtomicBool::new(false)),
+             is_started: Arc::new(AtomicBool::new(false)),
+             should_stop: Arc::new(AtomicBool::new(false)),
+             volume_bits: Arc::new(AtomicU32::new(f32_to_bits(1.0))),
+             balance_bits: Arc::new(AtomicU32::new(f32_to_bits(0.0))),
+             mode_shared: Arc::new(Mutex::new(OutputMode::Stereo)),
+             mode: OutputMode::Stereo,
+             command_tx: tx,
+             thread_handle,
+             dsp_chain: DspChain::default(),
+             dsp_enabled: Arc::new(AtomicBool::new(true)),
+             samples_played: Arc::new(AtomicU64::new(0)),
+             sample_rate: 48000,
+             ring_buffer_capacity: 0,
+             empty_callback_count: Arc::new(AtomicU32::new(0)),
+             loop_reset: Arc::new(AtomicBool::new(false)),
+             _consumer: None,
+             clear_request: Arc::new(AtomicBool::new(false)),
+             seek_fade_remaining: Arc::new(AtomicU32::new(0)),
+             seek_mode: Arc::new(AtomicBool::new(false)),
+             paused: Arc::new(AtomicBool::new(false)),
+             flush_requested: Arc::new(AtomicBool::new(false)),
+             resume_frame_counter: Arc::new(AtomicU32::new(0)),
+             shared_consumer: Arc::new(Mutex::new(None)),
+             old_track_consumer: Arc::new(Mutex::new(None)),
+             normalizer_enabled: Arc::new(AtomicBool::new(false)),
+             normalizer: Arc::new(Mutex::new(
+                 crate::audio::dsp::normalizer::AudioNormalizer::new(true, -14.0),
+             )),
+             norm_input: vec![0.0f32; 16384],
+             norm_output: vec![0.0f32; 16384],
+             selected_device_index: Arc::new(Mutex::new(None)),
+             is_bluetooth_detected: Arc::new(AtomicBool::new(false)),
+             switching: Arc::new(AtomicBool::new(false)),
+             reconnecting: Arc::new(AtomicBool::new(false)),
+             reconnect_attempts: 0,
+             current_device_name: Arc::new(Mutex::new(None)),
+             available_devices: Arc::new(Mutex::new(Vec::new())),
+             output_state: Arc::new(AtomicU32::new(OUTPUT_STATE_PRIMING)),
+             decoder_eof: Arc::new(AtomicBool::new(false)),
+         }
     }
 
     pub fn request_loop_reset(&self) {
@@ -345,6 +347,10 @@ impl AudioOutput {
     }
 
     pub fn select_device(&mut self, device_name: String) {
+        let is_bluetooth = device_name.to_lowercase().contains("bluetooth");
+        self.is_bluetooth_detected.store(is_bluetooth, Ordering::SeqCst);
+        
+        // Logic untuk switch device
         if let Ok(mut selected) = self.selected_device_index.lock() {
             *selected = Some(device_name.parse().unwrap_or(0));
         }
@@ -352,6 +358,15 @@ impl AudioOutput {
 
     pub fn selectDevice(&mut self, deviceName: String) {
         self.select_device(deviceName);
+    }
+
+    fn handle_reconnect(&mut self) {
+        if self.is_bluetooth_detected.load(Ordering::SeqCst) {
+            if self.reconnect_attempts < 5 {
+                self.reconnect_attempts += 1;
+                // Logic reconnect di sini
+            }
+        }
     }
 
     pub fn change_device(&self, device_name: Option<String>) -> Result<(), String> {
