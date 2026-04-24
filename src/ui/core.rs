@@ -505,7 +505,7 @@ impl MusicModel {
 
         self.current_folder = String::new();
         self.current_folder_path = String::new();
-        self.current_folder_qml = QString::default();
+        self.current_folder_qml = QString::from("MUSIC");
         self.folders.clear();
         self.all_items.clear();
         self.expanded_folders.clear();
@@ -944,6 +944,7 @@ impl MusicModel {
 
     fn scan_custom_directory(&mut self, dir: &Path) {
         self.library.scan_directory(dir);
+        self.all_items = self.library.all_items.clone();
         self.display_list = self.library.display_list.clone();
     }
 

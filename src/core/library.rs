@@ -281,6 +281,9 @@ impl LibraryManager {
     }
 
     pub fn scan_directory(&mut self, dir: &Path) {
+        self.all_items.clear();
+        self.display_list.clear();
+        
         if let Ok(entries) = fs::read_dir(dir) {
             let mut dirs: Vec<_> = Vec::new();
             let mut files: Vec<_> = Vec::new();
