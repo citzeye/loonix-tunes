@@ -60,10 +60,6 @@ fn f32_to_bits(f: f32) -> u32 {
     f.to_bits()
 }
 
-fn bits_to_f32(bits: u32) -> f32 {
-    f32::from_bits(bits)
-}
-
 const BUFFER_EMPTY_THRESHOLD: u32 = 100;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -356,19 +352,6 @@ impl AudioOutput {
         }
     }
 
-    pub fn selectDevice(&mut self, deviceName: String) {
-        self.select_device(deviceName);
-    }
-
-    fn handle_reconnect(&mut self) {
-        if self.is_bluetooth_detected.load(Ordering::SeqCst) {
-            if self.reconnect_attempts < 5 {
-                self.reconnect_attempts += 1;
-                // Logic reconnect di sini
-            }
-        }
-    }
-
     pub fn change_device(&self, device_name: Option<String>) -> Result<(), String> {
         let (tx, rx) = mpsc::channel();
         self.switching.store(true, Ordering::SeqCst);
@@ -600,6 +583,7 @@ impl AudioOutput {
         let _ = set_current_thread_priority(ThreadPriority::Max);
 
         let mut current_handle: Option<pa_simple::Simple> = None;
+        #[allow(unused_assignments)]
         let mut current_flush: Option<Arc<AtomicBool>> = None;
 
         loop {
@@ -712,7 +696,6 @@ impl AudioOutput {
         let mut norm_output = vec![0.0f32; samples_per_write];
 
         let mut bluetooth_detected = is_bluetooth_detected.load(Ordering::Relaxed);
-        let mut norm_output = vec![0.0f32; samples_per_write];
 
         let mut reconnect_attempts = 0u32;
         const MAX_RECONNECT_ATTEMPTS: u32 = 2;

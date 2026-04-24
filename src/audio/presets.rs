@@ -1,6 +1,6 @@
 /* --- loonixtunesv2/src/audio/presets.rs | Presets --- */
 
-#![allow(non_snake_case)]
+
 
 #[derive(Clone)]
 pub struct EqPreset {

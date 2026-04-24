@@ -922,7 +922,7 @@ Window {
                                 id: bassboosterMA
                                 anchors.fill: bassboosterIcon
                                 hoverEnabled: true
-                                onClicked: musicModel.toggleBassBooster()
+                                onClicked: musicModel.toggle_bass_booster()
                             }
                         }
 
@@ -958,7 +958,7 @@ Window {
                                 id: crystalizerMA
                                 anchors.fill: crystalizerIcon
                                 hoverEnabled: true
-                                onClicked: musicModel.toggleCrystalizer()
+                                onClicked: musicModel.toggle_crystalizer()
                             }
                         }
 
@@ -1037,7 +1037,7 @@ Window {
                                 id: surroundMA
                                 anchors.fill: surroundIcon
                                 hoverEnabled: true
-                                onClicked: musicModel.toggleSurround()
+                                onClicked: musicModel.toggle_surround()
                             }
                         }
 
@@ -1088,13 +1088,13 @@ Window {
                         // VOLUME icon - Shows mute status + system muted
                         Text {
                             id: volIcon
-                            text: musicModel.systemMuted || musicModel.muted ? '󰝟' : '󰕾'
+                            text: musicModel.system_muted || musicModel.muted ? '󰝟' : '󰕾'
                             font.family: symbols.name
                             font.pixelSize: 18
                             Layout.alignment: Qt.AlignVCenter
                             horizontalAlignment: Text.AlignHCenter
                             Layout.preferredWidth: 20
-                            color: musicModel.systemMuted ? '#ff4444' : (volMA.containsMouse || musicModel.muted ? theme.colormap.playerhover : theme.colormap.playersubtext)
+                            color: musicModel.system_muted ? '#ff4444' : (volMA.containsMouse || musicModel.muted ? theme.colormap.playerhover : theme.colormap.playersubtext)
 
                             MouseArea {
                                 id: volMA

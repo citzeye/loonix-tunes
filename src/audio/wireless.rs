@@ -1,5 +1,5 @@
 /* --- loonixtunesv2/src/audio/wireless.rs | Wireless --- */
-#![allow(non_snake_case)]
+
 
 use std::process::Command;
 use std::sync::atomic::{AtomicBool, Ordering};

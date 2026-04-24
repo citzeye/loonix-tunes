@@ -1,6 +1,6 @@
 /* --- loonixtunesv2/src/core/dspconfig.rs | DSP Config --- */
 
-#![allow(non_snake_case)]
+
 
 use crate::audio::config::{AppConfig, DspConfig};
 use crate::audio::dsp::DspSettings;

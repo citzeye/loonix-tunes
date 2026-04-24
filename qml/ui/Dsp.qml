@@ -103,7 +103,7 @@ RowLayout {
                         displayText: Math.round((eqFader.currentValue + 20) * 2.5) + "%"
                     }
 
-                    // Row 2: Sliders (tengah) - bound to musicModel.eqBands via reactive property
+                    // Row 2: Sliders (tengah) - bound to musicModel.eq_bands via reactive property
                     EqSliderBox {
                         id: eqPreamp
                         controlValue: musicModel.get_preamp_gain()
@@ -111,52 +111,52 @@ RowLayout {
                     }
                     EqSliderBox {
                         id: eq31
-                        controlValue: musicModel.eqBands[0]
+                        controlValue: musicModel.eq_bands && musicModel.eq_bands.length > 0 ? musicModel.eq_bands[0] : 0
                         onSliderChanged: val => musicModel.set_eq_band(0, val)
                     }
                     EqSliderBox {
                         id: eq62
-                        controlValue: musicModel.eqBands[1]
+                        controlValue: musicModel.eq_bands && musicModel.eq_bands.length > 0 ? musicModel.eq_bands[1] : 0
                         onSliderChanged: val => musicModel.set_eq_band(1, val)
                     }
                     EqSliderBox {
                         id: eq125
-                        controlValue: musicModel.eqBands[2]
+                        controlValue: musicModel.eq_bands && musicModel.eq_bands.length > 0 ? musicModel.eq_bands[2] : 0
                         onSliderChanged: val => musicModel.set_eq_band(2, val)
                     }
                     EqSliderBox {
                         id: eq250
-                        controlValue: musicModel.eqBands[3]
+                        controlValue: musicModel.eq_bands && musicModel.eq_bands.length > 0 ? musicModel.eq_bands[3] : 0
                         onSliderChanged: val => musicModel.set_eq_band(3, val)
                     }
                     EqSliderBox {
                         id: eq500
-                        controlValue: musicModel.eqBands[4]
+                        controlValue: musicModel.eq_bands && musicModel.eq_bands.length > 0 ? musicModel.eq_bands[4] : 0
                         onSliderChanged: val => musicModel.set_eq_band(4, val)
                     }
                     EqSliderBox {
                         id: eq1k
-                        controlValue: musicModel.eqBands[5]
+                        controlValue: musicModel.eq_bands && musicModel.eq_bands.length > 0 ? musicModel.eq_bands[5] : 0
                         onSliderChanged: val => musicModel.set_eq_band(5, val)
                     }
                     EqSliderBox {
                         id: eq2k
-                        controlValue: musicModel.eqBands[6]
+                        controlValue: musicModel.eq_bands && musicModel.eq_bands.length > 0 ? musicModel.eq_bands[6] : 0
                         onSliderChanged: val => musicModel.set_eq_band(6, val)
                     }
                     EqSliderBox {
                         id: eq4k
-                        controlValue: musicModel.eqBands[7]
+                        controlValue: musicModel.eq_bands && musicModel.eq_bands.length > 0 ? musicModel.eq_bands[7] : 0
                         onSliderChanged: val => musicModel.set_eq_band(7, val)
                     }
                     EqSliderBox {
                         id: eq8k
-                        controlValue: musicModel.eqBands[8]
+                        controlValue: musicModel.eq_bands && musicModel.eq_bands.length > 0 ? musicModel.eq_bands[8] : 0
                         onSliderChanged: val => musicModel.set_eq_band(8, val)
                     }
                     EqSliderBox {
                         id: eq16k
-                        controlValue: musicModel.eqBands[9]
+                        controlValue: musicModel.eq_bands && musicModel.eq_bands.length > 0 ? musicModel.eq_bands[9] : 0
                         onSliderChanged: val => musicModel.set_eq_band(9, val)
                     }
                     EqSliderBox {
@@ -238,7 +238,7 @@ RowLayout {
                         id: compToggle
                         title: "COMPRESSOR"
                         isOn: musicModel.compressor_active
-                        onToggled: musicModel.toggleCompressor()
+                        onToggled: musicModel.toggle_compressor()
                     }
 
                     FxSliderBox {
@@ -246,7 +246,7 @@ RowLayout {
                         enabled: compToggle.isOn && musicModel.dsp_enabled
                         controlValue: musicModel.compressor_threshold
                         sliderRange: "db"
-                        onSliderChanged: val => musicModel.setStdCompressorThreshold(val)
+                        onSliderChanged: val => musicModel.set_compressor_threshold(val)
                     }
                     FxValueBox {
                         enabled: compToggle.isOn && musicModel.dsp_enabled
@@ -270,7 +270,7 @@ RowLayout {
                         id: surrToggle
                         title: "SURROUND"
                         isOn: musicModel.surround_active
-                        onToggled: musicModel.toggleSurround()
+                        onToggled: musicModel.toggle_surround()
                     }
 
                     FxSliderBox {
@@ -278,7 +278,7 @@ RowLayout {
                         enabled: surrToggle.isOn && musicModel.dsp_enabled
                         controlValue: musicModel.surround_width / 2.0
                         onSliderChanged: val => {
-                            musicModel.setStdSurroundWidth(val * 2.0);
+                            musicModel.set_surround_width(val * 2.0);
                         }
                     }
                     FxValueBox {
@@ -302,14 +302,14 @@ RowLayout {
                         id: monoToggle
                         title: "MONO - STEREO"
                         isOn: musicModel.mono_active
-                        onToggled: musicModel.toggleStereoWidth()
+                        onToggled: musicModel.toggle_stereo_width()
                     }
 
                     FxSliderBox {
                         id: monoSlider
                         enabled: monoToggle.isOn && musicModel.dsp_enabled
                         controlValue: musicModel.mono_width
-                        onSliderChanged: val => musicModel.setStdStereoWidthAmount(val)
+                        onSliderChanged: val => musicModel.set_stereo_width_amount(val)
                     }
                     FxValueBox {
                         enabled: monoToggle.isOn && musicModel.dsp_enabled
@@ -332,14 +332,14 @@ RowLayout {
                         id: midToggle
                         title: "MIDDLE CLARITY"
                         isOn: musicModel.middle_active
-                        onToggled: musicModel.toggleMiddleClarity()
+                        onToggled: musicModel.toggle_middle_clarity()
                     }
 
                     FxSliderBox {
                         id: midSlider
                         enabled: midToggle.isOn
                         controlValue: musicModel.middle_amount
-                        onSliderChanged: val => musicModel.setStdMiddleClarityAmount(val)
+                        onSliderChanged: val => musicModel.set_middle_clarity_amount(val)
                     }
                     FxValueBox {
                         enabled: midToggle.isOn
@@ -362,14 +362,14 @@ RowLayout {
                         id: stereoEnhToggle
                         title: "STEREO ENHANCER"
                         isOn: musicModel.stereo_active
-                        onToggled: musicModel.toggleStereoEnhance()
+                        onToggled: musicModel.toggle_stereo_enhance()
                     }
 
                     FxSliderBox {
                         id: stereoSlider
                         enabled: stereoEnhToggle.isOn
                         controlValue: musicModel.stereo_amount
-                        onSliderChanged: val => musicModel.setStdStereoEnhanceAmount(val)
+                        onSliderChanged: val => musicModel.set_stereo_enhance_amount(val)
                     }
                     FxValueBox {
                         enabled: stereoEnhToggle.isOn
@@ -392,14 +392,14 @@ RowLayout {
                         id: crossfeedToggle
                         title: "CROSSFEED"
                         isOn: musicModel.crossfeed_active
-                        onToggled: musicModel.toggleCrossfeed()
+                        onToggled: musicModel.toggle_crossfeed()
                     }
 
                     FxSliderBox {
                         id: crossfeedSlider
                         enabled: crossfeedToggle.isOn
                         controlValue: musicModel.crossfeed_amount
-                        onSliderChanged: val => musicModel.setStdCrossfeedAmount(val)
+                        onSliderChanged: val => musicModel.set_crossfeed_amount(val)
                     }
                     FxValueBox {
                         enabled: crossfeedToggle.isOn
@@ -422,7 +422,7 @@ RowLayout {
                         id: crystalToggle
                         title: "CRYSTALIZER"
                         isOn: musicModel.crystal_active
-                        onToggled: musicModel.toggleCrystalizer()
+                        onToggled: musicModel.toggle_crystalizer()
                     }
 
                     FxSliderBox {
@@ -452,7 +452,7 @@ RowLayout {
                         id: bassToggle
                         title: "BASS BOOSTER"
                         isOn: musicModel.bass_active
-                        onToggled: musicModel.toggleBassBooster()
+                        onToggled: musicModel.toggle_bass_booster()
                     }
 
                     BassModeSelector {
@@ -465,7 +465,7 @@ RowLayout {
                         id: bassGainBox
                         boxEnabled: bassToggle.isOn && musicModel.dsp_enabled
                         currentValue: musicModel.bass_gain
-                        onValueChanged: val => musicModel.setStdBassGain(val)
+                        onValueChanged: val => musicModel.set_bass_gain(val)
 
                         Connections {
                             target: musicModel
@@ -492,14 +492,14 @@ RowLayout {
                         title: "PITCH SHIFTER"
                         isOn: musicModel.pitch_active
                         boxEnabled: true
-                        onToggled: musicModel.togglePitch()
+                        onToggled: musicModel.toggle_pitch()
                     }
 
                     FxPitchSliderBox {
                         id: pitchSlider
                         enabled: pitchToggle.isOn
                         controlValue: musicModel.pitch_semitones
-                        onSliderChanged: val => musicModel.setStdPitchSemitones(val)
+                        onSliderChanged: val => musicModel.set_pitch_semitones(val)
                     }
                     FxValueBox {
                         enabled: pitchToggle.isOn
@@ -523,7 +523,7 @@ RowLayout {
                         id: reverbToggle
                         title: "REVERB"
                         isOn: musicModel.reverb_active
-                        onToggled: musicModel.toggleReverb()
+                        onToggled: musicModel.toggle_reverb()
                     }
 
                     ReverbModeSelector {
@@ -637,7 +637,7 @@ RowLayout {
             Layout.preferredHeight: 20
 
             onClicked: {
-                musicModel.toggleDsp()
+                musicModel.toggle_dsp()
             }
 
             background: Rectangle {
@@ -664,7 +664,7 @@ RowLayout {
             Layout.preferredHeight: 20
 
             onClicked: {
-                musicModel.resetAllDsp();
+                musicModel.reset_all();
             }
 
             background: Rectangle {

@@ -1,6 +1,6 @@
 /* --- loonixtunesv2/src/core/playback.rs | Playback --- */
 
-#![allow(non_snake_case)]
+
 
 use crate::audio::dsp::abrepeat::ABRepeat;
 use crate::audio::engine::{AudioState, FfmpegEngine, MusicItem, PlaybackState};

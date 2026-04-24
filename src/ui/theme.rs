@@ -1,5 +1,5 @@
 /* --- loonixtunesv2/src/ui/theme.rs | Theme --- */
-#![allow(non_snake_case)]
+
 
 use qmetaobject::prelude::*;
 use qmetaobject::{QAbstractListModel, QByteArray, QModelIndex, QVariant, QVariantList, QVariantMap};

@@ -1,10 +1,11 @@
 /* --- loonixtunesv2/src/core/library.rs | Library --- */
 
-#![allow(non_snake_case)]
+
 
 use crate::audio::engine::{is_audio_file, MusicItem};
 use qmetaobject::QString;
 use std::collections::{HashMap, HashSet};
+use std::fs;
 use std::path::Path;
 
 pub struct LibraryManager {
@@ -279,8 +280,79 @@ impl LibraryManager {
         self.display_list = self.external_files.clone();
     }
 
+    pub fn scan_directory(&mut self, dir: &Path) {
+        if let Ok(entries) = fs::read_dir(dir) {
+            let mut dirs: Vec<_> = Vec::new();
+            let mut files: Vec<_> = Vec::new();
+            for entry in entries.flatten() {
+                let path = entry.path();
+                let name = entry.file_name().to_string_lossy().to_string();
+                if path.is_dir() {
+                    dirs.push((name, path));
+                } else if is_audio_file(&path) {
+                    files.push((name, path));
+                }
+            }
+            dirs.sort_by(|a, b| a.0.to_lowercase().cmp(&b.0.to_lowercase()));
+            files.sort_by(|a, b| a.0.to_lowercase().cmp(&b.0.to_lowercase()));
+            for (name, path) in dirs {
+                self.all_items.push(MusicItem {
+                    name,
+                    path: path.to_string_lossy().to_string(),
+                    is_folder: true,
+                    parent_folder: None,
+                });
+            }
+            for (name, path) in files {
+                self.all_items.push(MusicItem {
+                    name,
+                    path: path.to_string_lossy().to_string(),
+                    is_folder: false,
+                    parent_folder: None,
+                });
+            }
+        }
+        self.display_list = self.all_items.clone();
+    }
+
     pub fn save_config(&self, config: &mut crate::audio::config::AppConfig) {
         config.custom_folders = self.custom_folders.clone();
         config.favorites = self.favorites.clone();
+    }
+
+    pub fn get_folder_contents(&self, folder_path: &Path) -> Vec<MusicItem> {
+        let mut items = vec![];
+        if let Ok(entries) = std::fs::read_dir(folder_path) {
+            for entry in entries.flatten() {
+                let path = entry.path();
+                let name = entry.file_name().to_string_lossy().to_string();
+                let folder_name = folder_path
+                    .file_name()
+                    .map(|n| n.to_string_lossy().to_string())
+                    .unwrap_or_default();
+
+                if path.is_dir() {
+                    items.push(MusicItem {
+                        name,
+                        path: path.to_string_lossy().to_string(),
+                        is_folder: true,
+                        parent_folder: Some(folder_name),
+                    });
+                } else if is_audio_file(&path) {
+                    items.push(MusicItem {
+                        name,
+                        path: path.to_string_lossy().to_string(),
+                        is_folder: false,
+                        parent_folder: Some(folder_name),
+                    });
+                }
+            }
+        }
+        items.sort_by(|a, b| match (a.is_folder, b.is_folder) {
+            (true, false) => std::cmp::Ordering::Less,
+            (false, true) => std::cmp::Ordering::Greater,
+            _ => a.name.to_lowercase().cmp(&b.name.to_lowercase()),
+        });
+        items
     }
 }

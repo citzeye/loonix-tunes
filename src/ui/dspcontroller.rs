@@ -1,19 +1,17 @@
-/* --- loonixtunesv2/src/ui/dsp.rs | DSP Controller --- */
+/* --- loonixtunesv2/src/ui/dspcontroller.rs | State + Rules --- */
 
-#![allow(non_snake_case)]
 
 use crate::audio::config::{AppConfig, DspConfig, EqPreset, FxPreset};
 use crate::audio::dsp::crystalizer::get_crystal_amount_arc;
-use crate::audio::dsp::pitchshifter::{get_pitch_enabled_arc, get_pitch_ratio_arc};
 use crate::core::dspconfig::DspConfigManager;
 use qmetaobject::{QString, QVariant, QVariantList};
 use std::sync::{Arc, Mutex};
 
 #[derive(Clone, Copy)]
 enum PresetSource {
-    Factory(usize), // Load from internal presets.rs
-    User(usize),    // Load from JSON (user preset data)
-    Preserve,       // Keep current FX settings (for user presets)
+    Factory(usize),
+    User(usize),
+    Preserve,
 }
 
 pub struct DspController {
@@ -67,7 +65,6 @@ pub struct DspController {
     pub user_eq_names: [String; 6],
     pub user_eq_gains: [[f32; 10]; 6],
     pub user_eq_macro: [f32; 6],
-    // User FX presets (User 1-6)
     pub user_fx_enabled: [bool; 6],
     pub user_fx_bass_enabled: [bool; 6],
     pub user_fx_bass_gain: [f32; 6],
@@ -193,7 +190,6 @@ impl DspController {
     }
 
     pub fn init_from_config(&mut self, config: &AppConfig) {
-        // 1. Load Normalizer Settings from config.json
         self.normalizer_enabled = config.normalizer_enabled;
         self.normalizer_target_lufs = config.normalizer_target_lufs as f64;
         self.normalizer_true_peak_dbtp = config.normalizer_true_peak_dbtp as f64;
@@ -205,16 +201,13 @@ impl DspController {
             std::sync::atomic::Ordering::Relaxed,
         );
 
-        // 2. Load all DSP settings from dsp.json or defaults
         let dsp_settings = crate::audio::dsp::DspSettings::default();
         self.dsp_enabled = dsp_settings.dsp_enabled;
         self.eq_enabled = dsp_settings.eq_enabled;
 
-        // 2. Load Preset Definitions into Memory
         self.eq_presets = AppConfig::get_eq_presets();
         self.fx_presets = AppConfig::get_fx_presets();
 
-        // Load user presets from dsp.json
         let dsp_config = DspConfig::load();
         self.user_eq_names = dsp_config.user_preset_names.clone();
         self.user_eq_gains = dsp_config.user_preset_gains;
@@ -240,16 +233,12 @@ impl DspController {
         self.user_fx_reverb_mode = dsp_config.user_fx_reverb_mode;
         self.user_fx_reverb_amount = dsp_config.user_fx_reverb_amount;
 
-        // 3. THE MASTER BOOT ACTION (0 to 11)
-        // Read preset index from dsp.json (not config.json)
         let preset_index = dsp_config.active_preset_index.clamp(0, 11);
         self.load_preset(preset_index);
     }
 
     fn applyBassMode(&mut self, mode: i32) {
-        // Frekuensi disesuaikan biar selaras sama preset (Punch dapet 180.0 biar tebel!)
-        // 0=Deep(80Hz), 1=Soft(120Hz), 2=Punch(180Hz), 3=Warm(220Hz)
-        let freqs: [f32; 4] = [80.0, 120.0, 180.0, 220.0]; 
+        let freqs: [f32; 4] = [80.0, 120.0, 180.0, 220.0];
         let q_vals: [f32; 4] = [0.5, 0.6, 0.7, 0.8];
 
         self.bass_cutoff = freqs[mode as usize] as f64;
@@ -263,7 +252,6 @@ impl DspController {
             std::sync::atomic::Ordering::Relaxed,
         );
         
-        // Panggil ini biar UI (kalau nanti ada slider cutoff) ikut update
         self.bass_cutoff_changed(); 
     }
 
@@ -331,6 +319,7 @@ impl DspController {
             let effective = (gain as f64 + self.fader_offset).clamp(-20.0, 20.0);
             list.push(QVariant::from(effective));
         }
+        eprintln!("[DSP] sync_eq_bands: {} items", list.len());
         list
     }
 
@@ -351,8 +340,8 @@ impl DspController {
         self.crossfeed_changed();
         self.crossfeed_amount_changed();
         self.active_preset_index_changed();
-        self.eqBandsChanged();
-        self.faderOffsetChanged();
+        self.eq_bands_changed();
+        self.fader_offset_changed();
         self.dsp_changed();
         self.eq_enabled_changed();
         self.normalizer_changed();
@@ -361,7 +350,6 @@ impl DspController {
         self.limiter_changed();
     }
 
-    // QML signal emitters
     pub fn reverb_changed(&self) {}
     pub fn reverb_active_changed(&self) {}
     pub fn reverb_mode_changed(&self) {}
@@ -388,8 +376,8 @@ impl DspController {
     pub fn crossfeed_changed(&self) {}
     pub fn crossfeed_amount_changed(&self) {}
     pub fn eq_enabled_changed(&self) {}
-    pub fn eqBandsChanged(&self) {}
-    pub fn faderOffsetChanged(&self) {}
+    pub fn eq_bands_changed(&self) {}
+    pub fn fader_offset_changed(&self) {}
     pub fn active_preset_index_changed(&self) {}
     pub fn normalizer_changed(&self) {}
     pub fn normalizer_params_changed(&self) {}
@@ -397,14 +385,12 @@ impl DspController {
     pub fn limiter_changed(&self) {}
     pub fn pitch_changed(&self) {}
 
-    // --- REVERB METHODS ---
     pub fn set_reverb_mode(&mut self, mode: i32) {
         let mode = mode.clamp(0, 3) as u32;
         self.reverb_preset = mode;
         self.reverb_mode = mode as i32;
         self.reverb_active = true;
 
-        // Send ALL reverb values to Rust atomics
         crate::audio::dsp::reverb::get_reverb_enabled_arc()
             .store(true, std::sync::atomic::Ordering::Relaxed);
         crate::audio::dsp::reverb::get_reverb_mode_arc()
@@ -423,7 +409,6 @@ impl DspController {
     pub fn set_reverb_amount(&mut self, amount: i32) {
         let amount = amount.clamp(0, 100) as u32;
         self.reverb_amount = amount as i32;
-        // Sync amount to Rust - use raw u32 (not float bits)
         crate::audio::dsp::reverb::get_reverb_amount_arc()
             .store(amount, std::sync::atomic::Ordering::Relaxed);
         self.reverb_amount_changed();
@@ -450,11 +435,9 @@ impl DspController {
         self.reverb_active = !self.reverb_active;
         self.reverb_active_changed();
 
-        // Toggle only enables/disables - do NOT change mode
         crate::audio::dsp::reverb::get_reverb_enabled_arc()
             .store(self.reverb_active, std::sync::atomic::Ordering::Relaxed);
 
-        // Sync amount to prevent "Ghost Slider"
         let current_amount = self.reverb_amount as u32;
         crate::audio::dsp::reverb::get_reverb_amount_arc()
             .store(current_amount, std::sync::atomic::Ordering::Relaxed);
@@ -475,7 +458,6 @@ impl DspController {
         crate::audio::dsp::reverb::get_reverb_mode_arc()
             .store(preset_id, std::sync::atomic::Ordering::Relaxed);
 
-        // Sync amount to prevent "Ghost Slider" - always send current amount
         let current_amount = self.reverb_amount as u32;
         crate::audio::dsp::reverb::get_reverb_amount_arc()
             .store(current_amount, std::sync::atomic::Ordering::Relaxed);
@@ -490,12 +472,10 @@ impl DspController {
         self.save_config();
     }
 
-    // --- BASS METHODS ---
     pub fn toggle_bass(&mut self) {
         self.bass_active = !self.bass_active;
         self.bass_active_changed();
 
-        // Murni cuma ngasih tau engine buat bypass/enable, tanpa ngotak-ngatik parameter slider!
         crate::audio::dsp::bassbooster::get_bass_enabled_arc()
             .store(self.bass_active, std::sync::atomic::Ordering::Relaxed);
             
@@ -542,12 +522,10 @@ impl DspController {
         self.save_config();
     }
 
-    // --- SURROUND METHODS ---
     pub fn toggle_surround(&mut self) {
         self.surround_active = !self.surround_active;
         self.surround_active_changed();
 
-        // Toggle only bypasses - do NOT reset width values
         crate::audio::dsp::surround::get_surround_enabled_arc()
             .store(self.surround_active, std::sync::atomic::Ordering::Relaxed);
 
@@ -574,7 +552,6 @@ impl DspController {
         self.save_config();
     }
 
-    // --- CRYSTALIZER METHODS ---
     pub fn toggle_crystalizer(&mut self) {
         self.crystal_active = !self.crystal_active;
         self.crystal_active_changed();
@@ -607,7 +584,6 @@ impl DspController {
         self.save_config();
     }
 
-    // --- COMPRESSOR METHODS ---
     pub fn toggle_compressor(&mut self) {
         self.compressor_active = !self.compressor_active;
         self.compressor_active_changed();
@@ -629,19 +605,15 @@ impl DspController {
         self.save_config();
     }
 
-    pub fn get_compressor_threshold(&self) -> f64 {
-        let bits = crate::audio::dsp::compressor::get_compressor_threshold_arc()
-            .load(std::sync::atomic::Ordering::Relaxed);
-        f32::from_bits(bits) as f64
+    pub fn toggle_bass_booster(&mut self) {
+        self.toggle_bass();
     }
 
-    // --- PITCH METHODS ---
     pub fn toggle_pitch(&mut self) {
         self.pitch_active = !self.pitch_active;
         self.pitch_changed();
-
-        get_pitch_enabled_arc().store(self.pitch_active, std::sync::atomic::Ordering::Relaxed);
-
+        crate::audio::dsp::pitchshifter::get_pitch_enabled_arc()
+            .store(self.pitch_active, std::sync::atomic::Ordering::Relaxed);
         self.save_config();
     }
 
@@ -652,39 +624,8 @@ impl DspController {
         self.pitch_changed();
 
         let ratio = 2.0_f32.powf((semitones as f32) / 12.0);
-        get_pitch_ratio_arc().store(ratio.to_bits(), std::sync::atomic::Ordering::Relaxed);
-
-        self.save_config();
-    }
-
-    // --- MIDDLE CLARITY METHODS ---
-    pub fn toggle_middle_clarity(&mut self) {
-        self.middle_active = !self.middle_active;
-        self.middle_changed();
-
-        crate::audio::dsp::middleclarity::get_middle_enabled_arc()
-            .store(self.middle_active, std::sync::atomic::Ordering::Relaxed);
-
-        self.save_config();
-    }
-
-    pub fn set_middle_clarity_amount(&mut self, val: f64) {
-        self.middle_amount = val.max(0.0).min(1.0);
-        self.middle_amount_changed();
-        crate::audio::dsp::middleclarity::get_middle_amount_arc().store(
-            (self.middle_amount as f32).to_bits(),
-            std::sync::atomic::Ordering::Relaxed,
-        );
-        self.save_config();
-    }
-
-    // --- STEREO WIDTH METHODS ---
-    pub fn toggle_stereo_width(&mut self) {
-        self.mono_active = !self.mono_active;
-        self.mono_changed();
-
-        crate::audio::dsp::stereowidth::get_mono_enabled_arc()
-            .store(self.mono_active, std::sync::atomic::Ordering::Relaxed);
+        crate::audio::dsp::pitchshifter::get_pitch_ratio_arc()
+            .store(ratio.to_bits(), std::sync::atomic::Ordering::Relaxed);
 
         self.save_config();
     }
@@ -699,21 +640,6 @@ impl DspController {
         self.save_config();
     }
 
-    // --- STEREO ENHANCE METHODS ---
-    pub fn toggle_stereo_enhance(&mut self) {
-        self.stereo_active = !self.stereo_active;
-        self.stereo_changed();
-
-        crate::audio::dsp::stereoenhance::get_stereo_enabled_arc()
-            .store(self.stereo_active, std::sync::atomic::Ordering::Relaxed);
-        crate::audio::dsp::stereoenhance::get_stereo_amount_arc().store(
-            (self.stereo_amount as f32).to_bits(),
-            std::sync::atomic::Ordering::Relaxed,
-        );
-
-        self.save_config();
-    }
-
     pub fn set_stereo_enhance_amount(&mut self, val: f64) {
         self.stereo_amount = val.max(0.0).min(1.0);
         self.stereo_amount_changed();
@@ -721,17 +647,6 @@ impl DspController {
             (self.stereo_amount as f32).to_bits(),
             std::sync::atomic::Ordering::Relaxed,
         );
-        self.save_config();
-    }
-
-    // --- CROSSFEED METHODS ---
-    pub fn toggle_crossfeed(&mut self) {
-        self.crossfeed_active = !self.crossfeed_active;
-        self.crossfeed_changed();
-
-        crate::audio::dsp::crossfeed::get_crossfeed_enabled_arc()
-            .store(self.crossfeed_active, std::sync::atomic::Ordering::Relaxed);
-
         self.save_config();
     }
 
@@ -745,7 +660,52 @@ impl DspController {
         self.save_config();
     }
 
-    // --- PREAMP METHODS ---
+    pub fn set_middle_clarity_amount(&mut self, val: f64) {
+        self.middle_amount = val.max(0.0).min(1.0);
+        self.middle_amount_changed();
+        crate::audio::dsp::middleclarity::get_middle_amount_arc().store(
+            (self.middle_amount as f32).to_bits(),
+            std::sync::atomic::Ordering::Relaxed,
+        );
+        self.save_config();
+    }
+
+    pub fn toggle_middle_clarity(&mut self) {
+        self.middle_active = !self.middle_active;
+        self.middle_changed();
+        crate::audio::dsp::middleclarity::get_middle_enabled_arc()
+            .store(self.middle_active, std::sync::atomic::Ordering::Relaxed);
+        self.save_config();
+    }
+
+    pub fn toggle_stereo_width(&mut self) {
+        self.mono_active = !self.mono_active;
+        self.mono_changed();
+        crate::audio::dsp::stereowidth::get_mono_enabled_arc()
+            .store(self.mono_active, std::sync::atomic::Ordering::Relaxed);
+        self.save_config();
+    }
+
+    pub fn toggle_stereo_enhance(&mut self) {
+        self.stereo_active = !self.stereo_active;
+        self.stereo_changed();
+        crate::audio::dsp::stereoenhance::get_stereo_enabled_arc()
+            .store(self.stereo_active, std::sync::atomic::Ordering::Relaxed);
+        crate::audio::dsp::stereoenhance::get_stereo_amount_arc().store(
+            (self.stereo_amount as f32).to_bits(),
+            std::sync::atomic::Ordering::Relaxed,
+        );
+        self.save_config();
+    }
+
+    pub fn toggle_crossfeed(&mut self) {
+        self.crossfeed_active = !self.crossfeed_active;
+        self.crossfeed_changed();
+        crate::audio::dsp::crossfeed::get_crossfeed_enabled_arc()
+            .store(self.crossfeed_active, std::sync::atomic::Ordering::Relaxed);
+        self.save_config();
+    }
+
     pub fn toggle_preamp(&mut self) {
         self.preamp_active = !self.preamp_active;
         self.preamp_changed();
@@ -754,7 +714,6 @@ impl DspController {
         self.save_config();
     }
 
-    // --- LIMITER METHODS ---
     pub fn toggle_limiter(&mut self) {
         self.limiter_active = !self.limiter_active;
         self.limiter_changed();
@@ -763,96 +722,131 @@ impl DspController {
         self.save_config();
     }
 
-    // --- NORMALIZER METHODS ---
     pub fn toggle_normalizer(&mut self) {
         self.normalizer_enabled = !self.normalizer_enabled;
         self.normalizer_changed();
         self.save_config();
     }
 
-    pub fn set_normalizer_target_lufs(&mut self, val: f64) {
-        let clamped = val.clamp(-24.0, -10.0);
-        self.normalizer_target_lufs = clamped;
-        self.normalizer_params_changed();
-
-        if let Ok(mut ff) = self.ffmpeg.lock() {
-            ff.set_normalizer_params(
-                clamped as f32,
-                self.normalizer_true_peak_dbtp as f32,
-                self.normalizer_max_gain_db as f32,
-            );
-        }
+    pub fn compressor_indie_reset(&mut self) {
+        self.compressor_threshold = 1.0;
+        crate::audio::dsp::compressor::get_compressor_threshold_arc().store(
+            1.0_f32.to_bits(),
+            std::sync::atomic::Ordering::Relaxed,
+        );
+        self.compressor_threshold_changed();
         self.save_config();
     }
 
-    pub fn set_normalizer_true_peak_dbtp(&mut self, val: f64) {
-        let clamped = val.clamp(-3.0, 0.0);
-        self.normalizer_true_peak_dbtp = clamped;
-        self.normalizer_params_changed();
-
-        if let Ok(mut ff) = self.ffmpeg.lock() {
-            ff.set_normalizer_params(
-                self.normalizer_target_lufs as f32,
-                clamped as f32,
-                self.normalizer_max_gain_db as f32,
-            );
-        }
-        self.save_config();
+    pub fn get_compressor_threshold(&self) -> f64 {
+        let bits = crate::audio::dsp::compressor::get_compressor_threshold_arc()
+            .load(std::sync::atomic::Ordering::Relaxed);
+        f32::from_bits(bits) as f64
     }
 
-    pub fn set_normalizer_max_gain_db(&mut self, val: f64) {
-        let clamped = val.clamp(0.0, 12.0);
-        self.normalizer_max_gain_db = clamped;
-        self.normalizer_params_changed();
-
-        if let Ok(mut ff) = self.ffmpeg.lock() {
-            ff.set_normalizer_params(
-                self.normalizer_target_lufs as f32,
-                self.normalizer_true_peak_dbtp as f32,
-                clamped as f32,
-            );
-        }
-        self.save_config();
+    pub fn get_preamp_gain(&self) -> f64 {
+        let bits = crate::audio::dsp::eq::get_eq_preamp_arc().load(std::sync::atomic::Ordering::Relaxed);
+        f32::from_bits(bits) as f64
     }
 
-    pub fn set_normalizer_smoothing(&mut self, val: f64) {
-        let clamped = val.clamp(0.0005, 0.01);
-        self.normalizer_smoothing = clamped;
-        self.normalizer_params_changed();
-
-        crate::audio::dsp::normalizer::get_normalizer_smoothing_arc().store(
+    pub fn set_preamp_gain(&mut self, gain: f64) {
+        let clamped = gain.clamp(-20.0, 20.0);
+        crate::audio::dsp::eq::get_eq_preamp_arc().store(
             (clamped as f32).to_bits(),
             std::sync::atomic::Ordering::Relaxed,
         );
         self.save_config();
     }
 
-    pub fn get_normalizer_smoothing_label(&self) -> QString {
-        let label = crate::audio::dsp::normalizer::SmoothingPreset::from_factor(
-            self.normalizer_smoothing as f32,
-        );
-        QString::from(label)
+    pub fn set_eq_instant_apply(&mut self) {
+        // No-op - sync already happens in set methods
     }
 
-    // --- DSP MASTER METHODS ---
-    pub fn toggle_dsp(&mut self) {
-        self.dsp_enabled = !self.dsp_enabled;
-        self.dsp_changed();    
-        self.emit_all_signals();     
-
-        if let Ok(mut ff) = self.ffmpeg.lock() {
-            ff.set_dsp_enabled(self.dsp_enabled);
-        }
-
-        if !self.dsp_enabled {
-            if let Ok(mut ff) = self.ffmpeg.lock() {
-                ff.reset_dsp();
-            }
+    pub fn reset_compressor(&mut self) {
+        if let Some(ref snapshot) = self.default_fx_snapshot {
+            self.compressor_threshold = snapshot.compressor_threshold as f64;
+            crate::audio::dsp::compressor::get_compressor_threshold_arc().store(
+                snapshot.compressor_threshold.to_bits(),
+                std::sync::atomic::Ordering::Relaxed,
+            );
+            self.compressor_threshold_changed();
+        } else {
+            self.compressor_indie_reset();
         }
         self.save_config();
     }
 
-    // --- EQ METHODS ---
+    pub fn reset_surround(&mut self) {
+        let width = self.default_fx_snapshot
+            .as_ref()
+            .map(|s| s.surround_width)
+            .unwrap_or(1.8);
+        self.surround_width = width as f64;
+        crate::audio::dsp::surround::get_surround_width_arc().store(
+            width.to_bits(),
+            std::sync::atomic::Ordering::Relaxed,
+        );
+        self.surround_width_changed();
+        self.save_config();
+    }
+
+    pub fn reset_stereo_width(&mut self) {
+        let width = self.default_fx_snapshot
+            .as_ref()
+            .map(|s| s.mono_width)
+            .unwrap_or(1.0);
+        self.mono_width = width as f64;
+        crate::audio::dsp::stereowidth::get_mono_width_arc().store(
+            width.to_bits(),
+            std::sync::atomic::Ordering::Relaxed,
+        );
+        self.mono_width_changed();
+        self.save_config();
+    }
+
+    pub fn reset_middle_clarity(&mut self) {
+        let amount = self.default_fx_snapshot
+            .as_ref()
+            .map(|s| s.middle_amount)
+            .unwrap_or(0.0);
+        self.middle_amount = amount as f64;
+        crate::audio::dsp::middleclarity::get_middle_amount_arc().store(
+            amount.to_bits(),
+            std::sync::atomic::Ordering::Relaxed,
+        );
+        self.middle_amount_changed();
+        self.save_config();
+    }
+
+    pub fn reset_stereo_enhance(&mut self) {
+        let amount = self.default_fx_snapshot
+            .as_ref()
+            .map(|s| s.stereo_amount)
+            .unwrap_or(0.0);
+        self.stereo_amount = amount as f64;
+        crate::audio::dsp::stereoenhance::get_stereo_amount_arc().store(
+            amount.to_bits(),
+            std::sync::atomic::Ordering::Relaxed,
+        );
+        self.stereo_amount_changed();
+        self.save_config();
+    }
+
+    pub fn reset_crossfeed(&mut self) {
+        let amount = self.default_fx_snapshot
+            .as_ref()
+            .map(|s| s.crossfeed_amount)
+            .unwrap_or(0.0);
+        self.crossfeed_amount = amount as f64;
+        crate::audio::dsp::crossfeed::get_crossfeed_amount_arc().store(
+            amount.to_bits(),
+            std::sync::atomic::Ordering::Relaxed,
+        );
+        self.crossfeed_amount_changed();
+        self.save_config();
+    }
+
+    // --- EQ SETTERS ---
     pub fn set_eq_enabled(&mut self, enabled: bool) {
         self.eq_enabled = enabled;
         crate::audio::dsp::eq::get_eq_enabled_arc().store(
@@ -876,7 +870,7 @@ impl DspController {
                 std::sync::atomic::Ordering::Relaxed,
             );
 
-            self.eqBandsChanged();
+            self.eq_bands_changed();
             self.save_config();
         }
     }
@@ -884,39 +878,33 @@ impl DspController {
     pub fn set_fader(&mut self, offset: f64) {
         let offset = offset.clamp(-20.0, 20.0);
         self.fader_offset = offset;
-        self.faderOffsetChanged();
+        self.fader_offset_changed();
 
         let arc = crate::audio::dsp::eq::get_eq_bands_arc();
         for i in 0..10 {
             let effective = (self.eq_bands[i] as f64 + offset).clamp(-20.0, 20.0) as f32;
             arc[i].store(effective.to_bits(), std::sync::atomic::Ordering::Relaxed);
         }
-
-        self.eqBandsChanged();
-        self.save_config();
     }
 
-    pub fn set_active_preset_index(&mut self, index: i32) {
-        if index >= 0 && index < 6 {
-            self.load_preset(index);
+    pub fn toggle_dsp(&mut self) {
+        self.dsp_enabled = !self.dsp_enabled;
+        self.dsp_changed();    
+        self.emit_all_signals();     
+
+        if let Ok(mut ff) = self.ffmpeg.lock() {
+            ff.set_dsp_enabled(self.dsp_enabled);
         }
-    }
 
-    pub fn get_preamp_gain(&self) -> f64 {
-        let bits =
-            crate::audio::dsp::eq::get_eq_preamp_arc().load(std::sync::atomic::Ordering::Relaxed);
-        f32::from_bits(bits) as f64
-    }
-
-    pub fn set_preamp_gain(&mut self, gain: f64) {
-        let clamped = gain.clamp(-20.0, 20.0);
-        crate::audio::dsp::eq::get_eq_preamp_arc().store(
-            (clamped as f32).to_bits(),
-            std::sync::atomic::Ordering::Relaxed,
-        );
+        if !self.dsp_enabled {
+            if let Ok(mut ff) = self.ffmpeg.lock() {
+                ff.reset_dsp();
+            }
+        }
         self.save_config();
     }
 
+    // --- PRESET SAVING ---
     pub fn save_user_eq(&mut self, preset: i32, name: String, macro_val: f64) {
         if preset >= 0 && preset < 6 {
             let idx = preset as usize;
@@ -936,9 +924,8 @@ impl DspController {
     }
 
     pub fn save_user_preset(&mut self, slot: usize, name: String) -> i32 {
-        // Validate slot is within user preset range (0-5 for User 1-6)
         if slot >= 6 {
-            return -2; // Invalid slot
+            return -2;
         }
 
         let mut trimmed_name = name.trim().to_string();
@@ -946,16 +933,14 @@ impl DspController {
         if trimmed_name.is_empty() {
             return -1;
         }
-        let _name_upper = trimmed_name.to_uppercase();
+        let name_upper = trimmed_name.to_uppercase();
 
         let idx = slot;
 
-        // Save ALL DSP (EQ + FX)
-        self.user_eq_names[idx] = _name_upper;
+        self.user_eq_names[idx] = name_upper;
         self.user_eq_gains[idx] = self.eq_bands;
         self.user_eq_macro[idx] = self.fader_offset as f32;
 
-        // FX settings
         self.user_fx_enabled[idx] = self.bass_active
             || self.crystal_active
             || self.surround_active
@@ -983,38 +968,171 @@ impl DspController {
         self.save_config();
         idx as i32
     }
-    pub fn get_eq_preset_count(&self) -> i32 {
-        self.eq_presets.len() as i32
-    }
 
-    pub fn get_eq_preset_name(&self, index: i32) -> QString {
-        if index >= 0 && (index as usize) < self.eq_presets.len() {
-            QString::from(self.eq_presets[index as usize].name.clone())
+    pub fn reset_crystalizer(&mut self) {
+        if let Some(ref snapshot) = self.default_fx_snapshot {
+            self.crystal_amount = snapshot.crystal_amount as f64;
+            self.crystal_active = snapshot.crystal_enabled;
+            crate::audio::dsp::crystalizer::get_crystal_amount_arc().store(
+                snapshot.crystal_amount.to_bits(),
+                std::sync::atomic::Ordering::Relaxed,
+            );
+            crate::audio::dsp::crystalizer::get_crystal_enabled_arc().store(
+                snapshot.crystal_enabled,
+                std::sync::atomic::Ordering::Relaxed,
+            );
         } else {
-            QString::default()
+            self.crystal_amount = 0.0;
+            self.crystal_active = false;
+            crate::audio::dsp::crystalizer::get_crystal_amount_arc().store(
+                0.0_f32.to_bits(),
+                std::sync::atomic::Ordering::Relaxed,
+            );
+            crate::audio::dsp::crystalizer::get_crystal_enabled_arc().store(
+                false,
+                std::sync::atomic::Ordering::Relaxed,
+            );
         }
+        self.crystal_active_changed();
+        self.crystal_amount_changed();
+        self.save_config();
     }
 
-    pub fn get_eq_preset_gains(&self, index: i32) -> QVariantList {
-        let mut list = QVariantList::default();
-        if index >= 0 && (index as usize) < self.eq_presets.len() {
-            for &gain in &self.eq_presets[index as usize].gains {
-                list.push(QVariant::from(gain as f64));
-            }
-        }
-        list
-    }
-
-    pub fn get_fx_preset_count(&self) -> i32 {
-        self.fx_presets.len() as i32
-    }
-
-    pub fn get_fx_preset_name(&self, index: i32) -> QString {
-        if index >= 0 && (index as usize) < self.fx_presets.len() {
-            QString::from(self.fx_presets[index as usize].name.clone())
+    pub fn reset_bass(&mut self) {
+        if let Some(ref snapshot) = self.default_fx_snapshot {
+            self.bass_gain = snapshot.bass_gain as f64;
+            self.bass_active = snapshot.bass_enabled;
+            self.bass_cutoff = snapshot.bass_cutoff as f64;
+            self.bass_mode = snapshot.bass_mode;
+            crate::audio::dsp::bassbooster::get_bass_gain_arc().store(
+                snapshot.bass_gain.to_bits(),
+                std::sync::atomic::Ordering::Relaxed,
+            );
+            crate::audio::dsp::bassbooster::get_bass_enabled_arc().store(
+                snapshot.bass_enabled,
+                std::sync::atomic::Ordering::Relaxed,
+            );
+            crate::audio::dsp::bassbooster::get_bass_freq_arc().store(
+                snapshot.bass_cutoff.to_bits(),
+                std::sync::atomic::Ordering::Relaxed,
+            );
         } else {
-            QString::default()
+            self.bass_gain = 0.0;
+            self.bass_active = false;
+            crate::audio::dsp::bassbooster::get_bass_gain_arc().store(
+                0.0_f32.to_bits(),
+                std::sync::atomic::Ordering::Relaxed,
+            );
+            crate::audio::dsp::bassbooster::get_bass_enabled_arc().store(
+                false,
+                std::sync::atomic::Ordering::Relaxed,
+            );
         }
+        self.bass_active_changed();
+        self.bass_gain_changed();
+        self.save_config();
+    }
+
+    pub fn reset_reverb(&mut self) {
+        if let Some(ref snapshot) = self.default_fx_snapshot {
+            self.reverb_active = snapshot.reverb_enabled;
+            self.reverb_amount = snapshot.reverb_amount as i32;
+            self.reverb_mode = snapshot.reverb_mode;
+            crate::audio::dsp::reverb::get_reverb_enabled_arc().store(
+                snapshot.reverb_enabled,
+                std::sync::atomic::Ordering::Relaxed,
+            );
+            crate::audio::dsp::reverb::get_reverb_amount_arc().store(
+                snapshot.reverb_amount as u32,
+                std::sync::atomic::Ordering::Relaxed,
+            );
+        } else {
+            self.reverb_active = false;
+            self.reverb_amount = 50;
+            self.reverb_mode = 0;
+            crate::audio::dsp::reverb::get_reverb_enabled_arc().store(
+                false,
+                std::sync::atomic::Ordering::Relaxed,
+            );
+            crate::audio::dsp::reverb::get_reverb_amount_arc().store(
+                50u32,
+                std::sync::atomic::Ordering::Relaxed,
+            );
+        }
+        self.reverb_active_changed();
+        self.reverb_amount_changed();
+        self.save_config();
+    }
+
+    pub fn reset_pitch(&mut self) {
+        if let Some(ref snapshot) = self.default_fx_snapshot {
+            self.pitch_active = snapshot.pitch_enabled;
+            self.pitch_semitones = snapshot.pitch_semitones as f64;
+            crate::audio::dsp::pitchshifter::get_pitch_enabled_arc().store(
+                snapshot.pitch_enabled,
+                std::sync::atomic::Ordering::Relaxed,
+            );
+            crate::audio::dsp::pitchshifter::get_pitch_ratio_arc().store(
+                2.0_f32.powf(snapshot.pitch_semitones / 12.0).to_bits(),
+                std::sync::atomic::Ordering::Relaxed,
+            );
+        } else {
+            self.pitch_active = false;
+            self.pitch_semitones = 0.0;
+            crate::audio::dsp::pitchshifter::get_pitch_enabled_arc().store(
+                false,
+                std::sync::atomic::Ordering::Relaxed,
+            );
+            crate::audio::dsp::pitchshifter::get_pitch_ratio_arc().store(
+                1.0_f32.to_bits(),
+                std::sync::atomic::Ordering::Relaxed,
+            );
+        }
+        self.pitch_changed();
+        self.save_config();
+    }
+
+    pub fn reset_all(&mut self) {
+        let dsp_settings = crate::audio::dsp::DspSettings::default();
+        
+        self.dsp_enabled = dsp_settings.dsp_enabled;
+        self.eq_enabled = dsp_settings.eq_enabled;
+        
+        self.eq_bands = [0.0; 10];
+        self.fader_offset = 0.0;
+        
+        let arc = crate::audio::dsp::eq::get_eq_bands_arc();
+        for i in 0..10 {
+            arc[i].store(0.0_f32.to_bits(), std::sync::atomic::Ordering::Relaxed);
+        }
+        
+        self.toggle_bass();
+        self.toggle_surround();
+        self.toggle_crystalizer();
+        self.toggle_compressor();
+        self.toggle_reverb();
+        self.toggle_pitch();
+        self.toggle_middle_clarity();
+        self.toggle_stereo_width();
+        self.toggle_stereo_enhance();
+        self.toggle_crossfeed();
+        
+        self.bass_gain = 0.0;
+        self.surround_width = 1.8;
+        self.crystal_amount = 0.0;
+        self.compressor_threshold = 1.0;
+        self.middle_amount = 0.0;
+        self.stereo_amount = 0.0;
+        self.crossfeed_amount = 0.0;
+        
+        self.toggle_dsp();
+        
+        self.emit_all_signals();
+        self.save_config();
+    }
+
+    pub fn get_active_preset_index(&self) -> i32 {
+        self.active_preset_index
     }
 
     pub fn get_user_eq_gains(&self, preset: i32) -> QVariantList {
@@ -1056,7 +1174,40 @@ impl DspController {
         list
     }
 
-    // --- PRESET LOADING METHODS ---
+    pub fn get_eq_preset_count(&self) -> i32 {
+        self.eq_presets.len() as i32
+    }
+
+    pub fn get_eq_preset_name(&self, index: i32) -> QString {
+        if index >= 0 && (index as usize) < self.eq_presets.len() {
+            QString::from(self.eq_presets[index as usize].name.clone())
+        } else {
+            QString::default()
+        }
+    }
+
+    pub fn get_eq_preset_gains(&self, index: i32) -> QVariantList {
+        let mut list = QVariantList::default();
+        if index >= 0 && (index as usize) < self.eq_presets.len() {
+            for &gain in &self.eq_presets[index as usize].gains {
+                list.push(QVariant::from(gain as f64));
+            }
+        }
+        list
+    }
+
+    pub fn get_fx_preset_count(&self) -> i32 {
+        self.fx_presets.len() as i32
+    }
+
+    pub fn get_fx_preset_name(&self, index: i32) -> QString {
+        if index >= 0 && (index as usize) < self.fx_presets.len() {
+            QString::from(self.fx_presets[index as usize].name.clone())
+        } else {
+            QString::default()
+        }
+    }
+
     pub fn load_eq_preset(&mut self, index: i32) {
         if index < 0 || (index as usize) >= self.eq_presets.len() {
             return;
@@ -1070,7 +1221,7 @@ impl DspController {
             arc[i].store(gain.to_bits(), std::sync::atomic::Ordering::Relaxed);
         }
 
-        self.eqBandsChanged();
+        self.eq_bands_changed();
         self.active_preset_index = index;
         self.active_preset_index_changed();
         self.save_config();
@@ -1086,21 +1237,16 @@ impl DspController {
         }
 
         let (eq_source, fx_source, use_factory_fx) = if index < 6 {
-            // FACTORY PRESET (0-5): Load ALL from internal code (presets.rs)
-            // JSON is completely IGNORED for these indices
             (
                 PresetSource::Factory(index as usize),
                 PresetSource::Factory(index as usize),
                 true,
             )
         } else {
-            // USER PRESET (6-11)
             let user_idx = (index - 6) as usize;
             if self.user_eq_names[user_idx].trim().is_empty() {
-                // INVALID/EMPTY: FALLBACK to LOONIX (factory preset 0)
                 (PresetSource::Factory(0), PresetSource::Factory(0), true)
             } else {
-                // VALID: Load user saved EQ + FX
                 self.load_user_fx_preset(user_idx);
                 (
                     PresetSource::User(user_idx),
@@ -1110,7 +1256,6 @@ impl DspController {
             }
         };
 
-        // Load EQ bands from source
         match eq_source {
             PresetSource::Factory(idx) => {
                 self.fader_offset = 0.0;
@@ -1136,7 +1281,6 @@ impl DspController {
             PresetSource::Preserve => {}
         }
 
-        // Load FX from source (only for factory presets)
         if use_factory_fx {
             match fx_source {
                 PresetSource::Factory(idx) => {
@@ -1148,16 +1292,20 @@ impl DspController {
             }
         }
 
-        // Sinkronisasi Signal ke QML UI
-        self.faderOffsetChanged();
-        self.eqBandsChanged();
+        self.fader_offset_changed();
+        self.eq_bands_changed();
 
         self.active_preset_index = index;
         self.active_preset_index_changed();
 
-        // Only save untuk user preset (6-11), bukan default preset (0-5)
         if index >= 6 {
             self.save_config();
+        }
+}
+
+    pub fn set_active_preset_index(&mut self, index: i32) {
+        if index >= 0 && index < 6 {
+            self.load_preset(index);
         }
     }
 
@@ -1282,7 +1430,6 @@ impl DspController {
         self.compressor_active_changed();
         self.compressor_threshold_changed();
 
-        // Reverb - Murni snapshot
         self.reverb_active = preset.reverb_enabled;
         self.reverb_mode = preset.reverb_mode as i32;
         self.reverb_amount = preset.reverb_amount as i32;
@@ -1308,12 +1455,10 @@ impl DspController {
     }
 
     pub fn load_user_fx_preset(&mut self, idx: usize) {
-        // Load user saved FX settings
         if !self.user_fx_enabled[idx] {
             return;
         }
 
-        // Bass
         self.bass_active = self.user_fx_bass_enabled[idx];
         self.bass_gain = self.user_fx_bass_gain[idx] as f64;
         self.bass_cutoff = self.user_fx_bass_cutoff[idx] as f64;
@@ -1337,7 +1482,6 @@ impl DspController {
         self.bass_cutoff_changed();
         self.bass_mode_changed();
 
-        // Crystalizer
         self.crystal_active = self.user_fx_crystal_enabled[idx];
         self.crystal_amount = self.user_fx_crystal_amount[idx] as f64;
         crate::audio::dsp::crystalizer::get_crystal_enabled_arc().store(
@@ -1350,7 +1494,6 @@ impl DspController {
         );
         self.crystal_active_changed();
 
-        // Surround
         self.surround_active = self.user_fx_surround_enabled[idx];
         self.surround_width = self.user_fx_surround_width[idx] as f64;
         crate::audio::dsp::surround::get_surround_enabled_arc().store(
@@ -1364,7 +1507,6 @@ impl DspController {
         self.surround_active_changed();
         self.surround_width_changed();
 
-        // Mono
         self.mono_active = self.user_fx_mono_enabled[idx];
         self.mono_width = self.user_fx_mono_width[idx] as f64;
         crate::audio::dsp::stereowidth::get_mono_enabled_arc().store(
@@ -1374,7 +1516,6 @@ impl DspController {
         self.mono_changed();
         self.mono_width_changed();
 
-        // Stereo
         self.stereo_active = self.user_fx_stereo_enabled[idx];
         self.stereo_amount = self.user_fx_stereo_amount[idx] as f64;
         crate::audio::dsp::stereoenhance::get_stereo_enabled_arc().store(
@@ -1384,326 +1525,52 @@ impl DspController {
         self.stereo_changed();
         self.stereo_amount_changed();
 
-        // Crossfeed
         self.crossfeed_active = self.user_fx_crossfeed_enabled[idx];
         self.crossfeed_amount = self.user_fx_crossfeed_amount[idx] as f64;
         crate::audio::dsp::crossfeed::get_crossfeed_enabled_arc().store(
             self.user_fx_crossfeed_enabled[idx],
             std::sync::atomic::Ordering::Relaxed,
         );
+        crate::audio::dsp::crossfeed::get_crossfeed_amount_arc().store(
+            self.user_fx_crossfeed_amount[idx].to_bits(),
+            std::sync::atomic::Ordering::Relaxed,
+        );
         self.crossfeed_changed();
         self.crossfeed_amount_changed();
 
-        // Compressor
         self.compressor_active = self.user_fx_compressor_enabled[idx];
-        self.compressor_threshold = self.user_fx_compressor_threshold[idx].clamp(-60.0, 0.0) as f64;
+        self.compressor_threshold = self.user_fx_compressor_threshold[idx] as f64;
         crate::audio::dsp::compressor::get_compressor_enabled_arc().store(
             self.user_fx_compressor_enabled[idx],
             std::sync::atomic::Ordering::Relaxed,
         );
-        crate::audio::dsp::compressor::get_compressor_threshold_arc()
-            .store((self.compressor_threshold as f32).to_bits(), std::sync::atomic::Ordering::Relaxed);
+        crate::audio::dsp::compressor::get_compressor_threshold_arc().store(
+            self.user_fx_compressor_threshold[idx].to_bits(),
+            std::sync::atomic::Ordering::Relaxed,
+        );
         self.compressor_active_changed();
         self.compressor_threshold_changed();
 
-        // Reverb - Murni dari array user
         self.reverb_active = self.user_fx_reverb_enabled[idx];
         self.reverb_mode = self.user_fx_reverb_mode[idx];
         self.reverb_amount = self.user_fx_reverb_amount[idx];
-
         crate::audio::dsp::reverb::get_reverb_enabled_arc().store(
-            self.reverb_active,
+            self.user_fx_reverb_enabled[idx],
             std::sync::atomic::Ordering::Relaxed,
         );
         crate::audio::dsp::reverb::get_reverb_mode_arc().store(
-            self.reverb_mode as u32,
+            self.user_fx_reverb_mode[idx] as u32,
             std::sync::atomic::Ordering::Relaxed,
         );
         crate::audio::dsp::reverb::get_reverb_amount_arc().store(
-            self.reverb_amount as u32,
+            self.user_fx_reverb_amount[idx] as u32,
             std::sync::atomic::Ordering::Relaxed,
         );
-
         self.reverb_active_changed();
         self.reverb_mode_changed();
         self.reverb_amount_changed();
         self.reverb_changed();
 
-        self.default_fx_snapshot = Some(FxPreset {
-            name: String::from("User"),
-            bass_enabled: self.user_fx_bass_enabled[idx],
-            bass_gain: self.user_fx_bass_gain[idx],
-            bass_cutoff: self.user_fx_bass_cutoff[idx],
-            bass_mode: self.user_fx_bass_mode[idx],
-            crystal_enabled: self.user_fx_crystal_enabled[idx],
-            crystal_amount: self.user_fx_crystal_amount[idx],
-            crystal_freq: 4000.0,
-            surround_enabled: self.user_fx_surround_enabled[idx],
-            surround_width: self.user_fx_surround_width[idx],
-            mono_enabled: self.user_fx_mono_enabled[idx],
-            mono_width: self.user_fx_mono_width[idx],
-            pitch_enabled: false,
-            pitch_semitones: 0.0,
-            middle_enabled: false,
-            middle_amount: 0.0,
-            stereo_enabled: self.user_fx_stereo_enabled[idx],
-            stereo_amount: self.user_fx_stereo_amount[idx],
-            crossfeed_enabled: self.user_fx_crossfeed_enabled[idx],
-            crossfeed_amount: self.user_fx_crossfeed_amount[idx],
-            compressor_enabled: self.user_fx_compressor_enabled[idx],
-            compressor_threshold: self.user_fx_compressor_threshold[idx],
-            reverb_enabled: self.user_fx_reverb_enabled[idx],
-            reverb_mode: self.user_fx_reverb_mode[idx],
-            reverb_amount: self.user_fx_reverb_amount[idx],
-        });
-    }
-
-    // --- RESET METHODS ---
-    pub fn compressor_indie_reset(&mut self) {
-        if let Some(default) = &self.default_fx_snapshot {
-            let db = default.compressor_threshold.clamp(-60.0, 0.0);
-            self.compressor_threshold = db as f64;
-            self.compressor_active = default.compressor_enabled;
-            crate::audio::dsp::compressor::get_compressor_enabled_arc()
-                .store(self.compressor_active, std::sync::atomic::Ordering::Relaxed);
-            crate::audio::dsp::compressor::get_compressor_threshold_arc().store(
-                (db as f32).to_bits(),
-                std::sync::atomic::Ordering::Relaxed,
-            );
-            self.compressor_active_changed();
-            self.compressor_threshold_changed();
-        }
-    }
-
-    pub fn surround_indie_reset(&mut self) {
-        if let Some(default) = &self.default_fx_snapshot {
-            self.surround_active = default.surround_enabled || default.surround_width > 0.0;
-            self.surround_width = default.surround_width.clamp(0.0, 2.0) as f64;
-            crate::audio::dsp::surround::get_surround_enabled_arc()
-                .store(self.surround_active, std::sync::atomic::Ordering::Relaxed);
-            crate::audio::dsp::surround::get_surround_width_arc().store(
-                default.surround_width.to_bits(),
-                std::sync::atomic::Ordering::Relaxed,
-            );
-            self.surround_active_changed();
-            self.surround_width_changed();
-        }
-    }
-
-    pub fn stereo_width_indie_reset(&mut self) {
-        if let Some(default) = &self.default_fx_snapshot {
-            self.mono_active = default.mono_enabled;
-            self.mono_width = default.mono_width.clamp(0.0, 2.0) as f64;
-            crate::audio::dsp::stereowidth::get_mono_enabled_arc()
-                .store(self.mono_active, std::sync::atomic::Ordering::Relaxed);
-            crate::audio::dsp::stereowidth::get_mono_width_arc().store(
-                default.mono_width.to_bits(),
-                std::sync::atomic::Ordering::Relaxed,
-            );
-            self.mono_changed();
-            self.mono_width_changed();
-        }
-    }
-
-    pub fn middle_clarity_indie_reset(&mut self) {
-        if let Some(default) = &self.default_fx_snapshot {
-            self.middle_active = default.middle_enabled || default.middle_amount > 0.0;
-            self.middle_amount = default.middle_amount as f64;
-            crate::audio::dsp::middleclarity::get_middle_enabled_arc()
-                .store(self.middle_active, std::sync::atomic::Ordering::Relaxed);
-            crate::audio::dsp::middleclarity::get_middle_amount_arc().store(
-                default.middle_amount.to_bits(),
-                std::sync::atomic::Ordering::Relaxed,
-            );
-            self.middle_changed();
-            self.middle_amount_changed();
-        }
-    }
-
-    pub fn stereo_enhance_indie_reset(&mut self) {
-        if let Some(default) = &self.default_fx_snapshot {
-            self.stereo_active = default.stereo_enabled || default.stereo_amount > 0.0;
-            self.stereo_amount = default.stereo_amount.clamp(0.0, 1.0) as f64;
-            crate::audio::dsp::stereoenhance::get_stereo_enabled_arc()
-                .store(self.stereo_active, std::sync::atomic::Ordering::Relaxed);
-            crate::audio::dsp::stereoenhance::get_stereo_amount_arc().store(
-                default.stereo_amount.to_bits(),
-                std::sync::atomic::Ordering::Relaxed,
-            );
-            self.stereo_changed();
-            self.stereo_amount_changed();
-        }
-    }
-
-    pub fn crossfeed_indie_reset(&mut self) {
-        if let Some(default) = &self.default_fx_snapshot {
-            self.crossfeed_active = default.crossfeed_enabled || default.crossfeed_amount > 0.0;
-            self.crossfeed_amount = default.crossfeed_amount.clamp(0.0, 1.0) as f64;
-            crate::audio::dsp::crossfeed::get_crossfeed_enabled_arc()
-                .store(self.crossfeed_active, std::sync::atomic::Ordering::Relaxed);
-            crate::audio::dsp::crossfeed::get_crossfeed_amount_arc().store(
-                default.crossfeed_amount.to_bits(),
-                std::sync::atomic::Ordering::Relaxed,
-            );
-            self.crossfeed_changed();
-            self.crossfeed_amount_changed();
-        }
-    }
-
-    pub fn crystalizer_indie_reset(&mut self) {
-        if let Some(default) = &self.default_fx_snapshot {
-            self.crystal_active = default.crystal_enabled || default.crystal_amount > 0.0;
-            self.crystal_amount = default.crystal_amount.clamp(0.0, 1.0) as f64;
-            self.crystal_freq = default.crystal_freq as f64;
-            crate::audio::dsp::crystalizer::get_crystal_enabled_arc()
-                .store(self.crystal_active, std::sync::atomic::Ordering::Relaxed);
-            crate::audio::dsp::crystalizer::get_crystal_amount_arc().store(
-                default.crystal_amount.to_bits(),
-                std::sync::atomic::Ordering::Relaxed,
-            );
-            self.crystal_active_changed();
-            self.crystal_amount_changed();
-            self.crystal_freq_changed();
-        }
-    }
-
-    pub fn bass_indie_reset(&mut self) {
-        if let Some(default) = &self.default_fx_snapshot {
-            self.bass_active = default.bass_enabled;
-            self.bass_gain = default.bass_gain as f64;
-            self.bass_cutoff = default.bass_cutoff as f64;
-            self.bass_mode = default.bass_mode as i32;
-            
-            crate::audio::dsp::bassbooster::get_bass_enabled_arc()
-                .store(self.bass_active, std::sync::atomic::Ordering::Relaxed);
-            crate::audio::dsp::bassbooster::get_bass_gain_arc().store(
-                default.bass_gain.to_bits(),
-                std::sync::atomic::Ordering::Relaxed,
-            );
-            crate::audio::dsp::bassbooster::get_bass_freq_arc().store(
-                default.bass_cutoff.to_bits(),
-                std::sync::atomic::Ordering::Relaxed,
-            );
-            
-            self.bass_active_changed();
-            self.bass_gain_changed();
-            self.bass_cutoff_changed();
-            self.bass_mode_changed();
-        }
-    }
-
-    pub fn reverb_indie_reset(&mut self) {
-        if let Some(default) = &self.default_fx_snapshot {
-            // Pola BASS: Pakai data asli snapshot, buang logika "|| amount > 0"
-            self.reverb_active = default.reverb_enabled;
-            self.reverb_mode = default.reverb_mode;
-            self.reverb_amount = default.reverb_amount;
-
-            crate::audio::dsp::reverb::get_reverb_enabled_arc()
-                .store(self.reverb_active, std::sync::atomic::Ordering::Relaxed);
-            crate::audio::dsp::reverb::get_reverb_mode_arc().store(
-                self.reverb_mode as u32,
-                std::sync::atomic::Ordering::Relaxed,
-            );
-            crate::audio::dsp::reverb::get_reverb_amount_arc().store(
-                self.reverb_amount as u32,
-                std::sync::atomic::Ordering::Relaxed,
-            );
-
-            // Trigger UI Update (Sama persis polanya ama Bass Reset)
-            self.reverb_active_changed(); 
-            self.reverb_mode_changed();
-            self.reverb_amount_changed();
-            self.reverb_changed();
-        }
-    }
-
-    pub fn pitch_indie_reset(&mut self) {
-        if let Some(default) = &self.default_fx_snapshot {
-            self.pitch_semitones = default.pitch_semitones as f64;
-            self.pitch_active = default.pitch_enabled;
-            crate::audio::dsp::pitchshifter::get_pitch_enabled_arc()
-                .store(default.pitch_enabled, std::sync::atomic::Ordering::Relaxed);
-            crate::audio::dsp::pitchshifter::get_pitch_ratio_arc().store(
-                2.0_f32.powf(default.pitch_semitones / 12.0).to_bits(),
-                std::sync::atomic::Ordering::Relaxed,
-            );
-            self.pitch_changed();
-        }
-    }
-
-    // --- EQ INSTANT APPLY ---
-    pub fn set_eq_instant_apply(&mut self) {
-        // No-op: eq.rs already does instant updates
-    }
-
-    // --- RESET ALL TO FLAT ---
-    pub fn reset_all(&mut self) {
-        // Reset EQ bands to flat (all zeros)
-        for band in self.eq_bands.iter_mut() {
-            *band = 0.0;
-        }
-        // Sync EQ bands to audio
-        self.sync_eq_bands();
-
-        // Reset preamp and fader
-        self.set_preamp_gain(0.0);
-        self.set_fader(0.0);
-
-        // Turn off all FX and reset amounts
-        if self.compressor_active {
-            self.toggle_compressor();
-        }
-        self.set_compressor_threshold(1.0);
-
-        if self.surround_active {
-            self.toggle_surround();
-        }
-        self.set_surround_width(1.8);
-
-        if self.mono_active {
-            self.toggle_stereo_width();
-        }
-        self.set_stereo_width_amount(1.0);
-
-        if self.middle_active {
-            self.toggle_middle_clarity();
-        }
-        self.set_middle_clarity_amount(0.0);
-
-        if self.stereo_active {
-            self.toggle_stereo_enhance();
-        }
-        self.set_stereo_enhance_amount(0.0);
-
-        if self.crossfeed_active {
-            self.toggle_crossfeed();
-        }
-        self.set_crossfeed_amount(0.0);
-
-        if self.crystal_active {
-            self.toggle_crystalizer();
-        }
-        self.set_crystalizer_amount(0.0);
-
-        if self.bass_active {
-            self.toggle_bass();
-        }
-        self.set_bass_gain(0.0);
-        self.set_bass_cutoff(180.0);
-        self.set_bass_mode(0);
-
-        if self.reverb_active {
-            self.toggle_reverb();
-        }
-        self.set_reverb_amount(50);
-        self.set_reverb_mode(1);
-
-        if self.pitch_active {
-            self.toggle_pitch();
-        }
-        self.set_pitch_semitones(0.0);
-
-        self.active_preset_index = 0;
+        self.save_config();
     }
 }
