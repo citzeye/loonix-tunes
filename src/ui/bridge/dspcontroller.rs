@@ -221,7 +221,7 @@ impl DspController {
     }
 
     pub fn init_from_config(&mut self, config: &AppConfig) {
-        eprintln!("[DSP] init_from_config called - START");
+        // eprintln!("[DSP] init_from_config called - START");
         
         self.normalizer_enabled = config.normalizer_enabled;
         self.normalizer_target_lufs = config.normalizer_target_lufs as f64;
@@ -243,18 +243,18 @@ impl DspController {
 
         // Flow A/B: Check if dsp.json exists
         let dsp_path = DspConfig::dsp_path();
-        eprintln!("[DSP] dsp_path: {:?}", dsp_path);
+        // eprintln!("[DSP] dsp_path: {:?}", dsp_path);
         let is_fresh_install = dsp_path.map(|p| !p.exists()).unwrap_or(true);
-        eprintln!("[DSP] is_fresh_install: {}", is_fresh_install);
+        // eprintln!("[DSP] is_fresh_install: {}", is_fresh_install);
 
         if is_fresh_install {
             // Flow A: Fresh install - dsp.json does not exist
-            eprintln!("[DSP] Flow A: Creating fresh dsp.json");
+            // eprintln!("[DSP] Flow A: Creating fresh dsp.json");
             let mut new_config = DspConfig::dsp_user_template();
             new_config.active_preset_index = 0;
             new_config.dsp_enabled = true;
             let save_result = new_config.save();
-            eprintln!("[DSP] Flow A: save_result: {:?}", save_result);
+            // eprintln!("[DSP] Flow A: save_result: {:?}", save_result);
 
             // Initialize user preset names
             self.user_eq_names = new_config.user_preset_names.clone();
@@ -762,19 +762,19 @@ impl DspController {
     }
 
     pub fn load_preset(&mut self, index: i32) {
-        eprintln!("[DSP] load_preset START - index: {}, current active_preset_index: {}", index, self.active_preset_index);
+        // eprintln!("[DSP] load_preset START - index: {}, current active_preset_index: {}", index, self.active_preset_index);
         
         if index < 0 || index > 11 {
-            eprintln!("[DSP] load_preset: index out of range");
+            // eprintln!("[DSP] load_preset: index out of range");
             return;
         }
 
         if index == self.active_preset_index {
-            eprintln!("[DSP] load_preset: SAME INDEX - returning early!");
+            // eprintln!("[DSP] load_preset: SAME INDEX - returning early!");
             return;
         }
 
-        eprintln!("[DSP] load_preset called with index: {}", index);
+        // eprintln!("[DSP] load_preset called with index: {}", index);
 
         let (eq_source, fx_source, use_factory_fx) = if index < 6 {
             (
@@ -847,9 +847,9 @@ impl DspController {
         let mut dsp_config = crate::audio::config::DspConfig::load();
         dsp_config.active_preset_index = index;
         if let Err(e) = dsp_config.save() {
-            eprintln!("[DSP] Auto-save failed: {:?}", e);
+            // eprintln!("[DSP] Auto-save failed: {:?}", e);
         } else {
-            eprintln!("[DSP] Auto-saved active_preset_index: {}", index);
+            // eprintln!("[DSP] Auto-saved active_preset_index: {}", index);
         }
     }
 
@@ -1191,8 +1191,6 @@ impl DspController {
     // 1. MASTER & POWER CONTROLS
     // ==========================================
     pub fn toggle_dsp(&mut self) {
-        eprintln!("[DSP] toggle_dsp BEFORE - dsp_enabled: {}", self.dsp_enabled);
-        
         self.dsp_enabled = !self.dsp_enabled;
         
         // Store to DSP Module Atomic (for Rack bypass)
@@ -1201,9 +1199,6 @@ impl DspController {
             .store(!self.dsp_enabled, std::sync::atomic::Ordering::Relaxed);
         
         // PREAMP SELALU ON - Core Chain, DO NOT store to preamp_enabled_arc
-        
-        eprintln!("[DSP] toggle_dsp AFTER - dsp_enabled: {}, dsp_bypass: {}", self.dsp_enabled, 
-            crate::audio::dsp::get_dsp_bypass_arc().load(std::sync::atomic::Ordering::Relaxed));
         
         self.dsp_changed();
     }
