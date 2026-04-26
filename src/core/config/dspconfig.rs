@@ -2,7 +2,7 @@
 
 
 
-use crate::audio::config::{AppConfig, DspConfig};
+use crate::audio::config::{AppConfig, BuiltInPreset, DspConfig};
 use crate::audio::dsp::DspSettings;
 use std::sync::{Arc, Mutex};
 
@@ -80,11 +80,18 @@ impl DspConfigManager {
     }
 
     pub fn save_dsp_config(&mut self, state: &DspStateView) {
-        // Save user presets to dsp.json
+        use crate::audio::config::BuiltInPreset;
+        use crate::audio::presets::EQ_PRESETS;
+        let built_in: Vec<BuiltInPreset> = EQ_PRESETS.iter()
+            .enumerate()
+            .map(|(i, p)| BuiltInPreset { id: i as i32, name: p.name.to_string() })
+            .collect();
+        let bis = [built_in[0].clone(), built_in[1].clone(), built_in[2].clone(), built_in[3].clone(), built_in[4].clone(), built_in[5].clone()];
         let dsp_config = DspConfig {
             version: "2.0".into(),
             dsp_enabled: state.dsp_enabled,
             active_preset_index: state.active_preset_index,
+            built_in_presets: bis,
             user_preset_names: state.user_eq_names.clone(),
             user_preset_gains: state.user_eq_gains,
             user_preset_macro: state.user_eq_macro,

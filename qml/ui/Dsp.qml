@@ -276,7 +276,7 @@ RowLayout {
                     FxSliderBox {
                         id: surrSlider
                         enabled: surrToggle.isOn && dspModel.dsp_enabled
-                        controlValue: dspModel.surround_width / 2.0
+                        controlValue: dspModel.surround_width
                         onSliderChanged: val => {
                             dspModel.set_surround_width(val);
                         }

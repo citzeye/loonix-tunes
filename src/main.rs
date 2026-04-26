@@ -46,6 +46,14 @@ impl App {
 
         let music_model = QObjectBox::new(music_raw);
         let dsp_model = QObjectBox::new(DspController::new(ffmpeg, config.clone()));
+
+        // Initialize DSP config (load dsp.json or create fresh)
+        if let Some(ref shared_config) = config {
+            if let Ok(cfg) = shared_config.lock() {
+                dsp_model.pinned().borrow_mut().init_from_config(&cfg);
+            }
+        }
+
         let theme = QObjectBox::new(ThemeManager::new());
 
         if let Some(shared_config) = config {

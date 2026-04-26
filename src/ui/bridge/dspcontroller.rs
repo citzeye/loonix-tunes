@@ -221,6 +221,8 @@ impl DspController {
     }
 
     pub fn init_from_config(&mut self, config: &AppConfig) {
+        eprintln!("[DSP] init_from_config called - START");
+        
         self.normalizer_enabled = config.normalizer_enabled;
         self.normalizer_target_lufs = config.normalizer_target_lufs as f64;
         self.normalizer_true_peak_dbtp = config.normalizer_true_peak_dbtp as f64;
@@ -241,22 +243,43 @@ impl DspController {
 
         // Flow A/B: Check if dsp.json exists
         let dsp_path = DspConfig::dsp_path();
+        eprintln!("[DSP] dsp_path: {:?}", dsp_path);
         let is_fresh_install = dsp_path.map(|p| !p.exists()).unwrap_or(true);
+        eprintln!("[DSP] is_fresh_install: {}", is_fresh_install);
 
         if is_fresh_install {
             // Flow A: Fresh install - dsp.json does not exist
+            eprintln!("[DSP] Flow A: Creating fresh dsp.json");
             let mut new_config = DspConfig::dsp_user_template();
-            new_config.active_preset_index = 0; // Loonix Default (Factory preset 0)
-            let _ = new_config.save(); // Save new config with Flat Template
+            new_config.active_preset_index = 0;
+            new_config.dsp_enabled = true;
+            let save_result = new_config.save();
+            eprintln!("[DSP] Flow A: save_result: {:?}", save_result);
+
+            // Initialize user preset names
+            self.user_eq_names = new_config.user_preset_names.clone();
+            self.user_preset_names = self.get_user_preset_names_list();
+            self.user_preset_names_changed();
+
+            // Set DSP enabled state AND store to Audio Engine (Atomic)
+            self.dsp_enabled = true;
+            crate::audio::dsp::preamp::get_preamp_enabled_arc()
+                .store(true, std::sync::atomic::Ordering::Relaxed);
+            self.dsp_changed();
 
             // Load factory preset 0 (Loonix Default)
+            // Reset to -1 to force load (default is 0 which causes early return)
+            self.active_preset_index = -1;
             self.load_preset(0);
+            self.active_preset_index_changed();
         } else {
             // Flow B: Routine reload - dsp.json exists
             let dsp_config = DspConfig::load();
 
-            // Restore dsp_enabled state from JSON (default to true)
+            // Restore dsp_enabled state from JSON AND store to Audio Engine
             self.dsp_enabled = dsp_config.dsp_enabled;
+            crate::audio::dsp::preamp::get_preamp_enabled_arc()
+                .store(self.dsp_enabled, std::sync::atomic::Ordering::Relaxed);
             self.dsp_changed();
 
             // Load user preset data from JSON
@@ -288,13 +311,17 @@ impl DspController {
 
             // Determine preset source
             let preset_index = dsp_config.active_preset_index.clamp(0, 11);
+            // Reset to -1 to force load (avoid early return when same index)
+            self.active_preset_index = -1;  
+            let actual_index = preset_index;
             if preset_index <= 5 {
                 // Flow B: Factory preset (SSoT from preset.rs)
-                self.load_preset(preset_index);
+                self.load_preset(actual_index);
             } else {
                 // Flow B: User preset (from dsp.json)
-                self.load_preset(preset_index);
+                self.load_preset(actual_index);
             }
+            self.active_preset_index_changed();
         }
     }
 
@@ -731,13 +758,19 @@ impl DspController {
     }
 
     pub fn load_preset(&mut self, index: i32) {
+        eprintln!("[DSP] load_preset START - index: {}, current active_preset_index: {}", index, self.active_preset_index);
+        
         if index < 0 || index > 11 {
+            eprintln!("[DSP] load_preset: index out of range");
             return;
         }
 
         if index == self.active_preset_index {
+            eprintln!("[DSP] load_preset: SAME INDEX - returning early!");
             return;
         }
+
+        eprintln!("[DSP] load_preset called with index: {}", index);
 
         let (eq_source, fx_source, use_factory_fx) = if index < 6 {
             (
@@ -1144,6 +1177,8 @@ impl DspController {
     // ==========================================
     pub fn toggle_dsp(&mut self) {
         self.dsp_enabled = !self.dsp_enabled;
+        crate::audio::dsp::preamp::get_preamp_enabled_arc()
+            .store(self.dsp_enabled, std::sync::atomic::Ordering::Relaxed);
         self.dsp_changed();
     }
 

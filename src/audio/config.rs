@@ -34,10 +34,17 @@ pub fn config_dir() -> Option<PathBuf> {
 }
 
 #[derive(Serialize, Deserialize, Clone)]
+pub struct BuiltInPreset {
+    pub id: i32,
+    pub name: String,
+}
+
+#[derive(Serialize, Deserialize, Clone)]
 pub struct DspConfig {
     pub version: String,
     pub dsp_enabled: bool,
     pub active_preset_index: i32,
+    pub built_in_presets: [BuiltInPreset; 6],
     pub user_preset_names: [String; 6],
     pub user_preset_gains: [[f32; 10]; 6],
     pub user_preset_macro: [f32; 6],
@@ -79,10 +86,24 @@ impl DspConfig {
     }
 
     pub fn dsp_user_template() -> Self {
+        use crate::audio::presets::EQ_PRESETS;
+        let built_in_presets: Vec<BuiltInPreset> = EQ_PRESETS.iter()
+            .enumerate()
+            .map(|(i, p)| BuiltInPreset { id: i as i32, name: p.name.to_string() })
+            .collect();
+        let built_in_presets: [BuiltInPreset; 6] = [
+            built_in_presets[0].clone(),
+            built_in_presets[1].clone(),
+            built_in_presets[2].clone(),
+            built_in_presets[3].clone(),
+            built_in_presets[4].clone(),
+            built_in_presets[5].clone(),
+        ];
         Self {
             version: "2.0".into(),
             dsp_enabled: true,
             active_preset_index: 0,
+            built_in_presets,
             user_preset_names: [
                 "User 1".into(),
                 "User 2".into(),
@@ -135,10 +156,17 @@ impl DspConfig {
 
 impl Default for DspConfig {
     fn default() -> Self {
+        use crate::audio::presets::EQ_PRESETS;
+        let built_in: Vec<BuiltInPreset> = EQ_PRESETS.iter()
+            .enumerate()
+            .map(|(i, p)| BuiltInPreset { id: i as i32, name: p.name.to_string() })
+            .collect();
+        let bis = [built_in[0].clone(), built_in[1].clone(), built_in[2].clone(), built_in[3].clone(), built_in[4].clone(), built_in[5].clone()];
         Self {
             version: "2.0".into(),
             dsp_enabled: true,
             active_preset_index: -1,
+            built_in_presets: bis,
             user_preset_names: [
                 "User 1".into(),
                 "User 2".into(),
