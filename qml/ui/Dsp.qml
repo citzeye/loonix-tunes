@@ -278,7 +278,7 @@ RowLayout {
                         enabled: surrToggle.isOn && dspModel.dsp_enabled
                         controlValue: dspModel.surround_width / 2.0
                         onSliderChanged: val => {
-                            dspModel.set_surround_width(val * 2.0);
+                            dspModel.set_surround_width(val);
                         }
                     }
                     FxValueBox {
@@ -536,7 +536,7 @@ RowLayout {
                         id: reverbAmountEditor
                         boxEnabled: reverbToggle.isOn && dspModel.dsp_enabled
                         currentValue: dspModel.reverb_amount
-                        onValueChanged: val => dspModel.set_reverb_amount(Math.round(val))
+                        onValueChanged: val => dspModel.set_reverb_amount(val)
 
                         Connections {
                             target: dspModel
@@ -604,7 +604,7 @@ RowLayout {
                 Layout.fillWidth: true
                 Layout.preferredHeight: 20
                 contentItem: Text {
-                    text: dspModel.user_preset_names[index]
+                    text: dspModel.user_preset_names && dspModel.user_preset_names[index] ? dspModel.user_preset_names[index] : ""
                     font.family: kodeMono.name
                     font.pixelSize: 10
                     color: pBtn.isActive ? theme.colormap.dsptextactive : (pBtn.hovered ? theme.colormap.dsptexthover : theme.colormap.dsptext)
@@ -744,7 +744,7 @@ RowLayout {
 
             ComboBox {
                 id: slotSelector
-                model: dspModel.user_preset_names
+                model: dspModel.user_preset_names || []
                 currentIndex: -1
                 Layout.fillWidth: true
                 Layout.preferredHeight: 24
@@ -769,7 +769,7 @@ RowLayout {
                 // Selected text display
                 contentItem: Text {
                     leftPadding: 5
-                    text: slotSelector.currentIndex >= 0 ? dspModel.user_preset_names[slotSelector.currentIndex] : "Select slot..."
+                    text: (slotSelector.currentIndex >= 0 && dspModel.user_preset_names) ? dspModel.user_preset_names[slotSelector.currentIndex] : "Select slot..."
                     font.family: kodeMono.name
                     font.pixelSize: 12
                     color: theme.colormap.dsptext

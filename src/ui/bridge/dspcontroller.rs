@@ -31,7 +31,7 @@ pub struct DspController {
     pub reverb_active_changed: qt_signal!(),
     pub reverb_mode: qt_property!(i32; NOTIFY reverb_mode_changed),
     pub reverb_mode_changed: qt_signal!(),
-    pub reverb_amount: qt_property!(i32; NOTIFY reverb_amount_changed),
+    pub reverb_amount: qt_property!(f64; NOTIFY reverb_amount_changed),
     pub reverb_amount_changed: qt_signal!(),
     pub reverb_room_size: qt_property!(f64; NOTIFY reverb_room_size_changed),
     pub reverb_room_size_changed: qt_signal!(),
@@ -141,7 +141,7 @@ pub struct DspController {
 
     // DSP wrapper methods for QML
     pub set_reverb_mode: qt_method!(fn(&mut self, mode: i32)),
-    pub set_reverb_amount: qt_method!(fn(&mut self, amount: i32)),
+    pub set_reverb_amount: qt_method!(fn(&mut self, amount: f64)),
     pub set_reverb_room_size: qt_method!(fn(&mut self, val: f64)),
     pub set_reverb_damp: qt_method!(fn(&mut self, val: f64)),
     pub toggle_reverb: qt_method!(fn(&mut self)),
@@ -930,7 +930,7 @@ impl DspController {
 
         self.reverb_active = preset.reverb_enabled;
         self.reverb_mode = preset.reverb_mode as i32;
-        self.reverb_amount = preset.reverb_amount as i32;
+        self.reverb_amount = preset.reverb_amount as f64;
 
         crate::audio::dsp::reverb::get_reverb_enabled_arc()
             .store(self.reverb_active, std::sync::atomic::Ordering::Relaxed);
@@ -1080,7 +1080,7 @@ impl DspController {
 
         self.reverb_active = self.user_fx_reverb_enabled[idx];
         self.reverb_mode = self.user_fx_reverb_mode[idx];
-        self.reverb_amount = self.user_fx_reverb_amount[idx];
+        self.reverb_amount = self.user_fx_reverb_amount[idx] as f64;
         crate::audio::dsp::reverb::get_reverb_enabled_arc().store(
             self.user_fx_reverb_enabled[idx],
             std::sync::atomic::Ordering::Relaxed,
@@ -1287,9 +1287,10 @@ impl DspController {
     }
 
     pub fn set_surround_width(&mut self, val: f64) {
-        self.surround_width = val;
+        let actual_width = val * 2.0;
+        self.surround_width = actual_width;
         crate::audio::dsp::surround::get_surround_width_arc()
-            .store((val as f32).to_bits(), std::sync::atomic::Ordering::Relaxed);
+            .store((actual_width as f32).to_bits(), std::sync::atomic::Ordering::Relaxed);
         self.surround_width_changed();
     }
 
@@ -1447,7 +1448,7 @@ impl DspController {
 
         self.user_fx_reverb_enabled[slot] = self.reverb_active;
         self.user_fx_reverb_mode[slot] = self.reverb_mode;
-        self.user_fx_reverb_amount[slot] = self.reverb_amount;
+        self.user_fx_reverb_amount[slot] = self.reverb_amount as i32;
 
         self.user_preset_names = self.get_user_preset_names_list();
         self.user_preset_names_changed();
@@ -1461,10 +1462,11 @@ impl DspController {
     // ==========================================
     // 7. MISSING SETTERS & INDIE RESETS (SNAPSHOT PROTOCOL)
     // ==========================================
-    pub fn set_reverb_amount(&mut self, amount: i32) {
+    pub fn set_reverb_amount(&mut self, amount: f64) {
+        let rounded = amount.round() as i32;
         self.reverb_amount = amount;
         crate::audio::dsp::reverb::get_reverb_amount_arc()
-            .store(amount as u32, std::sync::atomic::Ordering::Relaxed);
+            .store(rounded as u32, std::sync::atomic::Ordering::Relaxed);
         self.reverb_amount_changed();
     }
 
@@ -1626,11 +1628,11 @@ impl DspController {
         if let Some(ref snap) = self.default_fx_snapshot {
             self.reverb_active = snap.reverb_enabled;
             self.reverb_mode = snap.reverb_mode as i32;
-            self.reverb_amount = snap.reverb_amount as i32;
+            self.reverb_amount = snap.reverb_amount as f64;
         } else {
             self.reverb_active = false;
             self.reverb_mode = 0;
-            self.reverb_amount = 0;
+            self.reverb_amount = 0.0;
         }
         crate::audio::dsp::reverb::get_reverb_enabled_arc()
             .store(self.reverb_active, std::sync::atomic::Ordering::Relaxed);
