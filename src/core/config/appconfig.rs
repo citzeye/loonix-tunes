@@ -129,44 +129,6 @@ impl DspConfig {
     }
 }
 
-impl Default for DspConfig {
-    fn default() -> Self {
-        Self {
-            active_preset_index: -1,
-            user_preset_names: [
-                "User 1".into(),
-                "User 2".into(),
-                "User 3".into(),
-                "User 4".into(),
-                "User 5".into(),
-                "User 6".into(),
-            ],
-            user_preset_gains: [[0.0; 10]; 6],
-            user_preset_macro: [0.0; 6],
-            user_fx_enabled: [false; 6],
-            user_fx_bass_enabled: [false; 6],
-            user_fx_bass_gain: [6.0; 6],
-            user_fx_bass_cutoff: [180.0; 6],
-            user_fx_bass_mode: [0; 6],
-            user_fx_crystal_enabled: [false; 6],
-            user_fx_crystal_amount: [0.0; 6],
-            user_fx_surround_enabled: [false; 6],
-            user_fx_surround_width: [1.8; 6],
-            user_fx_mono_enabled: [false; 6],
-            user_fx_mono_width: [1.0; 6],
-            user_fx_stereo_enabled: [false; 6],
-            user_fx_stereo_amount: [0.0; 6],
-            user_fx_crossfeed_enabled: [false; 6],
-            user_fx_crossfeed_amount: [0.0; 6],
-            user_fx_compressor_enabled: [true; 6],
-            user_fx_compressor_threshold: [-6.0; 6],
-            user_fx_reverb_enabled: [false; 6],
-            user_fx_reverb_mode: [0; 6],
-            user_fx_reverb_amount: [0; 6],
-        }
-    }
-}
-
 #[derive(Serialize, Deserialize, Clone)]
 pub struct AppConfig {
     pub volume: f64,

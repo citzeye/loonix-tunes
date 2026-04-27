@@ -217,7 +217,7 @@ impl DspController {
         controller.eq_bands_raw = [0.0; 10];
         controller.eq_bands = QVariantList::default();
         controller.ffmpeg = ffmpeg;
-        controller.config_manager = crate::core::config::DspConfigManager::new(saved_config);
+        controller.config_manager = crate::core::config::DspConfigManager::new();
         controller.eq_presets = AppConfig::get_eq_presets();
         controller.fx_presets = AppConfig::get_fx_presets();
 

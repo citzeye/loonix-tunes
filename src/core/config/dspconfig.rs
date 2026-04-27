@@ -1,29 +1,24 @@
 /* --- loonixtunesv2/src/core/config/dspconfig.rs | dspconfig --- */
 
-
-
 use crate::audio::config::{AppConfig, DspConfig};
 use crate::audio::dsp::DspSettings;
 use std::sync::{Arc, Mutex};
 
 pub struct DspConfigManager {
-    pub(crate) saved_config: Option<Arc<Mutex<AppConfig>>>,
     pub(crate) is_dirty: bool,
 }
 
 impl Default for DspConfigManager {
     fn default() -> Self {
         Self {
-            saved_config: None,
             is_dirty: false,
         }
     }
 }
 
 impl DspConfigManager {
-    pub fn new(config: Option<Arc<Mutex<AppConfig>>>) -> Self {
+    pub fn new() -> Self {
         Self {
-            saved_config: config,
             is_dirty: false,
         }
     }
