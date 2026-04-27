@@ -107,7 +107,7 @@ impl LibraryManager {
     pub fn add_folder(&mut self, path: String) {
         let name = Path::new(&path)
             .file_name()
-            .map(|n| n.to_string_lossy().to_string())
+            .map(|n| n.to_string_lossy().to_string().to_uppercase())
             .unwrap_or_else(|| path.clone());
         self.custom_folders.push((name.clone(), path.clone()));
         self.custom_folder_count = self.custom_folders.len() as i32;
