@@ -912,17 +912,17 @@ Window {
                             Text {
                                 id: bassboosterIcon
                                 anchors.verticalCenter: parent.verticalCenter
-                                text: musicModel.bass_active ? '󰬉' : '󰯮'
+                                text: dspModel.bass_active ? '󰬉' : '󰯮'
                                 font.family: symbols.name
                                 font.pixelSize: 18
-                                color: musicModel.bass_active || bassboosterMA.containsMouse ? theme.colormap.playerhover : theme.colormap.playersubtext
+                                color: dspModel.bass_active || bassboosterMA.containsMouse ? theme.colormap.playerhover : theme.colormap.playersubtext
                             }
 
                             MouseArea {
                                 id: bassboosterMA
                                 anchors.fill: bassboosterIcon
                                 hoverEnabled: true
-                                onClicked: musicModel.toggle_bass_booster()
+                                onClicked: dspModel.toggle_bass_booster()
                             }
                         }
 
@@ -948,17 +948,17 @@ Window {
                             Text {
                                 id: crystalizerIcon
                                 anchors.verticalCenter: parent.verticalCenter
-                                text: musicModel.crystal_active ? '󰬊' : '󰯱'
+                                text: dspModel.crystal_active ? '󰬊' : '󰯱'
                                 font.family: symbols.name
                                 font.pixelSize: 18
-                                color: musicModel.crystal_active || crystalizerMA.containsMouse ? theme.colormap.playerhover : theme.colormap.playersubtext
+                                color: dspModel.crystal_active || crystalizerMA.containsMouse ? theme.colormap.playerhover : theme.colormap.playersubtext
                             }
 
                             MouseArea {
                                 id: crystalizerMA
                                 anchors.fill: crystalizerIcon
                                 hoverEnabled: true
-                                onClicked: musicModel.toggle_crystalizer()
+                                onClicked: dspModel.toggle_crystalizer()
                             }
                         }
 
@@ -1027,17 +1027,17 @@ Window {
                             Text {
                                 id: surroundIcon
                                 anchors.verticalCenter: parent.verticalCenter
-                                text: musicModel.surround_active ? '󰬚' : '󰰡'
+                                text: dspModel.surround_active ? '󰬚' : '󰰡'
                                 font.family: symbols.name
                                 font.pixelSize: 18
-                                color: musicModel.surround_active || surroundMA.containsMouse ? theme.colormap.playerhover : theme.colormap.playersubtext
+                                color: dspModel.surround_active || surroundMA.containsMouse ? theme.colormap.playerhover : theme.colormap.playersubtext
                             }
 
                             MouseArea {
                                 id: surroundMA
                                 anchors.fill: surroundIcon
                                 hoverEnabled: true
-                                onClicked: musicModel.toggle_surround()
+                                onClicked: dspModel.toggle_surround()
                             }
                         }
 

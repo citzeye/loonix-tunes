@@ -10,14 +10,15 @@ Rectangle {
   id: queueTab
   width: 30
   height: 20
-  visible: musicModel.queue_count > 0
+  visible: true
   property bool isActive: musicModel.current_folder_qml.toUpperCase() === 'QUEUE'
+  property bool hasItems: musicModel.queue_count > 0
   color: isActive || tabMA_queue.containsMouse ? theme.colormap.bgoverlay : 'transparent'
   radius: 4
-  border.width: 0.5
+  border.width: 1
   antialiasing: false
-  border.color: isActive || tabMA_queue.containsMouse
-    ? theme.colormap.tabhover
+  border.color: hasItems 
+    ? (isActive ? theme.colormap.tabhover : theme.colormap.playerhover)
     : theme.colormap.tabborder
 
   Text {
@@ -26,7 +27,7 @@ Rectangle {
     font.family: symbols.name
     font.pixelSize: 12
     font.bold: parent.isActive
-    color: theme.colormap.tabtext
+    color: hasItems ? theme.colormap.tabtext : theme.colormap.tabborder
   }
 
   MouseArea {
