@@ -901,13 +901,13 @@ impl DspController {
         self.crystal_freq_changed();
 
         self.surround_active = preset.surround_enabled || preset.surround_width > 0.0;
-        self.surround_width = preset.surround_width.clamp(0.0, 2.0) as f64;
+        self.surround_width = preset.surround_width.clamp(0.0, 1.0) as f64;
         crate::audio::dsp::surround::get_surround_enabled_arc().store(
             preset.surround_enabled,
             std::sync::atomic::Ordering::Relaxed,
         );
         crate::audio::dsp::surround::get_surround_width_arc().store(
-            preset.surround_width.clamp(0.0, 2.0).to_bits(),
+            preset.surround_width.clamp(0.0, 1.0).to_bits(),
             std::sync::atomic::Ordering::Relaxed,
         );
         self.surround_active_changed();
@@ -1350,7 +1350,7 @@ impl DspController {
     }
 
     pub fn set_surround_width(&mut self, val: f64) {
-        let actual_width = val * 2.0;
+        let actual_width = val.clamp(0.0, 1.0);
         self.surround_width = actual_width;
         crate::audio::dsp::surround::get_surround_width_arc()
             .store((actual_width as f32).to_bits(), std::sync::atomic::Ordering::Relaxed);

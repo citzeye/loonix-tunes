@@ -67,11 +67,14 @@ impl DspProcessor for SurroundProcessor {
         let target_width = bits_to_f32(get_surround_width_arc().load(Ordering::Relaxed));
         let bass_safe = bits_to_f32(get_surround_bass_safe_arc().load(Ordering::Relaxed));
 
-        // Bypass if off or target_width = 1.0 (Normal Stereo)
-        if !is_on || (target_width - 1.0).abs() < 0.01 {
+        // Bypass if off or target_width = 0.5 (Normal Stereo in 0-1 range)
+        if !is_on || (target_width - 0.5).abs() < 0.01 {
             output.copy_from_slice(input);
             return;
         }
+
+        // Scale from 0-1 to actual width (0-2 range for DSP)
+        let actual_width = target_width * 2.0;
 
         // Lazy Update: Update bass_safe target
         if (self.current_bass_safe - bass_safe).abs() > 0.01 {
@@ -79,7 +82,8 @@ impl DspProcessor for SurroundProcessor {
         }
 
         // Use target directly (no smoothing for responsiveness)
-        self.current_width = target_width;
+        let actual_width = target_width * 2.0;
+        self.current_width = actual_width;
 
         let len = input.len();
 
