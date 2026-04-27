@@ -10,21 +10,15 @@ pub mod audio;
 pub mod core;
 pub mod ui;
 
-use crate::audio::io::audiobus::AudioBus;
-use crate::audio::io::audiooutput::AudioOutput;
-use crate::audio::io::decoder::DecoderControl;
-use crate::audio::io::resample::StereoResampler;
 use crate::ui::bridge::MusicModel;
 use crate::ui::bridge::DspController;
 use crate::ui::bridge::PlayerBridge;
 use crate::ui::components::ThemeManager;
 use crate::ui::CustomThemeListModel;
 use crate::ui::PopupMenu;
-use crate::ui::bridge::QueueController;
 use crate::ui::reportbug::BugReportManager;
 #[cfg(target_os = "linux")]
 use crate::core::services::SysMediaManager;
-use crate::audio::dsp::rack::DspRack;
 
 struct App {
     music_model: QObjectBox<MusicModel>,

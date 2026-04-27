@@ -38,6 +38,8 @@ pub enum AudioCommand {
         output_state: Arc<AtomicU32>,
         decoder_eof: Arc<AtomicBool>,
         is_bluetooth_detected: Arc<AtomicBool>,
+        reconnecting: Arc<AtomicBool>,
+        reconnect_attempts: Arc<AtomicU32>,
     },
     Stop,
     Flush,
@@ -46,6 +48,10 @@ pub enum AudioCommand {
         result_tx: std::sync::mpsc::Sender<Result<(), String>>,
     },
     Exit,
+    ReconnectDevice {
+        device_name: Option<String>,
+        retry_count: u32,
+    },
 }
 
 // Audio device info for enumeration
@@ -76,8 +82,9 @@ impl Default for OutputState {
 }
 
 const OUTPUT_STATE_PRIMING: u32 = 0;
-const OUTPUT_STATE_RUNNING: u32 = 1;
-const OUTPUT_STATE_STOPPING: u32 = 2;
+    const OUTPUT_STATE_RUNNING: u32 = 1;
+    const OUTPUT_STATE_STOPPING: u32 = 2;
+    const OUTPUT_STATE_ERROR: u32 = 3;
 
 // Latency target: 60ms for tlength
 const TARGET_LATENCY_MS: u32 = 60;
@@ -116,8 +123,8 @@ pub struct AudioOutput {
     selected_device_index: Arc<Mutex<Option<usize>>>,
     is_bluetooth_detected: Arc<AtomicBool>,
     switching: Arc<AtomicBool>,
-    reconnecting: Arc<AtomicBool>,
-    reconnect_attempts: u32,
+    pub reconnecting: Arc<AtomicBool>,
+    pub reconnect_attempts: Arc<AtomicU32>,
     current_device_name: Arc<Mutex<Option<String>>>,
     available_devices: Arc<Mutex<Vec<AudioDevice>>>,
     output_state: Arc<AtomicU32>,
@@ -176,8 +183,8 @@ impl AudioOutput {
              selected_device_index: Arc::new(Mutex::new(None)),
              is_bluetooth_detected: Arc::new(AtomicBool::new(false)),
              switching: Arc::new(AtomicBool::new(false)),
-             reconnecting: Arc::new(AtomicBool::new(false)),
-             reconnect_attempts: 0,
+reconnecting: Arc::new(AtomicBool::new(false)),
+              reconnect_attempts: Arc::new(AtomicU32::new(0)),
              current_device_name: Arc::new(Mutex::new(None)),
              available_devices: Arc::new(Mutex::new(Vec::new())),
              output_state: Arc::new(AtomicU32::new(OUTPUT_STATE_PRIMING)),
@@ -217,6 +224,19 @@ impl AudioOutput {
 
     pub fn reset_samples_played(&self, samples: u64) {
         self.samples_played.store(samples, Ordering::SeqCst);
+    }
+
+    pub fn get_reconnecting_status(&self) -> bool {
+        self.reconnecting.load(Ordering::Relaxed)
+    }
+
+    pub fn get_reconnect_attempts(&self) -> u32 {
+        self.reconnect_attempts.load(Ordering::Relaxed)
+    }
+
+    pub fn force_reconnect(&self) {
+        self.reconnecting.store(true, Ordering::Relaxed);
+        self.reconnect_attempts.store(0, Ordering::Relaxed);
     }
 
     pub fn clear_buffer(&self) {
@@ -476,6 +496,8 @@ impl AudioOutput {
                     output_state: self.output_state.clone(),
                     decoder_eof: self.decoder_eof.clone(),
                     is_bluetooth_detected: self.is_bluetooth_detected.clone(),
+                    reconnecting: self.reconnecting.clone(),
+                    reconnect_attempts: self.reconnect_attempts.clone(),
                 });
 
                 self.is_started.store(true, Ordering::SeqCst);
@@ -605,6 +627,8 @@ impl AudioOutput {
                     output_state,
                     decoder_eof,
                     is_bluetooth_detected,
+                    reconnecting,
+                    reconnect_attempts,
                 }) => {
                     current_handle = Some(handle);
                     current_flush = Some(flush_req);
@@ -613,26 +637,28 @@ impl AudioOutput {
                         (current_handle.take(), current_flush.take())
                     {
                         Self::push_loop_owned(
-                            h,
-                            consumer,
-                            should_stop,
-                            seek_mode,
-                            paused,
-                            flush_flag,
-                            seek_fade_remaining,
-                            volume_bits,
-                            balance_bits,
-                            mode,
-                            dsp_chain,
-                            dsp_enabled,
-                            normalizer_enabled,
-                            normalizer,
-                            samples_played,
-                            empty_callback_count,
-                            output_state,
-                            decoder_eof,
-                            is_bluetooth_detected,
-                        );
+                             h,
+                             consumer,
+                             should_stop,
+                             seek_mode,
+                             paused,
+                             flush_flag,
+                             seek_fade_remaining,
+                             volume_bits,
+                             balance_bits,
+                             mode,
+                             dsp_chain,
+                             dsp_enabled,
+                             normalizer_enabled,
+                             normalizer,
+                             samples_played,
+                             empty_callback_count,
+                             output_state,
+                             decoder_eof,
+                             is_bluetooth_detected,
+                             reconnecting,
+                             reconnect_attempts,
+                         );
                     }
 
                     current_handle = None;
@@ -654,6 +680,12 @@ impl AudioOutput {
                             .map(|_| ());
                     let _ = result_tx.send(result);
                 }
+
+                Ok(AudioCommand::ReconnectDevice { device_name, retry_count }) => {
+                    println!("Reconnecting device {:?}, attempt: {}", device_name, retry_count);
+                    // Nanti logic reconnect lu taruh sini
+                }
+
                 Err(_) => break,
             }
         }
@@ -680,6 +712,8 @@ impl AudioOutput {
         output_state: Arc<AtomicU32>,
         decoder_eof: Arc<AtomicBool>,
         is_bluetooth_detected: Arc<AtomicBool>,
+        reconnecting: Arc<AtomicBool>,
+        reconnect_attempts: Arc<AtomicU32>,
     ) {
         let channels = 2;
         let frames_per_write = 1024usize;
@@ -692,8 +726,7 @@ impl AudioOutput {
 
         let mut bluetooth_detected = is_bluetooth_detected.load(Ordering::Relaxed);
 
-        let mut reconnect_attempts = 0u32;
-        const MAX_RECONNECT_ATTEMPTS: u32 = 2;
+        const MAX_RECONNECT_ATTEMPTS: u32 = 3;
 
         let current_mode = *mode.lock().unwrap_or_else(|e| e.into_inner());
 
@@ -738,7 +771,7 @@ impl AudioOutput {
                 };
                 match handle.write(silence) {
                     Ok(_) => {
-                        reconnect_attempts = 0;
+                        reconnect_attempts.store(0, Ordering::Relaxed);
                     }
                     Err(e) => {
                         eprintln!("[AudioOutput] Write error during seek: {}", e);
@@ -759,7 +792,7 @@ impl AudioOutput {
                 };
                 match handle.write(silence) {
                     Ok(_) => {
-                        reconnect_attempts = 0;
+                        reconnect_attempts.store(0, Ordering::Relaxed);
                     }
                     Err(e) => {
                         eprintln!("[AudioOutput] Write error during pause: {}", e);
@@ -791,7 +824,7 @@ impl AudioOutput {
                 };
                 match handle.write(silence) {
                     Ok(_) => {
-                        reconnect_attempts = 0;
+                        reconnect_attempts.store(0, Ordering::Relaxed);
                     }
                     Err(e) => {
                         eprintln!("[AudioOutput] Write error on empty: {}", e);
@@ -807,7 +840,7 @@ impl AudioOutput {
             }
 
             empty_callback_count.store(0, Ordering::Relaxed);
-            reconnect_attempts = 0;
+            reconnect_attempts.store(0, Ordering::Relaxed);
 
             samples_played.fetch_add(samples_read as u64, Ordering::SeqCst);
 
@@ -901,23 +934,30 @@ impl AudioOutput {
 
             match handle.write(bytes) {
                 Ok(_) => {
-                    reconnect_attempts = 0;
+                    reconnect_attempts.store(0, Ordering::Relaxed);
                 }
                 Err(e) => {
-                    reconnect_attempts += 1;
+                    let current_attempts = reconnect_attempts.fetch_add(1, Ordering::Relaxed) + 1;
 
                     eprintln!(
                         "[AudioOutput] Write error (attempt {}/{}): {:?}",
-                        reconnect_attempts, MAX_RECONNECT_ATTEMPTS, e
+                        current_attempts, MAX_RECONNECT_ATTEMPTS, e
                     );
 
-                    if reconnect_attempts > MAX_RECONNECT_ATTEMPTS {
+                    if current_attempts >= MAX_RECONNECT_ATTEMPTS {
                         eprintln!(
                             "[AudioOutput] Max reconnect attempts reached, stopping: {:?}",
                             e
                         );
+                        reconnecting.store(true, Ordering::Relaxed);
+                        output_state.store(OUTPUT_STATE_ERROR, Ordering::SeqCst);
                         break;
                     }
+                    
+                    // Exponential backoff before retry
+                    let delay_ms = 100 * current_attempts;
+                    eprintln!("[AudioOutput] Waiting {}ms before retry...", delay_ms);
+                    std::thread::sleep(Duration::from_millis(delay_ms as u64));
                 }
             }
         }

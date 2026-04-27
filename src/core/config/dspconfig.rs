@@ -2,7 +2,7 @@
 
 
 
-use crate::audio::config::{AppConfig, BuiltInPreset, DspConfig};
+use crate::audio::config::{AppConfig, DspConfig};
 use crate::audio::dsp::DspSettings;
 use std::sync::{Arc, Mutex};
 
