@@ -68,8 +68,6 @@ Item {
             "dspeqslider": inEq10Slider.inputText,
             "dspeqsliderbg": inEq10Slider.inputText,
             "dspeqhandle": inEq10Handle.inputText,
-            "dspeq10slider": inEq10Slider.inputText,
-            "dspeq10handle": inEq10Handle.inputText,
             "dspeqfaderslider": inEqFaderSlider.inputText,
             "dspeqfaderhandle": inEqFaderSlider.inputText,
             "dspeqmixslider": inEqFaderSlider.inputText,
@@ -138,8 +136,8 @@ Item {
                 inEqIcon.inputText = savedColors.dspeqicon;
                 inEqHover.inputText = savedColors.dspeqhover;
                 inEqPresetActive.inputText = savedColors.dspeqpresetactive;
-                inEq10Slider.inputText = savedColors.dspeq10slider;
-                inEq10Handle.inputText = savedColors.dspeq10handle;
+                inEqSlider.inputText = savedColors.dspeqslider;
+                inEqHandle.inputText = savedColors.dspeqhandle;
                 inEqFaderSlider.inputText = savedColors.dspeqfaderslider;
                 inFxBg.inputText = savedColors.dspfxbg;
                 inFxText.inputText = savedColors.dspfxtext;
@@ -176,8 +174,8 @@ Item {
                 inEqIcon.inputText = theme.colormap.dspeqicon;
                 inEqHover.inputText = theme.colormap.dspeqhover;
                 inEqPresetActive.inputText = theme.colormap.dspeqpresetactive;
-                inEq10Slider.inputText = theme.colormap.dspeq10slider;
-                inEq10Handle.inputText = theme.colormap.dspeq10handle;
+                inEqSlider.inputText = theme.colormap.dspeqslider;
+                inEqHandle.inputText = theme.colormap.dspeqhandle;
                 inEqFaderSlider.inputText = theme.colormap.dspeqfaderslider;
                 inFxBg.inputText = theme.colormap.dspfxbg;
                 inFxText.inputText = theme.colormap.dspfxtext;
@@ -488,14 +486,14 @@ Item {
                         hexValue: theme.colormap.dspeqpresetactive
                     }
                     ColorInputRow {
-                        id: inEq10Slider
-                        labelText: "dspeq10slider"
-                        hexValue: theme.colormap.dspeq10slider
+                        id: inEqSlider
+                        labelText: "dspeqslider"
+                        hexValue: theme.colormap.dspeqslider
                     }
                     ColorInputRow {
-                        id: inEq10Handle
-                        labelText: "dspeq10handle"
-                        hexValue: theme.colormap.dspeq10handle
+                        id: inEqHandle
+                        labelText: "dspeqhandle"
+                        hexValue: theme.colormap.dspeqhandle
                     }
                     ColorInputRow {
                         id: inEqFaderSlider

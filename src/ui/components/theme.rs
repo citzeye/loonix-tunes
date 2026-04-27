@@ -145,35 +145,49 @@ impl ThemeConfig {
     }
 
     pub fn user_template_colors() -> HashMap<String, String> {
-        let mut map = HashMap::new();
+    let mut map = HashMap::new();
+
+        // --- Global & Backgrounds ---
         map.insert("bgmain".to_string(), "#121212".to_string());
         map.insert("bgoverlay".to_string(), "#1e1e1e".to_string());
         map.insert("graysolid".to_string(), "#333333".to_string());
         map.insert("contextmenubg".to_string(), "#181818".to_string());
         map.insert("overlay".to_string(), "#80000000".to_string());
+
+        // --- Header Section ---
         map.insert("headerbg".to_string(), "#1e1e1e".to_string());
         map.insert("headericon".to_string(), "#6d6d6d".to_string());
         map.insert("headertext".to_string(), "#6d6d6d".to_string());
         map.insert("headerhover".to_string(), "#00ddff".to_string());
+
+        // --- Player Section ---
         map.insert("playertitle".to_string(), "#00ffdd".to_string());
         map.insert("playersubtext".to_string(), "#6d6d6d".to_string());
         map.insert("playeraccent".to_string(), "#00ffdd".to_string());
         map.insert("playerhover".to_string(), "#843ff3".to_string());
         map.insert("playerslider".to_string(), "#00ffdd".to_string());
         map.insert("playerhandle".to_string(), "#843ff3".to_string());
+
+        // --- Navigation Tabs ---
         map.insert("tabtext".to_string(), "#d1d8e6".to_string());
         map.insert("tabborder".to_string(), "#8a8a8a".to_string());
         map.insert("tabhover".to_string(), "#00ffdd".to_string());
+
+        // --- Playlist Section ---
         map.insert("playlisttext".to_string(), "#d1d8e6".to_string());
         map.insert("playlistfolder".to_string(), "#f5a623".to_string());
         map.insert("playlistactive".to_string(), "#843ff3".to_string());
         map.insert("playlisticon".to_string(), "#00ffdd".to_string());
+
+        // --- DSP Global ---
         map.insert("dspbg".to_string(), "#15151B".to_string());
         map.insert("dsptext".to_string(), "#6d6d6d".to_string());
         map.insert("dsptexthover".to_string(), "#fa7900".to_string());
         map.insert("dsptextactive".to_string(), "#fa7900".to_string());
         map.insert("dspborder".to_string(), "#6d6d6d".to_string());
         map.insert("dspgridbg".to_string(), "#111111".to_string());
+
+        // --- DSP EQ Section ---
         map.insert("dspeqbg".to_string(), "#151515".to_string());
         map.insert("dspeqtext".to_string(), "#00ffdd".to_string());
         map.insert("dspeqsubtext".to_string(), "#6d6d6d".to_string());
@@ -184,19 +198,20 @@ impl ThemeConfig {
         map.insert("dspeqslider".to_string(), "#ff1ae0".to_string());
         map.insert("dspeqsliderbg".to_string(), "#15151B".to_string());
         map.insert("dspeqhandle".to_string(), "#ff1ae0".to_string());
+
+        // --- DSP Amp & Mix ---
         map.insert("dspeampbg".to_string(), "#111111".to_string());
         map.insert("dspampslider".to_string(), "#ff1ae0".to_string());
         map.insert("dspampsliderbg".to_string(), "#000000".to_string());
         map.insert("dspeamphandle".to_string(), "#9442ff".to_string());
-        map.insert("dspeq10slider".to_string(), "#ff1ae0".to_string());
-        map.insert("dspeq10sliderbg".to_string(), "#000000".to_string());
-        map.insert("dspeq10handle".to_string(), "#9442ff".to_string());
         map.insert("dspeqfaderbg".to_string(), "#111111".to_string());
         map.insert("dspeqfaderslider".to_string(), "#ff1ae0".to_string());
         map.insert("dspeqfaderhandle".to_string(), "#9442ff".to_string());
         map.insert("dspeqmixslider".to_string(), "#00ffdd".to_string());
         map.insert("dspeqmixhandle".to_string(), "#843ff3".to_string());
         map.insert("dspeqmixbg".to_string(), "#15151B".to_string());
+
+        // --- DSP FX Section ---
         map.insert("dspfxbg".to_string(), "#151515".to_string());
         map.insert("dspfxborder".to_string(), "#6d6d6d".to_string());
         map.insert("dspfxtext".to_string(), "#00ffdd".to_string());
@@ -207,6 +222,8 @@ impl ThemeConfig {
         map.insert("dspfxslider".to_string(), "#ff1ae0".to_string());
         map.insert("dspfxsliderbg".to_string(), "#111111".to_string());
         map.insert("dspfxhandle".to_string(), "#9442ff".to_string());
+
+        // --- Generic DSP Controls ---
         map.insert("dspslider".to_string(), "#00ffdd".to_string());
         map.insert("dspsliderbg".to_string(), "#15151B".to_string());
         map.insert("dsphandle".to_string(), "#843ff3".to_string());
@@ -219,9 +236,12 @@ impl ThemeConfig {
         map.insert("dspmixslider".to_string(), "#00ffdd".to_string());
         map.insert("dspmixhandle".to_string(), "#843ff3".to_string());
         map.insert("dspmixbg".to_string(), "#15151B".to_string());
+
+        // --- DSP State UI ---
         map.insert("dspicon".to_string(), "#9442ff".to_string());
         map.insert("dsphover".to_string(), "#843ff3".to_string());
         map.insert("dspactive".to_string(), "#00ffdd".to_string());
+
         map
     }
 }
@@ -588,91 +608,113 @@ impl ThemeManager {
         self.save_config();
     }
 
-    fn get_builtin_colors(name: &str) -> HashMap<String, String> {
+fn get_builtin_colors(name: &str) -> HashMap<String, String> {
         let mut map: HashMap<String, String> = HashMap::new();
 
         match name {
             "Loonix" => {
                 c!(map, {
+                    // --- Global & Backgrounds ---
                     "bgmain", "#15151B",
                     "bgoverlay", "#201f2b",
                     "graysolid", "#6d6d6d",
                     "contextmenubg", "#2d2d2d",
-                    "overlay", "#000000",
+                    "overlay", "#80000000",
+
+                    // --- Header Section ---
                     "headerbg", "#201f2b",
                     "headericon", "#6d6d6d",
                     "headertext", "#6d6d6d",
                     "headerhover", "#ff1ae0",
+
+                    // --- Player Section ---
                     "playertitle", "#00ffa2",
-                    "playersubtext", "#00ffa2",
+                    "playersubtext", "#6d6d6d",
                     "playeraccent", "#9442ff",
                     "playerhover", "#ff1ae0",
                     "playerslider", "#ff1ae0",
                     "playerhandle", "#9442ff",
+
+                    // --- Navigation Tabs ---
                     "tabtext", "#c6c6c6",
                     "tabborder", "#6d6d6d",
                     "tabhover", "#ff1ae0",
-                    "tabbg", "#1a1a2e",
-                    "tabactive", "#3d3d5c",
-                    "tabtextactive", "#ffffff",
+
+                    // --- Playlist Section ---
                     "playlisttext", "#c6c6c6",
                     "playlistfolder", "#fa7900",
                     "playlistactive", "#00ffa2",
                     "playlisticon", "#fa7900",
 
+                    // --- DSP Master Section ---
                     "dspbg", "#15151B",
                     "dsptext", "#6d6d6d",
-                    "dsptexthover", "#fa7900",
-                    "dsptextactive", "#fa7900",
+                    "dsptexthover", "#ff1ae0",
+                    "dsptextactive", "#00ffa2",
                     "dspborder", "#6d6d6d",
                     "dspgridbg", "#111111",
+
+                    // --- DSP EQ Section ---
                     "dspeqbg", "#151515",
                     "dspeqicon", "#9442ff",
                     "dspeqslider", "#ff1ae0",
-                    "dspeqsliderbg", "#15151B",
-                    "dspeqhandle", "#ff1ae0",
+                    "dspeqsliderbg", "#000000",
+                    "dspeqhandle", "#9442ff",
+
+                    // --- DSP Amp & Fader ---
                     "dspeampbg", "#111111",
                     "dspampslider", "#ff1ae0",
                     "dspampsliderbg", "#000000",
                     "dspeamphandle", "#9442ff",
-                    "dspeq10slider", "#ff1ae0",
-                    "dspeq10sliderbg", "#000000",
-                    "dspeq10handle", "#9442ff",
                     "dspeqfaderbg", "#111111",
                     "dspeqfaderslider", "#ff1ae0",
+                    "dspeqfadersliderbg", "#000000",
                     "dspeqfaderhandle", "#9442ff",
+
+                    // --- DSP FX Section ---
                     "dspfxbg", "#151515",
                     "dspfxicon", "#9442ff",
                     "dspfxslider", "#ff1ae0",
-                    "dspfxsliderbg", "#111111",
+                    "dspfxsliderbg", "#000000",
                     "dspfxhandle", "#9442ff",
                 });
             }
+
             "Blue" => {
                 c!(map, {
+                    // --- Global & Backgrounds ---
                     "bgmain", "#121212",
                     "bgoverlay", "#1e1e1e",
                     "graysolid", "#333333",
                     "contextmenubg", "#181818",
                     "overlay", "#80000000",
+
+                    // --- Header Section ---
                     "headerbg", "#1e1e1e",
                     "headericon", "#6d6d6d",
                     "headertext", "#6d6d6d",
                     "headerhover", "#00ddff",
+
+                    // --- Player Section ---
                     "playertitle", "#00ffdd",
                     "playersubtext", "#6d6d6d",
                     "playeraccent", "#00ffdd",
                     "playerhover", "#843ff3",
                     "playerslider", "#9442ff",
                     "playerhandle", "#00ffa2",
+
+                    // --- Navigation Tabs ---
                     "tabtext", "#d1d8e6",
                     "tabborder", "#8a8a8a",
                     "tabhover", "#00ffdd",
+
+                    // --- Playlist Section ---
                     "playlisttext", "#d1d8e6",
                     "playlistfolder", "#f5a623",
                     "playlistactive", "#843ff3",
                     "playlisticon", "#843ff3",
 
+                    // --- DSP Section ---
                     "dspbg", "#15151B",
                     "dsptext", "#6d6d6d",
                     "dsptexthover", "#fa7900",
@@ -682,441 +724,398 @@ impl ThemeManager {
                     "dspeqbg", "#151515",
                     "dspeqicon", "#9442ff",
                     "dspeqslider", "#00ffdd",
-                    "dspeqsliderbg", "#15151B",
+                    "dspeqsliderbg", "#000000",
                     "dspeqhandle", "#9442ff",
                     "dspeampbg", "#111111",
                     "dspampslider", "#ff1ae0",
                     "dspampsliderbg", "#000000",
                     "dspeamphandle", "#9442ff",
-                    "dspeq10slider", "#ff1ae0",
-                    "dspeq10sliderbg", "#000000",
-                    "dspeq10handle", "#9442ff",
                     "dspeqfaderbg", "#111111",
                     "dspeqfaderslider", "#ff1ae0",
+                    "dspeqfadersliderbg", "#000000",
                     "dspeqfaderhandle", "#9442ff",
                     "dspfxbg", "#151515",
                     "dspfxicon", "#9442ff",
                     "dspfxslider", "#00ffdd",
-                    "dspfxsliderbg", "#111111",
+                    "dspfxsliderbg", "#000000",
                     "dspfxhandle", "#9442ff",
                 });
             }
+
             "Green" => {
                 c!(map, {
+                    // --- Global & Backgrounds ---
                     "bgmain", "#121212",
                     "bgoverlay", "#1e1e1e",
                     "graysolid", "#333333",
                     "contextmenubg", "#181818",
                     "overlay", "#80000000",
+
+                    // --- Header Section ---
                     "headerbg", "#1e1e1e",
                     "headericon", "#6d6d6d",
                     "headertext", "#6d6d6d",
                     "headerhover", "#00ff26",
+
+                    // --- Player Section ---
                     "playertitle", "#00ff26",
                     "playersubtext", "#6d6d6d",
                     "playeraccent", "#00ff26",
                     "playerhover", "#ffcc00",
                     "playerslider", "#00ffa2",
                     "playerhandle", "#9442ff",
+
+                    // --- Navigation Tabs ---
                     "tabtext", "#d1e6d8",
                     "tabborder", "#6d6d6d",
                     "tabhover", "#00ff26",
+
+                    // --- Playlist Section ---
                     "playlisttext", "#d1e6d8",
                     "playlistfolder", "#00ff26",
                     "playlistactive", "#ffcc00",
                     "playlisticon", "#00ff26",
 
+                    // --- DSP Section ---
                     "dspbg", "#1e1e1e",
+                    "dsptext", "#6d6d6d",
+                    "dsptexthover", "#00ff26",
+                    "dsptextactive", "#00ff26",
                     "dspborder", "#6d6d6d",
-
+                    "dspgridbg", "#111111",
                     "dspeqbg", "#121c15",
-                    "dspeqtext", "#00ff66",
-                    "dspeqsubtext", "#6d6d6d",
                     "dspeqicon", "#00ff26",
-                    "dspeqhover", "#ffcc00",
-                    "dspeqpresettext", "#6d6d6d",
-                    "dspeqpresetactive", "#00ff66",
-                    "dspeq10slider", "#ffcc00",
-                    "dspeq10handle", "#00ff26",
-                    "dspeq10bg", "#1e1e1e",
-                    "dspeqfaderslider", "#f5a623",
-                    "dspeqfaderhandle", "#8b0000",
+                    "dspeqslider", "#00ff66",
+                    "dspeqsliderbg", "#000000",
+                    "dspeqhandle", "#ffcc00",
+                    "dspeampbg", "#111111",
+                    "dspampslider", "#00ff66",
+                    "dspampsliderbg", "#000000",
+                    "dspeamphandle", "#00ff26",
                     "dspeqfaderbg", "#1e1e1e",
-                    "dspeqmixslider", "#00ff26",
-                    "dspeqmixhandle", "#ffcc00",
-                    "dspeqmixbg", "#1e1e1e",
-
+                    "dspeqfaderslider", "#f5a623",
+                    "dspeqfadersliderbg", "#000000",
+                    "dspeqfaderhandle", "#8b0000",
                     "dspfxbg", "#121c15",
-                    "dspfxborder", "#6d6d6d",
-                    "dspfxtext", "#00ff66",
-                    "dspfxsubtext", "#6d6d6d",
                     "dspfxicon", "#00ff26",
-                    "dspfxhover", "#ffcc00",
-                    "dspfxactive", "#00ff66",
                     "dspfxslider", "#00ff66",
-                    "dspfxsliderbg", "#121c15",
+                    "dspfxsliderbg", "#000000",
                     "dspfxhandle", "#00ff26",
-
-                    "dspslider", "#00ff66",
-                    "dspsliderbg", "#121c15",
-                    "dsphandle", "#00ff26",
                 });
             }
+
             "Monochrome" => {
                 c!(map, {
+                    // --- Global & Backgrounds ---
                     "bgmain", "#121212",
                     "bgoverlay", "#1e1e1e",
                     "graysolid", "#333333",
                     "contextmenubg", "#181818",
                     "overlay", "#80000000",
+
+                    // --- Header Section ---
                     "headerbg", "#1e1e1e",
                     "headericon", "#6d6d6d",
                     "headertext", "#6d6d6d",
                     "headerhover", "#ffffff",
+
+                    // --- Player Section ---
                     "playertitle", "#ffffff",
                     "playersubtext", "#6d6d6d",
                     "playeraccent", "#555555",
                     "playerhover", "#ffffff",
                     "playerslider", "#ffffff",
                     "playerhandle", "#555555",
+
+                    // --- Navigation Tabs ---
                     "tabtext", "#e0e0e0",
                     "tabborder", "#ffffff",
                     "tabhover", "#ffffff",
+
+                    // --- Playlist Section ---
                     "playlisttext", "#e0e0e0",
                     "playlistfolder", "#d4d4d4",
                     "playlistactive", "#ffffff",
                     "playlisticon", "#d4d4d4",
 
+                    // --- DSP Section ---
                     "dspbg", "#1e1e1e",
+                    "dsptext", "#6d6d6d",
+                    "dsptexthover", "#ffffff",
+                    "dsptextactive", "#ffffff",
                     "dspborder", "#ffffff",
-
+                    "dspgridbg", "#111111",
                     "dspeqbg", "#121212",
-                    "dspeqtext", "#ffffff",
-                    "dspeqsubtext", "#8b8b8b",
                     "dspeqicon", "#d4d4d4",
-                    "dspeqhover", "#ffffff",
-                    "dspeqpresettext", "#8b8b8b",
-                    "dspeqpresetactive", "#ffffff",
-                    "dspeq10slider", "#ffffff",
-                    "dspeq10handle", "#555555",
-                    "dspeq10bg", "#1e1e1e",
-                    "dspeqfaderslider", "#f5a623",
-                    "dspeqfaderhandle", "#8b0000",
+                    "dspeqslider", "#ffffff",
+                    "dspeqsliderbg", "#000000",
+                    "dspeqhandle", "#ffffff",
+                    "dspeampbg", "#111111",
+                    "dspampslider", "#ffffff",
+                    "dspampsliderbg", "#000000",
+                    "dspeamphandle", "#555555",
                     "dspeqfaderbg", "#1e1e1e",
-                    "dspeqmixslider", "#555555",
-                    "dspeqmixhandle", "#ffffff",
-                    "dspeqmixbg", "#1e1e1e",
-
+                    "dspeqfaderslider", "#f5a623",
+                    "dspeqfadersliderbg", "#000000",
+                    "dspeqfaderhandle", "#8b0000",
                     "dspfxbg", "#121212",
-                    "dspfxborder", "#ffffff",
-                    "dspfxtext", "#ffffff",
-                    "dspfxsubtext", "#8b8b8b",
                     "dspfxicon", "#d4d4d4",
-                    "dspfxhover", "#ffffff",
-                    "dspfxactive", "#ffffff",
                     "dspfxslider", "#ffffff",
-                    "dspfxsliderbg", "#121212",
+                    "dspfxsliderbg", "#000000",
                     "dspfxhandle", "#d4d4d4",
-
-                    "dspslider", "#ffffff",
-                    "dspsliderbg", "#121212",
-                    "dsphandle", "#d4d4d4",
                 });
             }
+
             "Orange" => {
                 c!(map, {
+                    // --- Global & Backgrounds ---
                     "bgmain", "#121212",
                     "bgoverlay", "#1e1e1e",
                     "graysolid", "#333333",
                     "contextmenubg", "#181818",
                     "overlay", "#80000000",
+
+                    // --- Header Section ---
                     "headerbg", "#1e1e1e",
                     "headericon", "#6d6d6d",
                     "headertext", "#6d6d6d",
                     "headerhover", "#ffea00",
+
+                    // --- Player Section ---
                     "playertitle", "#ff5500",
                     "playersubtext", "#6d6d6d",
                     "playeraccent", "#ff5500",
                     "playerhover", "#ffea00",
                     "playerslider", "#ff5500",
                     "playerhandle", "#ffea00",
+
+                    // --- Navigation Tabs ---
                     "tabtext", "#ecdcd9",
                     "tabborder", "#6d6d6d",
                     "tabhover", "#ff5500",
+
+                    // --- Playlist Section ---
                     "playlisttext", "#ecdcd9",
                     "playlistfolder", "#ffea00",
                     "playlistactive", "#ff5500",
                     "playlisticon", "#ff5500",
 
+                    // --- DSP Section ---
                     "dspbg", "#1e1e1e",
+                    "dsptext", "#6d6d6d",
+                    "dsptexthover", "#ffea00",
+                    "dsptextactive", "#ff5500",
                     "dspborder", "#6d6d6d",
-
+                    "dspgridbg", "#111111",
                     "dspeqbg", "#1c1210",
-                    "dspeqtext", "#ff5500",
-                    "dspeqsubtext", "#6d6d6d",
                     "dspeqicon", "#ff5500",
-                    "dspeqhover", "#ffea00",
-                    "dspeqpresettext", "#6d6d6d",
-                    "dspeqpresetactive", "#ff5500",
-                    "dspeq10slider", "#ffea00",
-                    "dspeq10handle", "#ff5500",
-                    "dspeq10bg", "#1e1e1e",
-                    "dspeqfaderslider", "#f5a623",
-                    "dspeqfaderhandle", "#8b0000",
+                    "dspeqslider", "#ff5500",
+                    "dspeqsliderbg", "#000000",
+                    "dspeqhandle", "#ffea00",
+                    "dspeampbg", "#111111",
+                    "dspampslider", "#ff5500",
+                    "dspampsliderbg", "#000000",
+                    "dspeamphandle", "#ffea00",
                     "dspeqfaderbg", "#1e1e1e",
-                    "dspeqmixslider", "#ff5500",
-                    "dspeqmixhandle", "#ffea00",
-                    "dspeqmixbg", "#1e1e1e",
-
+                    "dspeqfaderslider", "#f5a623",
+                    "dspeqfadersliderbg", "#000000",
+                    "dspeqfaderhandle", "#8b0000",
                     "dspfxbg", "#1c1210",
-                    "dspfxborder", "#6d6d6d",
-                    "dspfxtext", "#ff5500",
-                    "dspfxsubtext", "#6d6d6d",
                     "dspfxicon", "#ff5500",
-                    "dspfxhover", "#ffea00",
-                    "dspfxactive", "#ff5500",
                     "dspfxslider", "#ff5500",
-                    "dspfxsliderbg", "#1c1210",
+                    "dspfxsliderbg", "#000000",
                     "dspfxhandle", "#ff5500",
-
-                    "dspslider", "#ff5500",
-                    "dspsliderbg", "#1c1210",
-                    "dsphandle", "#ff5500",
                 });
             }
+
             "Pink" => {
                 c!(map, {
+                    // --- Global & Backgrounds ---
                     "bgmain", "#121212",
                     "bgoverlay", "#1e1e1e",
                     "graysolid", "#333333",
                     "contextmenubg", "#181818",
                     "overlay", "#80000000",
+
+                    // --- Header Section ---
                     "headerbg", "#1e1e1e",
                     "headericon", "#6d6d6d",
                     "headertext", "#6d6d6d",
                     "headerhover", "#00ffcc",
+
+                    // --- Player Section ---
                     "playertitle", "#f965d9",
                     "playersubtext", "#6d6d6d",
                     "playeraccent", "#f965d9",
                     "playerhover", "#00ffcc",
                     "playerslider", "#f965d9",
                     "playerhandle", "#00ffcc",
+
+                    // --- Navigation Tabs ---
                     "tabtext", "#eedef2",
                     "tabborder", "#6d6d6d",
                     "tabhover", "#f965d9",
+
+                    // --- Playlist Section ---
                     "playlisttext", "#eedef2",
                     "playlistfolder", "#d59407",
                     "playlistactive", "#65f996",
                     "playlisticon", "#f965d9",
 
+                    // --- DSP Section ---
                     "dspbg", "#1e1e1e",
+                    "dsptext", "#6d6d6d",
+                    "dsptexthover", "#00ffcc",
+                    "dsptextactive", "#f965d9",
                     "dspborder", "#6d6d6d",
-
+                    "dspgridbg", "#111111",
                     "dspeqbg", "#1b101f",
-                    "dspeqtext", "#f965d9",
-                    "dspeqsubtext", "#6d6d6d",
                     "dspeqicon", "#f965d9",
-                    "dspeqhover", "#00ffcc",
-                    "dspeqpresettext", "#6d6d6d",
-                    "dspeqpresetactive", "#f965d9",
-                    "dspeq10slider", "#00ffcc",
-                    "dspeq10handle", "#f965d9",
-                    "dspeq10bg", "#1e1e1e",
-                    "dspeqfaderslider", "#f5a623",
-                    "dspeqfaderhandle", "#8b0000",
+                    "dspeqslider", "#f965d9",
+                    "dspeqsliderbg", "#000000",
+                    "dspeqhandle", "#00ffcc",
+                    "dspeampbg", "#111111",
+                    "dspampslider", "#f965d9",
+                    "dspampsliderbg", "#000000",
+                    "dspeamphandle", "#00ffcc",
                     "dspeqfaderbg", "#1e1e1e",
-                    "dspeqmixslider", "#f965d9",
-                    "dspeqmixhandle", "#00ffcc",
-                    "dspeqmixbg", "#1e1e1e",
-
+                    "dspeqfaderslider", "#f5a623",
+                    "dspeqfadersliderbg", "#000000",
+                    "dspeqfaderhandle", "#8b0000",
                     "dspfxbg", "#1b101f",
-                    "dspfxborder", "#6d6d6d",
-                    "dspfxtext", "#f965d9",
-                    "dspfxsubtext", "#6d6d6d",
                     "dspfxicon", "#f965d9",
-                    "dspfxhover", "#00ffcc",
-                    "dspfxactive", "#f965d9",
                     "dspfxslider", "#f965d9",
-                    "dspfxsliderbg", "#1b101f",
+                    "dspfxsliderbg", "#000000",
                     "dspfxhandle", "#00ffcc",
                 });
             }
+
             "Red" => {
                 c!(map, {
+                    // --- Global & Backgrounds ---
                     "bgmain", "#121212",
                     "bgoverlay", "#1e1e1e",
                     "graysolid", "#333333",
                     "contextmenubg", "#181818",
                     "overlay", "#80000000",
+
+                    // --- Header Section ---
                     "headerbg", "#1e1e1e",
                     "headericon", "#6d6d6d",
                     "headertext", "#6d6d6d",
                     "headerhover", "#ff003c",
+
+                    // --- Player Section ---
                     "playertitle", "#ff003c",
                     "playersubtext", "#bdbdbd",
                     "playeraccent", "#ff003c",
                     "playerhover", "#2b00ff",
                     "playerslider", "#ff003c",
                     "playerhandle", "#2b00ff",
+
+                    // --- Navigation Tabs ---
                     "tabtext", "#bdbdbd",
                     "tabborder", "#6d6d6d",
                     "tabhover", "#ff003c",
+
+                    // --- Playlist Section ---
                     "playlisttext", "#bdbdbd",
                     "playlistfolder", "#d59407",
                     "playlistactive", "#ff003c",
                     "playlisticon", "#2b00ff",
 
+                    // --- DSP Section ---
                     "dspbg", "#1e1e1e",
+                    "dsptext", "#6d6d6d",
+                    "dsptexthover", "#ff003c",
+                    "dsptextactive", "#ff003c",
                     "dspborder", "#6d6d6d",
-
+                    "dspgridbg", "#111111",
                     "dspeqbg", "#1c0d0d",
-                    "dspeqtext", "#ff003c",
-                    "dspeqsubtext", "#bdbdbd",
                     "dspeqicon", "#ff003c",
-                    "dspeqhover", "#2b00ff",
-                    "dspeqpresettext", "#bdbdbd",
-                    "dspeqpresetactive", "#ff003c",
-                    "dspeq10slider", "#2b00ff",
-                    "dspeq10handle", "#ff003c",
-                    "dspeq10bg", "#1e1e1e",
-                    "dspeqfaderslider", "#f5a623",
-                    "dspeqfaderhandle", "#8b0000",
+                    "dspeqslider", "#ff003c",
+                    "dspeqsliderbg", "#000000",
+                    "dspeqhandle", "#2b00ff",
+                    "dspeampbg", "#111111",
+                    "dspampslider", "#ff003c",
+                    "dspampsliderbg", "#000000",
+                    "dspeamphandle", "#2b00ff",
                     "dspeqfaderbg", "#1e1e1e",
-                    "dspeqmixslider", "#ff003c",
-                    "dspeqmixhandle", "#2b00ff",
-                    "dspeqmixbg", "#1e1e1e",
-
+                    "dspeqfaderslider", "#f5a623",
+                    "dspeqfadersliderbg", "#000000",
+                    "dspeqfaderhandle", "#8b0000",
                     "dspfxbg", "#1c0d0d",
-                    "dspfxborder", "#6d6d6d",
-                    "dspfxtext", "#ff003c",
-                    "dspfxsubtext", "#bdbdbd",
                     "dspfxicon", "#ff003c",
-                    "dspfxhover", "#2b00ff",
-                    "dspfxactive", "#ff003c",
                     "dspfxslider", "#ff003c",
-                    "dspfxsliderbg", "#1c0d0d",
+                    "dspfxsliderbg", "#000000",
                     "dspfxhandle", "#2b00ff",
-
-                    "dspslider", "#ff003c",
-                    "dspsliderbg", "#1c0d0d",
-                    "dsphandle", "#2b00ff",
                 });
             }
+
             "Yellow" => {
                 c!(map, {
+                    // --- Global & Backgrounds ---
                     "bgmain", "#0d1012",
                     "bgoverlay", "#15191c",
                     "graysolid", "#2d353b",
                     "contextmenubg", "#0a0c0e",
-                    "overlay", "#000000",
+                    "overlay", "#80000000",
+
+                    // --- Header Section ---
                     "headerbg", "#15191c",
                     "headericon", "#6d6d6d",
                     "headertext", "#6d6d6d",
                     "headerhover", "#f965d9",
+
+                    // --- Player Section ---
                     "playertitle", "#ffea00",
                     "playersubtext", "#6d6d6d",
                     "playeraccent", "#ffea00",
                     "playerhover", "#f965d9",
                     "playerslider", "#ffea00",
                     "playerhandle", "#f965d9",
+
+                    // --- Navigation Tabs ---
                     "tabtext", "#dde0d1",
                     "tabborder", "#6d6d6d",
                     "tabhover", "#ffea00",
+
+                    // --- Playlist Section ---
                     "playlisttext", "#dde0d1",
                     "playlistfolder", "#d59407",
                     "playlistactive", "#ffea00",
                     "playlisticon", "#f965d9",
 
+                    // --- DSP Section ---
                     "dspbg", "#15191c",
-                    "dspborder", "#6d6d6d",
-
-                    "dspeqbg", "#0d1012",
-                    "dspeqtext", "#ffea00",
-                    "dspeqsubtext", "#6d6d6d",
-                    "dspeqicon", "#ffea00",
-                    "dspeqhover", "#f965d9",
-                    "dspeqpresettext", "#6d6d6d",
-                    "dspeqpresetactive", "#ffea00",
-                    "dspeq10slider", "#f965d9",
-                    "dspeq10handle", "#ffea00",
-                    "dspeq10bg", "#15191c",
-                    "dspeqfaderslider", "#f5a623",
-                    "dspeqfaderhandle", "#8b0000",
-                    "dspeqfaderbg", "#15191c",
-                    "dspeqmixslider", "#ffea00",
-                    "dspeqmixhandle", "#f965d9",
-                    "dspeqmixbg", "#15191c",
-
-                    "dspfxbg", "#0d1012",
-                    "dspfxborder", "#6d6d6d",
-                    "dspfxtext", "#ffea00",
-                    "dspfxsubtext", "#6d6d6d",
-                    "dspfxicon", "#ffea00",
-                    "dspfxhover", "#f965d9",
-                    "dspfxactive", "#ffea00",
-                    "dspfxslider", "#ffea00",
-                    "dspfxsliderbg", "#0d1012",
-                    "dspfxhandle", "#f965d9",
-
-                    "dspslider", "#ffea00",
-                    "dspsliderbg", "#0d1012",
-                    "dsphandle", "#f965d9",
-});
-            }
-            _ => {
-                c!(map, {
-                    "bgmain", "#15151B",
-                    "bgoverlay", "#201f2b",
-                    "graysolid", "#6d6d6d",
-                    "contextmenubg", "#2d2d2d",
-                    "overlay", "#000000",
-                    "headerbg", "#201f2b",
-                    "headericon", "#6d6d6d",
-                    "headertext", "#6d6d6d",
-                    "headerhover", "#ff1ae0",
-                    "playertitle", "#00ffa2",
-                    "playersubtext", "#57caab",
-                    "playeraccent", "#9442ff",
-                    "playerhover", "#ff1ae0",
-                    "playerslider", "#00ffa2",
-                    "playerhandle", "#9442ff",
-                    "tabtext", "#c6c6c6",
-                    "tabborder", "#00ffa2",
-                    "tabhover", "#ff1ae0",
-                    "tabbg", "#1a1a2e",
-                    "tabactive", "#3d3d5c",
-                    "tabtextactive", "#ffffff",
-                    "playlisttext", "#c6c6c6",
-                    "playlistfolder", "#fa7900",
-                    "playlistactive", "#00ffa2",
-                    "playlisticon", "#fa7900",
-                    "dspbg", "#15151B",
                     "dsptext", "#6d6d6d",
-                    "dsptexthover", "#fa7900",
-                    "dsptextactive", "#fa7900",
+                    "dsptexthover", "#ffea00",
+                    "dsptextactive", "#ffea00",
                     "dspborder", "#6d6d6d",
                     "dspgridbg", "#111111",
-                    "dspeqbg", "#151515",
-                    "dspeqicon", "#9442ff",
-                    "dspeqslider", "#ff1ae0",
-                    "dspeqsliderbg", "#15151B",
-                    "dspeqhandle", "#ff1ae0",
+                    "dspeqbg", "#0d1012",
+                    "dspeqicon", "#ffea00",
+                    "dspeqslider", "#ffea00",
+                    "dspeqsliderbg", "#000000",
+                    "dspeqhandle", "#f965d9",
                     "dspeampbg", "#111111",
-                    "dspampslider", "#ff1ae0",
+                    "dspampslider", "#ffea00",
                     "dspampsliderbg", "#000000",
-                    "dspeamphandle", "#9442ff",
-                    "dspeq10slider", "#ff1ae0",
-                    "dspeq10sliderbg", "#000000",
-                    "dspeq10handle", "#9442ff",
-                    "dspeqfaderbg", "#111111",
-                    "dspeqfaderslider", "#ff1ae0",
-                    "dspeqfaderhandle", "#9442ff",
-                    "dspfxbg", "#151515",
-                    "dspfxicon", "#9442ff",
-                    "dspfxslider", "#ff1ae0",
-                    "dspfxsliderbg", "#111111",
-                    "dspfxhandle", "#9442ff",
+                    "dspeamphandle", "#f965d9",
+                    "dspeqfaderbg", "#15191c",
+                    "dspeqfaderslider", "#f5a623",
+                    "dspeqfadersliderbg", "#000000",
+                    "dspeqfaderhandle", "#8b0000",
+                    "dspfxbg", "#0d1012",
+                    "dspfxicon", "#ffea00",
+                    "dspfxslider", "#ffea00",
+                    "dspfxsliderbg", "#000000",
+                    "dspfxhandle", "#f965d9",
                 });
+            }
+
+            _ => { 
+                map = Self::get_builtin_colors("Loonix");
             }
         }
 

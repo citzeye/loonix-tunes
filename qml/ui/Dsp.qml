@@ -249,6 +249,7 @@ RowLayout {
                         sliderRange: "db"
                         onSliderChanged: val => dspModel.set_compressor_threshold(val)
                     }
+
                     FxValueBox {
                         enabled: compToggle.isOn && dspModel.dsp_enabled
                         sliderValue: compSlider.currentValue
@@ -1154,7 +1155,7 @@ RowLayout {
                     width: svdSld.availableWidth
                     height: 4
                     radius: 2
-                    color: theme.colormap.dspfxsliderbg
+                    color: theme.colormap.dspgridbg
                     Rectangle {
                         width: svdSld.visualPosition * parent.width
                         height: 4
@@ -1703,7 +1704,7 @@ RowLayout {
                 width: pitchSld.availableWidth
                 height: 4
                 radius: 2
-                color: theme.colormap.dspfxsliderbg
+                color: theme.colormap.dspgridbg
 
                 Rectangle {
                     width: 2
@@ -1791,7 +1792,7 @@ RowLayout {
                 width: 3
                 height: parent.height
                 radius: 1.5
-                color: theme.colormap.dspeq10sliderbg
+                color: theme.colormap.dspeqsliderbg
                 
                 Rectangle {
                     width: parent.width

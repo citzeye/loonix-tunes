@@ -49,7 +49,7 @@ pub use self::rack::DspRack;
 pub use self::bassbooster::{
     get_bass_enabled_arc, get_bass_freq_arc, get_bass_gain_arc, get_bass_q_arc, BassBooster,
 };
-pub use self::compressor::{get_compressor_enabled_arc, get_compressor_threshold_arc, Compressor};
+pub use self::compressor::{get_compressor_enabled_arc, get_compressor_threshold_arc, get_compressor_makeup_arc, Compressor};
 pub use self::crossfeed::{get_crossfeed_amount_arc, get_crossfeed_enabled_arc, Crossfeed};
 pub use self::crystalizer::{
     get_crystal_amount_arc, get_crystal_enabled_arc, get_crystal_freq_arc, Crystalizer,

@@ -7,17 +7,20 @@ use std::sync::{Arc, OnceLock};
 // Global atomics for real-time UI control (lock-free, like crystalizer pattern)
 static COMPRESSOR_ENABLED: OnceLock<Arc<AtomicBool>> = OnceLock::new();
 static COMPRESSOR_THRESHOLD: OnceLock<Arc<AtomicU32>> = OnceLock::new();
+static COMPRESSOR_MAKEUP: OnceLock<Arc<AtomicU32>> = OnceLock::new();
 
-pub fn get_compressor_enabled_arc() -> Arc<AtomicBool> {
-    COMPRESSOR_ENABLED
-        .get_or_init(|| Arc::new(AtomicBool::new(false)))
-        .clone()
+pub fn get_compressor_enabled_arc() -> &'static Arc<AtomicBool> {
+    COMPRESSOR_ENABLED.get_or_init(|| Arc::new(AtomicBool::new(false)))
 }
 
-pub fn get_compressor_threshold_arc() -> Arc<AtomicU32> {
+pub fn get_compressor_threshold_arc() -> &'static Arc<AtomicU32> {
     COMPRESSOR_THRESHOLD
+        .get_or_init(|| Arc::new(AtomicU32::new((-14.0_f32).to_bits())))
+}
+
+pub fn get_compressor_makeup_arc() -> &'static Arc<AtomicU32> {
+    COMPRESSOR_MAKEUP
         .get_or_init(|| Arc::new(AtomicU32::new(0.0_f32.to_bits())))
-        .clone()
 }
 
 fn bits_to_f32(b: u32) -> f32 {
@@ -94,6 +97,10 @@ impl DspProcessor for Compressor {
         // Read threshold from atomic (set by UI slider)
         let bits = get_compressor_threshold_arc().load(Ordering::Relaxed);
         self.threshold_db = bits_to_f32(bits);
+
+        // Read makeup gain from atomic (set by UI slider)
+        let makeup_bits = get_compressor_makeup_arc().load(Ordering::Relaxed);
+        self.makeup_gain_db = bits_to_f32(makeup_bits);
 
         let threshold_lin = 10.0_f32.powf(self.threshold_db / 20.0);
         let makeup_lin = 10.0_f32.powf(self.makeup_gain_db / 20.0);

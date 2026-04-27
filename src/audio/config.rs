@@ -46,6 +46,7 @@ pub struct BuiltInPreset {
 pub struct DspConfig {
     pub version: String,
     pub dsp_enabled: bool,
+    pub preamp_db: f32,
     pub active_preset_index: i32,
     pub built_in_presets: [BuiltInPreset; 6],
     pub user_preset_names: [String; 6],
@@ -105,6 +106,7 @@ impl DspConfig {
         Self {
             version: "2.0".into(),
             dsp_enabled: true,
+            preamp_db: 0.0,
             active_preset_index: 0,
             built_in_presets,
             user_preset_names: [
@@ -168,6 +170,7 @@ impl Default for DspConfig {
         Self {
             version: "2.0".into(),
             dsp_enabled: true,
+            preamp_db: 0.0,
             active_preset_index: -1,
             built_in_presets: bis,
             user_preset_names: [

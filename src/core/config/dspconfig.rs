@@ -90,6 +90,7 @@ impl DspConfigManager {
         let dsp_config = DspConfig {
             version: "2.0".into(),
             dsp_enabled: state.dsp_enabled,
+            preamp_db: 0.0,
             active_preset_index: state.active_preset_index,
             built_in_presets: bis,
             user_preset_names: state.user_eq_names.clone(),

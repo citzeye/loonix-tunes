@@ -63,6 +63,8 @@ pub struct DspController {
     pub compressor_active_changed: qt_signal!(),
     pub compressor_threshold: qt_property!(f64; NOTIFY compressor_threshold_changed),
     pub compressor_threshold_changed: qt_signal!(),
+    pub compressor_makeup: qt_property!(f64; NOTIFY compressor_makeup_changed),
+    pub compressor_makeup_changed: qt_signal!(),
 
     pub mono_active: qt_property!(bool; NOTIFY mono_changed),
     pub mono_changed: qt_signal!(),
@@ -156,6 +158,8 @@ pub struct DspController {
     pub toggle_compressor: qt_method!(fn(&mut self)),
     pub get_compressor_threshold: qt_method!(fn(&self) -> f64),
     pub set_compressor_threshold: qt_method!(fn(&mut self, val: f64)),
+    pub get_compressor_makeup: qt_method!(fn(&self) -> f64),
+    pub set_compressor_makeup: qt_method!(fn(&mut self, val: f64)),
     pub toggle_pitch: qt_method!(fn(&mut self)),
     pub set_pitch_semitones: qt_method!(fn(&mut self, val: f64)),
     pub toggle_middle_clarity: qt_method!(fn(&mut self)),
@@ -282,8 +286,16 @@ impl DspController {
             self.dsp_enabled = dsp_config.dsp_enabled;
             crate::audio::dsp::get_dsp_bypass_arc()
                 .store(!self.dsp_enabled, std::sync::atomic::Ordering::Relaxed); // inverted
-            crate::audio::dsp::preamp::get_preamp_enabled_arc()
+            crate::audio::dsp::eqpreamp::get_preamp_enabled_arc()
                 .store(true, std::sync::atomic::Ordering::Relaxed); // Preamp always ON
+            // Convert dB from config to Linear for engine
+            let linear_gain = if dsp_config.preamp_db != 0.0 {
+                10.0_f32.powf(dsp_config.preamp_db / 20.0)
+            } else {
+                1.0_f32
+            };
+            crate::audio::dsp::eqpreamp::get_preamp_gain_arc()
+                .store(linear_gain.to_bits(), std::sync::atomic::Ordering::Relaxed);
             self.dsp_changed();
 
             // Load user preset data from JSON
@@ -1208,22 +1220,40 @@ impl DspController {
 
     pub fn toggle_preamp(&mut self) {
         self.preamp_active = !self.preamp_active;
-        crate::audio::dsp::preamp::get_preamp_enabled_arc()
+        crate::audio::dsp::eqpreamp::get_preamp_enabled_arc()
             .store(self.preamp_active, std::sync::atomic::Ordering::Relaxed);
         self.preamp_changed();
     }
 
     pub fn get_preamp_gain(&self) -> f64 {
-        f32::from_bits(
-            crate::audio::dsp::preamp::get_preamp_gain_arc()
+        let linear = f32::from_bits(
+            crate::audio::dsp::eqpreamp::get_preamp_gain_arc()
                 .load(std::sync::atomic::Ordering::Relaxed),
-        ) as f64
+        );
+        // Convert Linear back to dB for UI display
+        // 1.0 → 0 dB, 2.0 → +6 dB, 0.5 → -6 dB
+        if linear > 0.0 {
+            (20.0_f32 * linear.log10()) as f64
+        } else {
+            0.0
+        }
     }
 
     pub fn set_preamp_gain(&mut self, gain: f64) {
-        let clamped_gain = gain.clamp(-20.0, 20.0) as f32;
-        crate::audio::dsp::preamp::get_preamp_gain_arc()
-            .store(clamped_gain.to_bits(), std::sync::atomic::Ordering::Relaxed);
+        let clamped_db = gain.clamp(-20.0, 20.0) as f32;
+        
+        // Convert dB to Linear gain before sending to engine
+        // 0 dB → 1.0 linear, +6 dB → 2.0 linear, -6 dB → 0.5 linear
+        let linear_gain = 10.0_f32.powf(clamped_db / 20.0);
+        
+        crate::audio::dsp::eqpreamp::get_preamp_gain_arc()
+            .store(linear_gain.to_bits(), std::sync::atomic::Ordering::Relaxed);
+        
+        // Save dB value to config for UI display
+        let mut dsp_cfg = crate::audio::config::DspConfig::load();
+        dsp_cfg.preamp_db = clamped_db;
+        let _ = dsp_cfg.save();
+        
         self.preamp_changed();
     }
 
@@ -1420,6 +1450,20 @@ impl DspController {
             std::sync::atomic::Ordering::Relaxed,
         );
         self.compressor_threshold_changed();
+    }
+
+    pub fn get_compressor_makeup(&self) -> f64 {
+        f32::from_bits(
+            crate::audio::dsp::compressor::get_compressor_makeup_arc()
+                .load(std::sync::atomic::Ordering::Relaxed),
+        ) as f64
+    }
+
+    pub fn set_compressor_makeup(&mut self, val: f64) {
+        let clamped = val.clamp(0.0, 24.0) as f32;
+        crate::audio::dsp::compressor::get_compressor_makeup_arc()
+            .store(clamped.to_bits(), std::sync::atomic::Ordering::Relaxed);
+        self.compressor_makeup_changed();
     }
 
     pub fn toggle_reverb(&mut self) {
