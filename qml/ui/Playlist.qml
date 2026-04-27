@@ -6,6 +6,17 @@ import QtQuick.Controls
 
 Rectangle {
   id: playlistSection
+
+  // Reset right-clicked index when context menu closes
+  Connections {
+      target: root
+      function onPlaylistContextMenuVisibleChanged() {
+          if (!root.playlistContextMenuVisible) {
+              root.rightClickedIndex = -1;
+          }
+      }
+  }
+
   Layout.fillWidth: true
   Layout.fillHeight: true
   color: 'transparent'
