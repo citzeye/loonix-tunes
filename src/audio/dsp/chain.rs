@@ -1,4 +1,4 @@
-/* --- loonixtunesv2/src/audio/dsp/chain.rs | DSP Chain --- */
+/* --- loonixtunesv2/src/audio/dsp/chain.rs | chain --- */
 
 use crate::audio::dsp::DspProcessor;
 use arc_swap::ArcSwap;

@@ -1,4 +1,4 @@
-/* --- loonixtunesv2/qml/ui/TrackInfo.qml | Track Info --- */
+/* --- loonixtunesv2/qml/ui/components/TrackInfo.qml | TrackInfo --- */
 import QtQuick
 import QtQuick.Layouts
 

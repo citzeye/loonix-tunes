@@ -1,11 +1,10 @@
-/* --- loonixtunesv2/src/core/config/mod.rs | Config Module --- */
+/* --- loonixtunesv2/src/core/config/mod.rs | mod --- */
 
 pub use self::appconfig::AppConfig;
 pub use crate::audio::config::DspConfig;
-pub use self::presets::Presets;
 pub use self::dspconfig::DspConfigManager;
 pub use self::dspconfig::DspStateView;
 
 mod appconfig;
 mod dspconfig;
-mod presets;
+pub mod presets;

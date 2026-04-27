@@ -1,4 +1,4 @@
-/* --- loonixtunesv2/src/audio/dsp/limiter.rs | Limiter --- */
+/* --- loonixtunesv2/src/audio/dsp/limiter.rs | limiter --- */
 
 use crate::audio::dsp::DspProcessor;
 use std::sync::atomic::{AtomicBool, Ordering};

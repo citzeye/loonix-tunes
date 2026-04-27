@@ -1,4 +1,4 @@
-/* --- loonixtunesv2/src/core/dspconfig.rs | DSP Config --- */
+/* --- loonixtunesv2/src/core/dspconfig.rs | dspconfig --- */
 
 
 

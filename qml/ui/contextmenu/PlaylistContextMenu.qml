@@ -1,4 +1,4 @@
-/* --- loonixtunesv2/qml/ui/contextmenu/PlaylistContextMenu.qml | Playlist Context --- */
+/* --- loonixtunesv2/qml/ui/contextmenu/PlaylistContextMenu.qml | PlaylistContextMenu --- */
 
 import QtQuick
 import QtQuick.Layouts

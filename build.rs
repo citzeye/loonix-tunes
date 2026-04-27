@@ -1,4 +1,4 @@
-/* --- loonixtunesv2/build.rs | Build Script --- */
+/* --- loonixtunesv2/build.rs | build --- */
 fn main() {
     // --- LINUX BUILD ---
     #[cfg(target_os = "linux")]

@@ -1,4 +1,4 @@
-/* --- loonixtunesv2/src/audio/resample.rs | Resampler --- */
+/* --- loonixtunesv2/src/audio/io/resample.rs | resample --- */
 
 use ringbuf::traits::Producer;
 use ringbuf::HeapProd;

@@ -1,4 +1,4 @@
-/* --- loonixtunesv2/src/ui/updater.rs | Updater --- */
+/* --- loonixtunesv2/src/ui/updater.rs | updater --- */
 
 use std::sync::mpsc::Receiver;
 

@@ -1,4 +1,4 @@
-/* --- loonixtunesv2/qml/ui/pref/PrefThemeEditor.qml | Theme Editor --- */
+/* --- loonixtunesv2/qml/ui/pref/PrefThemeEditor.qml | PrefThemeEditor --- */
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts

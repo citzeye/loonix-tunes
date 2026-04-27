@@ -1,4 +1,4 @@
-/* --- loonixtunesv2/src/core/dspconfig.rs | DSP Config --- */
+/* --- loonixtunesv2/src/core/config/dspconfig.rs | dspconfig --- */
 
 
 
@@ -81,7 +81,7 @@ impl DspConfigManager {
 
     pub fn save_dsp_config(&mut self, state: &DspStateView) {
         use crate::audio::config::BuiltInPreset;
-        use crate::audio::presets::EQ_PRESETS;
+        use crate::core::config::presets::EQ_PRESETS;
         let built_in: Vec<BuiltInPreset> = EQ_PRESETS.iter()
             .enumerate()
             .map(|(i, p)| BuiltInPreset { id: i as i32, name: p.name.to_string() })

@@ -1,4 +1,4 @@
-/* --- loonixtunesv2/src/ui/core.rs | The Bridge (QML) --- */
+/* --- loonixtunesv2/src/ui/bridge/core.rs | core --- */
 use crate::audio::io::audiooutput::AudioOutput;
 use crate::audio::engine::{AudioState, FfmpegEngine, MusicItem};
 use crate::core::services::get_file_service;

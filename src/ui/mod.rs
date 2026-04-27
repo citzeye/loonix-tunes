@@ -1,4 +1,4 @@
-/* --- loonixtunesv2/src/ui/mod.rs | UI Module --- */
+/* --- loonixtunesv2/src/ui/mod.rs | mod --- */
 
 pub mod components;
 pub mod bridge;

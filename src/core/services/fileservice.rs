@@ -1,4 +1,7 @@
-pub fn delete_file(path: &str) -> Result<(), String> {
+/* --- loonixtunesv2/src/core/services/fileservice.rs | fileservice --- */
+use trash;
+
+fn delete_file(path: &str) -> Result<(), String> {
     trash::delete(path).map_err(|e| e.to_string())
 }
 

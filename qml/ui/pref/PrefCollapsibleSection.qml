@@ -1,4 +1,4 @@
-
+/* --- loonixtunesv2/qml/ui/pref/PrefCollapsibleSection.qml | PrefCollapsibleSection --- */
 /* --- loonixtunesv2/qml/ui/pref/PrefCollapsibleSection.qml | Collapsible Section --- */
 
 import QtQuick

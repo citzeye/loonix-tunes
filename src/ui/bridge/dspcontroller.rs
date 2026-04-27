@@ -1,4 +1,4 @@
-/* --- loonixtunesv2/src/ui/dspcontroller.rs | State + Rules --- */
+/* --- loonixtunesv2/src/ui/bridge/dspcontroller.rs | dspcontroller --- */
 
 use crate::audio::config::{AppConfig, DspConfig, EqPreset, FxPreset};
 // removed duplicate import

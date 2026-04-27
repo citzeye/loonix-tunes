@@ -1,4 +1,4 @@
-/* --- loonixtunesv2/src/audio/dsp/compressor.rs | Compressor --- */
+/* --- loonixtunesv2/src/audio/dsp/compressor.rs | compressor --- */
 
 use crate::audio::dsp::DspProcessor;
 use std::sync::atomic::{AtomicBool, AtomicU32, Ordering};

@@ -1,4 +1,4 @@
-/* --- loonixtunesv2/src/audio/metadata.rs | Metadata --- */
+/* --- loonixtunesv2/src/audio/metadata.rs | metadata --- */
 
 use ffmpeg::format::input;
 use ffmpeg::media::Type;

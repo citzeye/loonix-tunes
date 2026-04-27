@@ -1,4 +1,4 @@
-/* --- loonixtunesv2/src/ui/components/mod.rs | Components Module --- */
+/* --- loonixtunesv2/src/ui/components/mod.rs | mod --- */
 
 pub use self::popup::PopupMenu;
 pub use self::theme::CustomThemeListModel;

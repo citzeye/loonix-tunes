@@ -1,4 +1,4 @@
-/* --- loonixtunesv2/src/audio/engine/clock.rs | Clock --- */
+/* --- loonixtunesv2/src/audio/engine/clock.rs | clock --- */
 
 /// Audio clock based on sample counter (not system timer)
 pub struct AudioClock {

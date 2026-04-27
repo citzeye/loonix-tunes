@@ -1,4 +1,4 @@
-/* --- loonixtunesv2/src/audio/dsp/eqpreamp.rs | EQ Preamp --- */
+/* --- loonixtunesv2/src/audio/dsp/eqpreamp.rs | eqpreamp --- */
 
 use crate::audio::dsp::DspProcessor;
 use std::sync::atomic::{AtomicBool, AtomicU32, Ordering};

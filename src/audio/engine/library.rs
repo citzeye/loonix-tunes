@@ -1,4 +1,4 @@
-/* --- loonixtunesv2/src/audio/engine/library.rs | Engine Library --- */
+/* --- loonixtunesv2/src/audio/engine/library.rs | library --- */
 use crate::audio::engine::{is_audio_file, MusicItem};
 use std::path::Path;
 use std::thread;

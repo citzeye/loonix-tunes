@@ -1,5 +1,5 @@
-/* --- loonixtunesv2/src/audio/config.rs | Config --- */
-use crate::audio::presets::{EQ_PRESETS, FX_PRESETS};
+/* --- loonixtunesv2/src/core/config/appconfig.rs | appconfig --- */
+use crate::core::config::presets::{EQ_PRESETS, FX_PRESETS};
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::PathBuf;

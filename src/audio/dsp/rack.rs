@@ -1,4 +1,4 @@
-/* --- loonixtunesv2/src/audio/dsp/rack.rs | DSP Rack --- */
+/* --- loonixtunesv2/src/audio/dsp/rack.rs | rack --- */
 
 use crate::audio::dsp::{
     AudioNormalizer, BassBooster, Compressor, Crossfeed, Crystalizer, DspProcessor, DspSettings,

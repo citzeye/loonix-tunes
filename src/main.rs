@@ -1,4 +1,4 @@
-/* --- loonixtunesv2/src/main.rs | Main Entry --- */
+/* --- loonixtunesv2/src/main.rs | main --- */
 #![cfg_attr(
     all(target_os = "windows", not(debug_assertions)),
     windows_subsystem = "windows"

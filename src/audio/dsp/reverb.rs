@@ -1,4 +1,4 @@
-/* --- loonixtunesv2/src/audio/dsp/reverb.rs | Reverb --- */
+/* --- loonixtunesv2/src/audio/dsp/reverb.rs | reverb --- */
 
 use crate::audio::dsp::biquad::BiquadHpf;
 use crate::audio::dsp::DspProcessor;

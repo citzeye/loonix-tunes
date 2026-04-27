@@ -1,4 +1,4 @@
-/* --- loonixtunesv2/src/audio/wireless.rs | Wireless --- */
+/* --- loonixtunesv2/src/core/services/wireless.rs | wireless --- */
 
 
 use std::process::Command;

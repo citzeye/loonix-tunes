@@ -1,4 +1,4 @@
-/* --- loonixtunesv2/src/core/services/mod.rs | Services Module --- */
+/* --- loonixtunesv2/src/core/services/mod.rs | mod --- */
 
 pub use self::fileservice::FileService;
 pub use self::fileservice::get_file_service;

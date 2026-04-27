@@ -1,4 +1,4 @@
-/* --- loonixtunesv2/qml/ui/pref/PrefLibrary.qml | Library Pref --- */
+/* --- loonixtunesv2/qml/ui/pref/PrefLibrary.qml | PrefLibrary --- */
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts

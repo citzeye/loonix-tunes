@@ -1,4 +1,4 @@
-/* --- loonixtunesv2/src/audio/dsp/mod.rs | DSP Module --- */
+/* --- loonixtunesv2/src/audio/dsp/mod.rs | mod --- */
 
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::OnceLock;

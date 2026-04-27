@@ -1,4 +1,4 @@
-/* --- loonixtunesv2/src/ui/queue.rs | Queue Controller --- */
+/* --- loonixtunesv2/src/ui/bridge/queue.rs | queue --- */
 
 use crate::audio::engine::MusicItem;
 use qmetaobject::{QString, QVariantMap};

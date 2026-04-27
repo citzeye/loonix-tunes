@@ -1,4 +1,4 @@
-/* --- loonixtunesv2/qml/ui/ThemeSlider.qml | Theme Slider --- */
+/* --- loonixtunesv2/qml/ui/components/ThemeSlider.qml | ThemeSlider --- */
 import QtQuick
 import QtQuick.Controls
 

@@ -1,4 +1,4 @@
-/* --- loonixtunesv2/src/core/library/mod.rs | Library Module --- */
+/* --- loonixtunesv2/src/core/library/mod.rs | mod --- */
 
 pub use self::favorites::Favorites;
 pub use self::library::Library;

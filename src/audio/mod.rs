@@ -1,4 +1,4 @@
-/* --- loonixtunesv2/src/audio/mod.rs | Audio Module --- */
+/* --- loonixtunesv2/src/audio/mod.rs | mod --- */
 
 // Audio IO submodules
 pub mod io;
@@ -8,9 +8,6 @@ pub mod engine;
 
 // DSP
 pub mod dsp;
-
-// Presets
-pub mod presets;
 
 // Pre-scan loudness
 pub mod scanner;

@@ -1,4 +1,4 @@
-/* --- loonixtunesv2/qml/ui/pref/PrefReportBug.qml | Report Bug --- */
+/* --- loonixtunesv2/qml/ui/pref/PrefReportBug.qml | PrefReportBug --- */
 import QtQuick
 import QtQuick.Layouts
 import QtQuick.Controls

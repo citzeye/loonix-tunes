@@ -1,4 +1,4 @@
-/* --- loonixtunesv2/src/audio/audiobus.rs | Audio Bus --- */
+/* --- loonixtunesv2/src/audio/io/audiobus.rs | audiobus --- */
 // Audio signal path & buffer management
 
 use ringbuf::traits::Split;

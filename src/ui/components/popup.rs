@@ -1,4 +1,4 @@
-/* --- loonixtunesv2/src/audio/popup.rs | Popup --- */
+/* --- loonixtunesv2/src/ui/components/popup.rs | popup --- */
 use crate::ui::components::ThemeManager;
 use qmetaobject::*;
 

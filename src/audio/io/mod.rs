@@ -1,4 +1,4 @@
-/* --- loonixtunesv2/src/audio/io/mod.rs | Audio IO Module --- */
+/* --- loonixtunesv2/src/audio/io/mod.rs | mod --- */
 
 pub mod audiobus;
 pub mod audiooutput;

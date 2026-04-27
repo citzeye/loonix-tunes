@@ -1,4 +1,4 @@
-/* --- loonixtunesv2/src/audio/dsp/crossfeed.rs | Crossfeed --- */
+/* --- loonixtunesv2/src/audio/dsp/crossfeed.rs | crossfeed --- */
 use crate::audio::dsp::DspProcessor;
 use std::sync::atomic::{AtomicBool, AtomicU32, Ordering};
 use std::sync::OnceLock;

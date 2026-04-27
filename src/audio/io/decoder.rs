@@ -1,4 +1,4 @@
-/* --- loonixtunesv2/src/audio/decoder.rs | Decoder --- */
+/* --- loonixtunesv2/src/audio/io/decoder.rs | decoder --- */
 
 use ffmpeg::format::input;
 use ffmpeg::media::Type;

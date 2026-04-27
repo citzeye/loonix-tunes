@@ -1,5 +1,5 @@
-/* --- loonixtunesv2/src/audio/config.rs | Config --- */
-use crate::audio::presets::{EQ_PRESETS, FX_PRESETS};
+/* --- loonixtunesv2/src/audio/config.rs | config --- */
+use crate::core::config::presets::{EQ_PRESETS, FX_PRESETS};
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::PathBuf;
@@ -90,7 +90,7 @@ impl DspConfig {
     }
 
     pub fn dsp_user_template() -> Self {
-        use crate::audio::presets::EQ_PRESETS;
+        use crate::core::config::presets::EQ_PRESETS;
         let built_in_presets: Vec<BuiltInPreset> = EQ_PRESETS.iter()
             .enumerate()
             .map(|(i, p)| BuiltInPreset { id: i as i32, name: p.name.to_string() })
@@ -161,7 +161,7 @@ impl DspConfig {
 
 impl Default for DspConfig {
     fn default() -> Self {
-        use crate::audio::presets::EQ_PRESETS;
+        use crate::core::config::presets::EQ_PRESETS;
         let built_in: Vec<BuiltInPreset> = EQ_PRESETS.iter()
             .enumerate()
             .map(|(i, p)| BuiltInPreset { id: i as i32, name: p.name.to_string() })

@@ -1,4 +1,4 @@
-/* --- loonixtunesv2/src/ui/bridge/mod.rs | Bridge Module --- */
+/* --- loonixtunesv2/src/ui/bridge/mod.rs | mod --- */
 
 pub use self::core::MusicModel;
 pub use self::dspcontroller::DspController;

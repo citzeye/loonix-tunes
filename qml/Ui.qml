@@ -1,4 +1,4 @@
-/* --- loonixtunesv2/qml/Ui.qml | Main UI --- */
+/* --- loonixtunesv2/qml/Ui.qml | Ui --- */
 
 import QtQuick
 import QtQuick.Window

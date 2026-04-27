@@ -1,4 +1,4 @@
-/* --- loonixtunesv2/src/audio/buffer/ringbuffer.rs | Ringbuffer --- */
+/* --- loonixtunesv2/src/audio/io/buffer/ringbuffer.rs | ringbuffer --- */
 
 use ringbuf::traits::Consumer;
 use ringbuf::traits::Split;

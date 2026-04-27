@@ -1,4 +1,4 @@
-/* --- loonixtunesv2/qml/ui/pref/PrefSlider.qml | Slider Pref --- */
+/* --- loonixtunesv2/qml/ui/pref/PrefSlider.qml | PrefSlider --- */
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts

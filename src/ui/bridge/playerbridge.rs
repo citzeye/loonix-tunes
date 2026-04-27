@@ -1,4 +1,4 @@
-/* --- loonixtunesv2/src/ui/playerbridge.rs | Player Bridge --- */
+/* --- loonixtunesv2/src/ui/bridge/playerbridge.rs | playerbridge --- */
 
 use qmetaobject::*;
 

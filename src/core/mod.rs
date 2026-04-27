@@ -1,4 +1,4 @@
-/* --- loonixtunesv2/src/core/mod.rs | Core Module --- */
+/* --- loonixtunesv2/src/core/mod.rs | mod --- */
 
 pub mod config;
 pub mod library;

@@ -1,4 +1,4 @@
-/* --- loonixtunesv2/src/core/library.rs | Library --- */
+/* --- loonixtunesv2/src/core/library/library.rs | library --- */
 
 use crate::audio::engine::{is_audio_file, MusicItem};
 use qmetaobject::QString;

@@ -1,4 +1,4 @@
-/* --- loonixtunesv2/src/audio/engine/engine.rs | Engine --- */
+/* --- loonixtunesv2/src/audio/engine/engine.rs | engine --- */
 
 use crate::audio::io::audiooutput::OutputState;
 use crate::audio::io::decoder;

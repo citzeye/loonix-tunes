@@ -1,4 +1,4 @@
-/* --- loonixtunesv2/src/audio/dsp/crystalizer.rs | Crystalizer --- */
+/* --- loonixtunesv2/src/audio/dsp/crystalizer.rs | crystalizer --- */
 
 use crate::audio::dsp::DspProcessor;
 use std::sync::atomic::{AtomicBool, AtomicU32, Ordering};

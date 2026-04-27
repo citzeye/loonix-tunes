@@ -1,4 +1,4 @@
-/* --- loonixtunesv2/src/ui/reportbug.rs | Queue Controller --- */
+/* --- loonixtunesv2/src/ui/reportbug.rs | reportbug --- */
 use qmetaobject::prelude::*;
 use std::process::Command;
 

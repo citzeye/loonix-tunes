@@ -1,4 +1,4 @@
-/* --- loonixtunesv2/src/ui/theme.rs | Theme --- */
+/* --- loonixtunesv2/src/ui/components/theme.rs | theme --- */
 
 
 use qmetaobject::prelude::*;

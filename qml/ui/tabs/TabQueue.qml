@@ -1,4 +1,4 @@
-/* --- loonixtunesv2/qml/ui/TabQueue.qml | Queue Tab --- */
+/* --- loonixtunesv2/qml/ui/tabs/TabQueue.qml | TabQueue --- */
 
 import QtQuick
 import QtQuick.Layouts

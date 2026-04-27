@@ -1,4 +1,4 @@
-/* --- loonixtunesv2/qml/ui/contextmenu/AppearanceContextMenu.qml | Appearance Context --- */
+/* --- loonixtunesv2/qml/ui/contextmenu/AppearanceContextMenu.qml | AppearanceContextMenu --- */
 
 import QtQuick
 import QtQuick.Layouts

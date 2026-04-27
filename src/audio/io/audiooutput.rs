@@ -1,4 +1,4 @@
-/* --- loonixtunesv2/src/audio/audiooutput.rs | Audio Output --- */
+/* --- loonixtunesv2/src/audio/io/audiooutput.rs | audiooutput --- */
 #[allow(non_snake_case)]
 use crate::audio::dsp::{DspChain, DspProcessor};
 use crate::audio::engine::OutputMode;

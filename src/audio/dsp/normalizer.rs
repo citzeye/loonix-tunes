@@ -1,4 +1,4 @@
-/* --- loonixtunesv2/src/audio/dsp/normalizer.rs | Normalizer --- */
+/* --- loonixtunesv2/src/audio/dsp/normalizer.rs | normalizer --- */
 use crate::audio::dsp::DspProcessor;
 use std::sync::atomic::{AtomicBool, AtomicU32, Ordering};
 use std::sync::{Arc, OnceLock};

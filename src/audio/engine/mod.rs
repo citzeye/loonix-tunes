@@ -1,4 +1,4 @@
-/* --- loonixtunesv2/src/audio/engine/mod.rs | Engine Module --- */
+/* --- loonixtunesv2/src/audio/engine/mod.rs | mod --- */
 
 // Re-export all engine modules
 pub mod clock;

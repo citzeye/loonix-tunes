@@ -1,4 +1,4 @@
-/* --- loonixtunesv2/src/audio/engine/seek.rs | Seek --- */
+/* --- loonixtunesv2/src/audio/engine/seek.rs | seek --- */
 use std::sync::atomic::{AtomicU64, AtomicU8, Ordering};
 
 #[derive(Debug, Clone, Copy, PartialEq)]

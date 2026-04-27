@@ -1,3 +1,4 @@
+/* --- loonixtunesv2/src/core/library/favorites.rs | favorites --- */
 use std::sync::{Arc, Mutex};
 
 #[derive(Clone, Debug)]

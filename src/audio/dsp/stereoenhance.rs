@@ -1,4 +1,4 @@
-/* --- loonixtunesv2/src/audio/dsp/stereoenhance.rs | Stereo Enhance --- */
+/* --- loonixtunesv2/src/audio/dsp/stereoenhance.rs | stereoenhance --- */
 
 use crate::audio::dsp::DspProcessor;
 use std::sync::atomic::{AtomicBool, AtomicU32, Ordering};
