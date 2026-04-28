@@ -594,7 +594,7 @@ reconnecting: Arc::new(AtomicBool::new(false)),
 
     fn audio_thread_loop(rx: mpsc::Receiver<AudioCommand>) {
         let _ = set_current_thread_priority(ThreadPriority::Max);
-        let current_handle: Option<pa_simple::Simple> = None;
+        let mut current_handle: Option<pa_simple::Simple> = None;
 
         loop {
             match rx.recv() {
@@ -657,10 +657,27 @@ reconnecting: Arc::new(AtomicBool::new(false)),
                     device_name,
                     result_tx,
                 }) => {
-                    let sample_rate = 48000;
-                    let result =
-                        Self::create_pa_simple_with_latency(device_name.as_deref(), sample_rate)
-                            .map(|_| ());
+                    // Adaptive audio config based on device type
+                    let device_str = device_name.as_deref();
+                    let status = crate::core::services::wireless::get_system_audio_status(
+                        device_str.unwrap_or("")
+                    );
+                    let sample_rate = if status.is_bluetooth {
+                        // Bluetooth: slower codec
+                        44100
+                    } else {
+                        // Wired/WiFi: standard rate
+                        48000
+                    };
+                    let mut new_handle = None;
+                    let result = Self::create_pa_simple_with_latency(device_str, sample_rate)
+                        .map(|handle| {
+                            new_handle = Some(handle);
+                        })
+                        .map(|_| ());
+                    if result.is_ok() {
+                        current_handle = new_handle;
+                    }
                     let _ = result_tx.send(result);
                 }
 
@@ -719,7 +736,7 @@ reconnecting: Arc::new(AtomicBool::new(false)),
                 break;
             }
 
-            let current_detected = crate::core::services::wireless::isBluetoothDetected();
+                let current_detected = crate::core::services::wireless::is_bluetooth_detected();
             if current_detected != bluetooth_detected {
                 is_bluetooth_detected.store(current_detected, Ordering::Relaxed);
                 eprintln!("[AudioOutput] Device berubah. Bluetooth: {}. Reconnecting...", current_detected);

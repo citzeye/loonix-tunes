@@ -102,7 +102,7 @@ fn main() {
 
     #[cfg(target_os = "linux")]
     {
-        crate::core::services::wireless::startSystemCheck();
+        crate::core::services::wireless::start_system_check();
     }
 
     let app = App::new();

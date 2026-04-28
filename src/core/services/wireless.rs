@@ -27,28 +27,28 @@ impl Default for DeviceType {
 
 #[derive(Default)]
 pub struct SystemAudioStatus {
-    pub isMuted: bool,
-    pub isBluetooth: bool,
-    pub deviceType: String,
+    pub is_muted: bool,
+    pub is_bluetooth: bool,
+    pub device_type: String,
 }
 
-pub fn setSystemMuted(muted: bool) {
+pub fn set_system_muted(muted: bool) {
     SYSTEM_MUTED.store(muted, Ordering::SeqCst);
 }
 
-pub fn setBluetoothDetected(is_bt: bool) {
+pub fn set_bluetooth_detected(is_bt: bool) {
     BLUETOOTH_DETECTED.store(is_bt, Ordering::SeqCst);
 }
 
-pub fn isSystemMuted() -> bool {
+pub fn is_system_muted() -> bool {
     SYSTEM_MUTED.load(Ordering::Relaxed)
 }
 
-pub fn isBluetoothDetected() -> bool {
+pub fn is_bluetooth_detected() -> bool {
     BLUETOOTH_DETECTED.load(Ordering::Relaxed)
 }
 
-pub fn detectDeviceType(device_name: &str) -> DeviceType {
+pub fn detect_device_type(device_name: &str) -> DeviceType {
     let name = device_name.to_lowercase();
 
     if name.contains("bluez") || name.contains("a2dp") || name.contains("bluetooth") {
@@ -74,10 +74,10 @@ pub fn detectDeviceType(device_name: &str) -> DeviceType {
     DeviceType::Unknown
 }
 
-pub fn getSystemAudioStatus(device_name: &str) -> SystemAudioStatus {
-    let dev_type = detectDeviceType(device_name);
+pub fn get_system_audio_status(device_name: &str) -> SystemAudioStatus {
+    let dev_type = detect_device_type(device_name);
     let is_bt = dev_type == DeviceType::Bluetooth;
-    setBluetoothDetected(is_bt);
+    set_bluetooth_detected(is_bt);
 
     let type_string = match dev_type {
         DeviceType::Bluetooth => "Bluetooth",
@@ -89,17 +89,17 @@ pub fn getSystemAudioStatus(device_name: &str) -> SystemAudioStatus {
     .to_string();
 
     SystemAudioStatus {
-        isMuted: SYSTEM_MUTED.load(Ordering::SeqCst),
-        isBluetooth: is_bt,
-        deviceType: type_string,
+        is_muted: SYSTEM_MUTED.load(Ordering::SeqCst),
+        is_bluetooth: is_bt,
+        device_type: type_string,
     }
 }
 
-pub fn getSystemAudioStatus_simple() -> SystemAudioStatus {
+pub fn get_system_audio_status_simple() -> SystemAudioStatus {
     SystemAudioStatus {
-        isMuted: SYSTEM_MUTED.load(Ordering::SeqCst),
-        isBluetooth: BLUETOOTH_DETECTED.load(Ordering::SeqCst),
-        deviceType: if BLUETOOTH_DETECTED.load(Ordering::SeqCst) {
+        is_muted: SYSTEM_MUTED.load(Ordering::SeqCst),
+        is_bluetooth: BLUETOOTH_DETECTED.load(Ordering::SeqCst),
+        device_type: if BLUETOOTH_DETECTED.load(Ordering::SeqCst) {
             "Bluetooth".to_string()
         } else {
             "Wired".to_string()
@@ -111,7 +111,7 @@ pub fn stop_system_check() {
     SHOULD_STOP.store(true, Ordering::SeqCst);
 }
 
-pub fn startSystemCheck() {
+pub fn start_system_check() {
     SHOULD_STOP.store(false, Ordering::SeqCst);
     thread::spawn(|| loop {
         if SHOULD_STOP.load(Ordering::Relaxed) {
