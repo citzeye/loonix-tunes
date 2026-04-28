@@ -18,67 +18,30 @@ const ROLE_COLORS: i32 = 258;
 #[derive(QObject, Default)]
 pub struct CustomThemeListModel {
     base: qt_base_class!(trait QAbstractListModel),
-    pub themes: Vec<ThemeEntry>,
-}
-
-impl CustomThemeListModel {
-    pub fn set_themes(&mut self) {
-        // Left empty - QML will populate directly
-    }
-
-    pub fn rename_theme(&mut self, index: i32, new_name: String) {
-        let idx = index as usize;
-        if idx < self.themes.len() {
-            self.themes[idx].name = new_name;
-            self.data_changed(QModelIndex::default(), QModelIndex::default());
-        }
-    }
-
-    pub fn update_colors(&mut self, index: i32, colors: HashMap<String, String>) {
-        let idx = index as usize;
-        if idx < self.themes.len() {
-            self.themes[idx].colors = Some(colors);
-            self.data_changed(QModelIndex::default(), QModelIndex::default());
-        }
-    }
-
-    pub fn add_theme(&mut self, theme: ThemeEntry) {
-        self.themes.push(theme);
-    }
-
-    pub fn remove_theme(&mut self, index: i32) {
-        let idx = index as usize;
-        if idx < self.themes.len() {
-            self.themes.remove(idx);
-        }
-    }
+    items: Vec<ThemeEntry>,
 }
 
 impl QAbstractListModel for CustomThemeListModel {
     fn row_count(&self) -> i32 {
-        self.themes.len() as i32
+        self.items.len() as i32
     }
 
     fn data(&self, index: QModelIndex, role: i32) -> QVariant {
         let row = index.row() as usize;
-        if row >= self.themes.len() {
+        if row >= self.items.len() {
             return QVariant::default();
         }
-
-        let theme = &self.themes[row];
+        let item = &self.items[row];
         match role {
-            ROLE_ID => (row as i32).into(),
-            ROLE_NAME => QString::from(theme.name.clone()).into(),
+            ROLE_NAME => QString::from(item.name.clone()).into(),
             ROLE_COLORS => {
-                if let Some(ref colors) = theme.colors {
-                    let map: QVariantMap = colors
-                        .iter()
-                        .map(|(k, v)| (QString::from(k.clone()), QVariant::from(QString::from(v.clone()))))
-                        .collect();
-                    QVariant::from(map)
-                } else {
-                    QVariant::default()
+                let mut map = QVariantMap::default();
+                if let Some(ref colors) = item.colors {
+                    for (k, v) in colors {
+                        map.insert(QString::from(k.as_str()), QVariant::from(QString::from(v.as_str())));
+                    }
                 }
+                map.into()
             }
             _ => QVariant::default(),
         }
@@ -86,17 +49,10 @@ impl QAbstractListModel for CustomThemeListModel {
 
     fn role_names(&self) -> HashMap<i32, QByteArray> {
         let mut map = HashMap::new();
-        map.insert(ROLE_ID, QByteArray::from("id"));
         map.insert(ROLE_NAME, QByteArray::from("name"));
         map.insert(ROLE_COLORS, QByteArray::from("colors"));
         map
     }
-}
-
-#[derive(Serialize, Deserialize, Debug, Clone, Default)]
-pub struct CustomTheme {
-    pub name: String,
-    pub colors: HashMap<String, String>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]

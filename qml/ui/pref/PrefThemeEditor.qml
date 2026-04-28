@@ -308,7 +308,7 @@ Item {
                         Repeater {
                             model: theme.get_custom_themes()
                             delegate: RadioButton {
-                                text: modelData.name + " (" + modelData.original_index + ")"
+                                text: modelData.name
                                 checked: prefThemeEditorRoot.selectedProfileIndex === modelData.original_index
                                 onClicked: {
                                     prefThemeEditorRoot.selectedProfileIndex = modelData.original_index;

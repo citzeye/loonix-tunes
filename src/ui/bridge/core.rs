@@ -202,7 +202,6 @@ pub struct MusicModel {
     pub update_status_changed: qt_signal!(),
     pub check_for_updates: qt_method!(fn(&mut self)),
     pub poll_update_result: qt_method!(fn(&mut self)),
-    update_rx: Option<std::sync::mpsc::Receiver<String>>,
     pub device_list: qt_property!(QStringList; NOTIFY device_list_changed),
     pub selected_device: qt_property!(QString; NOTIFY device_list_changed),
     pub device_list_changed: qt_signal!(),
