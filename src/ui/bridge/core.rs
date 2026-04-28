@@ -139,6 +139,7 @@ pub struct MusicModel {
     pub play_previous: qt_method!(fn(&mut self)),
     pub toggle_shuffle: qt_method!(fn(&mut self)),
     pub toggle_repeat: qt_method!(fn(&mut self)),
+    pub toggle_abrepeat: qt_method!(fn(&mut self)),
     pub seek_to: qt_method!(fn(&mut self, position: i32)),
     pub format_time: qt_method!(fn(&self, ms: i32) -> QString),
     pub set_volume: qt_method!(fn(&mut self, vol: f64)),
@@ -690,6 +691,10 @@ impl MusicModel {
         // Langsung tembak ke property QML (self.loop_playlist) ngambil dari playback
         self.loop_playlist = self.playback.loop_active;
         self.loop_changed();
+    }
+
+    pub fn toggle_abrepeat(&mut self) {
+        self.playback.toggle_abrepeat();
     }
 
     pub fn seek_to(&mut self, pos: i32) {
