@@ -863,21 +863,21 @@ Window {
                             }
                         }
 
-                        // AB REPEAT 󰇉
+                        // AB LOOP 󰇉
                         Text {
-                            id: abRepeatIcon
+                            id: abRLoopIcon
                             text: '󰇉'
                             font.family: symbols.name
                             font.pixelSize: 18
-                            color: abRepeatMA.containsMouse ? theme.colormap.playerhover : theme.colormap.playersubtext
+                            color: abLoopMA.containsMouse ? theme.colormap.playerhover : theme.colormap.playersubtext
                             Layout.alignment: Qt.AlignVCenter
 
                             MouseArea {
-                                id: abRepeatMA
+                                id: abLoopMA
                                 anchors.fill: parent
                                 hoverEnabled: true
                                 onClicked: {
-                                    musicModel.toggle_abrepeat();
+                                    musicModel.toggle_abloop();
                                 }
                             }
                         }
