@@ -18,8 +18,7 @@ Rectangle {
 
   width: Math.min(tabText.implicitWidth + 30, 100)
   height: 20
-  property bool isActive: musicModel.current_folder_qml.toUpperCase() ===
-    musicModel.get_custom_folder_name(index).toUpperCase()
+  property bool isActive: musicModel.current_folder_qml === musicModel.get_custom_folder_path(index)
   property int tabIndex: index
   property Item customRow: parent
   color: isActive || tabMA_custom.containsMouse ? theme.colormap.bgoverlay : 'transparent'
